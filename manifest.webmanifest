@@ -1,6 +1,6 @@
 {
-  "name": "Raportare Agenti Foton",
-  "short_name": "Foton Agenti",
+  "name": "Foton by Inter Cargo",
+  "short_name": "Foton by Inter Cargo",
   "description": "Introducere discutii cu dealeri Foton si raport centralizat pentru agentii de vanzari.",
   "start_url": "./index.html",
   "scope": "./",
