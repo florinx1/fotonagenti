@@ -92,6 +92,22 @@ input:focus, select:focus, textarea:focus {
   border-color: var(--blue);
 }
 textarea { resize: vertical; }
+input[readonly] { background: var(--gridline); color: var(--text-secondary); }
+
+.edit-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: rgba(42,120,214,0.10);
+  border: 1px solid rgba(42,120,214,0.30);
+  color: var(--blue-dark);
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+}
 
 .btn-primary {
   width: 100%;
@@ -233,3 +249,58 @@ textarea { resize: vertical; }
 .restanta-item .r-days { color: var(--critical); }
 .restanta-item .r-sub { color: var(--text-secondary); margin-bottom: 4px; }
 .restanta-item .r-obs { color: var(--text-muted); }
+
+.dealer-warning {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--critical);
+  background: rgba(208,59,59,0.10);
+  border: 1px solid rgba(208,59,59,0.25);
+  border-radius: 8px;
+  padding: 7px 10px;
+  line-height: 1.4;
+}
+
+.search-input { margin-bottom: 10px; }
+
+.discutie-item {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+}
+.discutie-item .d-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  margin-bottom: 3px;
+}
+.discutie-item .d-top .d-dealer { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.discutie-item .d-sub { color: var(--text-secondary); margin-bottom: 2px; }
+.discutie-item .d-next { color: var(--text-muted); }
+.discutie-item .d-actions { margin-top: 6px; }
+.btn-edit {
+  background: none;
+  border: 1px solid var(--blue);
+  color: var(--blue-dark);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.btn-edit:active { background: rgba(42,120,214,0.10); }
+
+.status-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.status-pill.good { background: rgba(12,163,12,0.12); color: #0ca30c; }
+.status-pill.critical { background: rgba(208,59,59,0.12); color: #d03b3b; }
+.status-pill.neutral { background: rgba(42,120,214,0.12); color: #184f95; }

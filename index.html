@@ -28,6 +28,10 @@
 </header>
 
 <main id="view-form" class="view">
+  <div id="editBanner" class="edit-banner" hidden>
+    <span id="editBannerText"></span>
+    <button type="button" id="cancelEditBtn" class="btn-secondary">Anuleaza</button>
+  </div>
   <form id="entryForm" autocomplete="off">
     <div class="field">
       <label for="f_agent">Agent *</label>
@@ -42,6 +46,7 @@
     <div class="field">
       <label for="f_dealer">Dealer / Firma *</label>
       <input type="text" id="f_dealer" placeholder="ex: Auto Exemplu SRL" required />
+      <div id="dealerWarning" class="dealer-warning" hidden></div>
     </div>
 
     <div class="field-row">
@@ -128,6 +133,13 @@
   <section class="card">
     <h2>Actiuni restante</h2>
     <div id="restanteList" class="restante-list"></div>
+  </section>
+
+  <section class="card">
+    <h2>Toate discutiile</h2>
+    <input type="search" id="searchInput" class="search-input" placeholder="Cauta dupa dealer sau agent..." />
+    <div id="listNote" class="muted-text" style="margin-bottom:8px;"></div>
+    <div id="allDiscutiiList" class="restante-list"></div>
   </section>
 </main>
 
