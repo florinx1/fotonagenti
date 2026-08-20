@@ -1,4 +1,4 @@
-var CACHE_NAME = "foton-agenti-v1";
+var CACHE_NAME = "foton-agenti-v2";
 var APP_SHELL = [
   "./",
   "./index.html",
@@ -8,6 +8,8 @@ var APP_SHELL = [
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
+  "./icons/brand/foton.png",
+  "./icons/brand/intercargo.png",
 ];
 
 self.addEventListener("install", function (event) {

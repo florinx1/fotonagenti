@@ -35,10 +35,27 @@ body {
 .app-header {
   background: var(--navy);
   color: #fff;
-  padding: calc(env(safe-area-inset-top, 0px) + 18px) 20px 16px;
+  padding: calc(env(safe-area-inset-top, 0px) + 16px) 16px 14px 20px;
   position: sticky;
   top: 0;
   z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.app-header-text { min-width: 0; }
+.app-header-brands {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.brand-badge {
+  height: 30px;
+  width: auto;
+  display: block;
 }
 .app-header-title { font-size: 19px; font-weight: 700; }
 .app-header-sub {
