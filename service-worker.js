@@ -1,4 +1,4 @@
-var CACHE_NAME = "foton-agenti-v5";
+var CACHE_NAME = "foton-agenti-v6";
 var APP_SHELL = [
   "./",
   "./index.html",
@@ -10,6 +10,13 @@ var APP_SHELL = [
   "./icons/icon-512.png",
   "./icons/brand/foton.png",
   "./icons/brand/intercargo.png",
+  "./lib/leaflet/leaflet.js",
+  "./lib/leaflet/leaflet.css",
+  "./lib/leaflet/images/marker-icon.png",
+  "./lib/leaflet/images/marker-icon-2x.png",
+  "./lib/leaflet/images/marker-shadow.png",
+  "./lib/leaflet/images/layers.png",
+  "./lib/leaflet/images/layers-2x.png",
 ];
 
 self.addEventListener("install", function (event) {

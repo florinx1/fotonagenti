@@ -24,6 +24,24 @@
   var dealerIndex = [];
   var editingKey = null; // normalized dealer key of the discussion currently being edited, or null when adding new
 
+  // Coordonate aproximative (resedinta de judet) pentru harta interactiva din Raport.
+  var JUDET_COORDS = {
+    "Alba": [46.0697, 23.5804], "Arad": [46.1866, 21.3123], "Arges": [44.8565, 24.8692],
+    "Bacau": [46.5670, 26.9146], "Bihor": [47.0465, 21.9189], "Bistrita-Nasaud": [47.1330, 24.5000],
+    "Botosani": [47.7486, 26.6690], "Braila": [45.2692, 27.9575], "Brasov": [45.6427, 25.5887],
+    "Buzau": [45.1500, 26.8333], "Calarasi": [44.2058, 27.3306], "Caras-Severin": [45.3000, 21.8833],
+    "Cluj": [46.7712, 23.6236], "Constanta": [44.1733, 28.6383], "Covasna": [45.8667, 26.1833],
+    "Dambovita": [44.9333, 25.4500], "Dolj": [44.3167, 23.8000], "Galati": [45.4353, 28.0080],
+    "Giurgiu": [43.9037, 25.9699], "Gorj": [45.0333, 23.2833], "Harghita": [46.3597, 25.8017],
+    "Hunedoara": [45.7500, 22.9000], "Ialomita": [44.5833, 27.3833], "Iasi": [47.1585, 27.6014],
+    "Ilfov": [44.5000, 26.1000], "Maramures": [47.6567, 23.5825], "Mehedinti": [44.6333, 22.6500],
+    "Mures": [46.5425, 24.5575], "Neamt": [46.9333, 26.3667], "Olt": [44.4333, 24.3667],
+    "Prahova": [44.9333, 26.0333], "Salaj": [47.1833, 23.0500], "Satu Mare": [47.7920, 22.8850],
+    "Sibiu": [45.7983, 24.1256], "Suceava": [47.6500, 26.2500], "Teleorman": [43.9000, 25.3333],
+    "Timis": [45.7472, 21.2306], "Tulcea": [45.1667, 28.8000], "Vaslui": [46.6333, 27.7333],
+    "Valcea": [45.1000, 24.3667], "Vrancea": [45.7000, 27.1833], "Bucuresti": [44.4268, 26.1025],
+  };
+
   function normalizeDealerJS(s) {
     return String(s == null ? "" : s)
       .toLowerCase()
@@ -433,6 +451,7 @@
     lastDiscutii = data.discutii || [];
     lastDiscutiiTotal = data.discutiiTotal || lastDiscutii.length;
     applyListFilter();
+    renderDealerMap(lastDiscutii);
   }
 
   function statusPillClass(status) {
@@ -479,6 +498,106 @@
       noteEl.textContent = lastDiscutii.length + " discutie(i) in total.";
     }
     renderAllList(filtered);
+  }
+
+  // ---------------------------------------------------------------------
+  // HARTA DEALERI
+  // ---------------------------------------------------------------------
+  var dealerMap = null;
+  var dealerMapLayer = null;
+
+  function ensureDealerMap() {
+    if (dealerMap || typeof L === "undefined") return dealerMap;
+    dealerMap = L.map("dealerMap", {
+      center: [45.9432, 24.9668],
+      zoom: 6,
+      minZoom: 5,
+      maxZoom: 12,
+      scrollWheelZoom: false,
+    });
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap contributors",
+      maxZoom: 18,
+    }).addTo(dealerMap);
+    dealerMapLayer = L.layerGroup().addTo(dealerMap);
+    return dealerMap;
+  }
+
+  function judetBucketColor(count) {
+    if (count >= 8) return "#184f95";
+    if (count >= 5) return "#2a78d6";
+    if (count >= 3) return "#5598e7";
+    if (count >= 2) return "#86b6ef";
+    return "#b7d3f6";
+  }
+
+  function buildMapPopup(judet, list) {
+    var rows = list.slice(0, 30).map(function (r) {
+      return '<div class="mp-row"><span class="mp-dealer">' + escapeHtml(r.dealer) + '</span>' +
+        '<span class="status-pill ' + statusPillClass(r.status) + '">' + escapeHtml(r.status) + '</span></div>';
+    }).join("");
+    var more = list.length > 30 ? '<div class="muted-text" style="margin-top:4px;">+ inca ' + (list.length - 30) + '</div>' : "";
+    return '<div class="map-popup"><div class="mp-title">' + escapeHtml(judet) + '</div>' +
+      '<div class="mp-count">' + list.length + ' dealer(i) contactat(i)</div>' +
+      '<div class="mp-list">' + rows + '</div>' + more + '</div>';
+  }
+
+  function renderMapLegend() {
+    var el = $("mapLegend");
+    if (!el) return;
+    var buckets = [
+      { label: "1", color: "#b7d3f6" },
+      { label: "2", color: "#86b6ef" },
+      { label: "3-4", color: "#5598e7" },
+      { label: "5-7", color: "#2a78d6" },
+      { label: "8+", color: "#184f95" },
+    ];
+    el.innerHTML = buckets.map(function (b) {
+      return '<span class="legend-item"><span class="legend-swatch" style="background:' + b.color + '"></span>' + b.label + ' dealeri</span>';
+    }).join("");
+  }
+
+  function renderDealerMap(discutii) {
+    var noteEl = $("mapNote");
+    if (typeof L === "undefined") {
+      if (noteEl) noteEl.textContent = "Harta nu a putut fi incarcata (necesita conexiune la internet).";
+      return;
+    }
+    var map = ensureDealerMap();
+    if (!map || !dealerMapLayer) return;
+    dealerMapLayer.clearLayers();
+
+    var byJudet = {};
+    (discutii || []).forEach(function (r) {
+      var key = r.judet || "";
+      if (!key) return;
+      if (!byJudet[key]) byJudet[key] = [];
+      byJudet[key].push(r);
+    });
+
+    var judeteWithData = Object.keys(byJudet).filter(function (j) { return JUDET_COORDS[j]; });
+    if (noteEl) {
+      noteEl.textContent = judeteWithData.length
+        ? "Atinge un judet de pe harta pentru detalii."
+        : "Inca nu exista discutii introduse.";
+    }
+
+    judeteWithData.forEach(function (judet) {
+      var list = byJudet[judet];
+      var coords = JUDET_COORDS[judet];
+      var radius = 8 + 6 * Math.sqrt(list.length);
+      var marker = L.circleMarker(coords, {
+        radius: radius,
+        color: "#184f95",
+        weight: 1.5,
+        fillColor: judetBucketColor(list.length),
+        fillOpacity: 0.82,
+      });
+      marker.bindPopup(buildMapPopup(judet, list), { maxWidth: 260 });
+      marker.addTo(dealerMapLayer);
+    });
+
+    renderMapLegend();
   }
 
   function kpiTile(label, value, cls) {

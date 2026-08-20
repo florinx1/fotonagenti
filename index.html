@@ -12,6 +12,7 @@
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="apple-touch-icon" href="icons/icon-192.png" />
 <link rel="icon" href="icons/icon-192.png" />
+<link rel="stylesheet" href="lib/leaflet/leaflet.css" />
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body class="viz-root">
@@ -131,6 +132,13 @@
   </section>
 
   <section class="card">
+    <h2>Harta dealeri</h2>
+    <div id="mapNote" class="muted-text" style="margin-bottom:8px;"></div>
+    <div id="dealerMap" class="dealer-map"></div>
+    <div id="mapLegend" class="map-legend"></div>
+  </section>
+
+  <section class="card">
     <h2>Actiuni restante</h2>
     <div id="restanteList" class="restante-list"></div>
   </section>
@@ -154,6 +162,7 @@
   </button>
 </nav>
 
+<script src="lib/leaflet/leaflet.js"></script>
 <script src="config.js"></script>
 <script src="app.js"></script>
 </body>
