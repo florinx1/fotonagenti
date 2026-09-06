@@ -163,6 +163,7 @@ input[readonly] { background: var(--gridline); color: var(--text-secondary); }
   font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
+  text-decoration: none;
 }
 .tab-btn .tab-icon { font-size: 20px; line-height: 1; }
 .tab-btn.active { color: var(--navy); }
