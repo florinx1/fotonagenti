@@ -443,7 +443,7 @@ input[readonly] { background: var(--gridline); color: var(--text-secondary); }
 .fisa-item .f-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fisa-item .f-meta { color: var(--text-secondary); font-size: 12px; margin-bottom: 10px; }
 .fisa-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.fisa-actions button {
+.fisa-actions button, .fisa-actions a {
   flex: 1;
   min-width: 84px;
   background: none;
@@ -454,8 +454,10 @@ input[readonly] { background: var(--gridline); color: var(--text-secondary); }
   padding: 8px 6px;
   border-radius: 8px;
   cursor: pointer;
+  text-align: center;
+  text-decoration: none;
 }
-.fisa-actions button:active { background: var(--page); }
+.fisa-actions button:active, .fisa-actions a:active { background: var(--page); }
 .fisa-actions button[data-act="trimite"] { color: var(--good); border-color: rgba(12,163,12,0.35); }
 .fisa-status { margin-top: 6px; min-height: 14px; }
 .btn-edit {
