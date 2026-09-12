@@ -462,28 +462,43 @@ const GALLERIES = {"p_8": ["/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA0JCgwKCA0MCwwPDg0Q
   const lbCaption = document.getElementById('lbCaption');
   const lbDots = document.getElementById('lbDots');
 
+  let scrollYInainteDeLightbox = 0;
   function openLightbox(gkey, code){
     lbImages = GALLERIES[gkey] || [];
     if(!lbImages.length) return;
     lbIndex = 0; lbCode = code;
     renderLightbox();
     lightbox.classList.add('open');
+    // Blocam scroll-ul paginii din spate cat timp e deschisa poza: pe telefon, altfel pagina de
+    // dedesubt tot "aluneca" sub degete si atingerile (inclusiv pe butonul X) nu mai ajung unde
+    // trebuie - de-asta parea ca X-ul de inchidere nu raspunde.
+    scrollYInainteDeLightbox = window.scrollY || 0;
+    document.body.style.position = 'fixed';
+    document.body.style.top = -scrollYInainteDeLightbox + 'px';
+    document.body.style.width = '100%';
+  }
+  function closeLightbox(){
+    lightbox.classList.remove('open');
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.width = '';
+    window.scrollTo(0, scrollYInainteDeLightbox);
   }
   function renderLightbox(){
     lbImgEl.src = imgSrc(lbImages[lbIndex]);
     lbCaption.textContent = `${lbCode} — imagine ${lbIndex+1} din ${lbImages.length} (din catalogul original)`;
     lbDots.innerHTML = lbImages.map((_,i)=>`<span class="lb-dot ${i===lbIndex?'active':''}" data-i="${i}"></span>`).join('');
   }
-  document.getElementById('lbClose').addEventListener('click', ()=> lightbox.classList.remove('open'));
+  document.getElementById('lbClose').addEventListener('click', closeLightbox);
   document.getElementById('lbPrev').addEventListener('click', ()=>{ lbIndex = (lbIndex-1+lbImages.length)%lbImages.length; renderLightbox(); });
   document.getElementById('lbNext').addEventListener('click', ()=>{ lbIndex = (lbIndex+1)%lbImages.length; renderLightbox(); });
   lbDots.addEventListener('click', (e)=>{
     if(e.target.classList.contains('lb-dot')){ lbIndex = parseInt(e.target.dataset.i); renderLightbox(); }
   });
-  lightbox.addEventListener('click', (e)=>{ if(e.target === lightbox) lightbox.classList.remove('open'); });
+  lightbox.addEventListener('click', (e)=>{ if(e.target === lightbox) closeLightbox(); });
   document.addEventListener('keydown', (e)=>{
     if(!lightbox.classList.contains('open')) return;
-    if(e.key === 'Escape') lightbox.classList.remove('open');
+    if(e.key === 'Escape') closeLightbox();
     if(e.key === 'ArrowLeft') document.getElementById('lbPrev').click();
     if(e.key === 'ArrowRight') document.getElementById('lbNext').click();
   });

@@ -856,12 +856,21 @@
     return new Blob([bytes], { type: mime || "application/pdf" });
   }
 
+  var fisaBlobCache = {}; // id -> {blob, nume}, tinut in memorie cat sta deschis ecranul
+
   function fetchFisaBlob(id) {
+    // Daca fisierul a mai fost descarcat o data in acest ecran, il refolosim direct din memorie -
+    // asta conteaza mai ales pentru "Trimite": pe unele telefoane (Safari/iOS mai ales) fereastra
+    // de distribuire porneste doar daca navigator.share() e apelat FARA nicio asteptare de retea
+    // intre click si apel; cu fisierul deja in cache, a doua apasare pe buton e instanta.
+    if (fisaBlobCache[id]) return Promise.resolve(fisaBlobCache[id]);
     return fetch(apiUrl({ action: "fisacontinut", id: id, token: CONFIG.APP_TOKEN }))
       .then(function (r) { return r.json(); })
       .then(function (res) {
         if (!res || !res.ok) throw new Error((res && res.error) || "eroare la citire");
-        return { blob: base64ToBlob(res.base64, res.mime), nume: res.nume || "fisa-tehnica.pdf" };
+        var entry = { blob: base64ToBlob(res.base64, res.mime), nume: res.nume || "fisa-tehnica.pdf" };
+        fisaBlobCache[id] = entry;
+        return entry;
       });
   }
 
@@ -883,15 +892,14 @@
     if (!fisaById(id)) return;
 
     if (act === "vezi") {
-      // Deschidem tab-ul gol IMEDIAT, sincron cu click-ul, altfel Safari/iOS il blocheaza
-      // ca pe un pop-up neasteptat (nu mai stie ca a pornit dintr-o actiune a utilizatorului).
-      var tab = window.open("", "_blank");
+      // Navigam pagina curenta direct catre PDF (nu deschidem fereastra/tab noua cu window.open -
+      // in multe telefoane, mai ales cand aplicatia e instalata pe ecranul principal, un tab nou
+      // deschis din JS e blocat ca pop-up si butonul pare "mort"). O navigare normala functioneaza
+      // peste tot, iar butonul de Inapoi al telefonului te readuce direct in aplicatie.
       setFisaStatus(card, "Se incarca...");
       fetchFisaBlob(id).then(function (r) {
-        if (tab) tab.location.href = URL.createObjectURL(r.blob);
-        setFisaStatus(card, "");
+        window.location.href = URL.createObjectURL(r.blob);
       }).catch(function (err) {
-        if (tab) tab.close();
         setFisaStatus(card, "Eroare: " + err.message);
       });
       return;
@@ -909,13 +917,20 @@
     }
 
     if (act === "trimite") {
-      setFisaStatus(card, "Se pregateste...");
+      var eraDejaInCache = !!fisaBlobCache[id];
+      setFisaStatus(card, eraDejaInCache ? "" : "Se pregateste...");
       fetchFisaBlob(id).then(function (r) {
         var file = new File([r.blob], r.nume, { type: "application/pdf" });
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           return navigator.share({ files: [file], title: r.nume })
             .then(function () { setFisaStatus(card, ""); })
-            .catch(function () { setFisaStatus(card, ""); }); // anulat de utilizator - nu e o eroare
+            .catch(function (err) {
+              if (err && err.name === "AbortError") { setFisaStatus(card, ""); return; } // anulat de utilizator
+              // Pe unele telefoane (Safari/iOS mai ales), fereastra de distribuire nu porneste
+              // daca inainte s-a asteptat dupa retea (prima apasare, cand fisierul s-a descarcat).
+              // Acum e deja in memorie, deci a doua apasare pe Trimite merge instant.
+              setFisaStatus(card, eraDejaInCache ? "Nu am putut deschide fereastra de trimitere." : "Fisierul e pregatit acum - mai apasa o data pe Trimite.");
+            });
         }
         // Fara Share API (de regula pe calculator): descarcam fisierul, ca sa fie atasat manual.
         downloadBlob(r.blob, r.nume);
