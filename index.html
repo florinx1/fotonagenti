@@ -18,8 +18,9 @@
 <body class="viz-root">
 
 <header class="app-header">
+  <button type="button" id="homeBtn" class="home-btn" hidden aria-label="Meniu principal">&#8592;</button>
   <div class="app-header-text">
-    <div class="app-header-title" id="appTitle">Raportare Agenti Foton</div>
+    <div class="app-header-title" id="appTitle">Foton by Inter Cargo</div>
     <div class="app-header-sub" id="offlineBadge" hidden>Offline &mdash; se salveaza local</div>
   </div>
   <div class="app-header-brands" aria-hidden="true">
@@ -28,7 +29,52 @@
   </div>
 </header>
 
-<main id="view-form" class="view">
+<main id="view-home" class="view">
+  <div class="home-menu">
+    <button type="button" class="home-tile home-tile--raportare" id="homeToRaportare">
+      <span class="home-tile-icon" aria-hidden="true">&#128203;</span>
+      <span class="home-tile-text">
+        <span class="home-tile-title">Raportare agenti</span>
+        <span class="home-tile-sub">Adauga discutii, puncte de lucru si vezi raportul</span>
+      </span>
+      <span class="home-tile-arrow" aria-hidden="true">&#8250;</span>
+    </button>
+    <a class="home-tile home-tile--stoc" href="https://florinx1.github.io/DBK-STOC/" target="_blank" rel="noopener">
+      <span class="home-tile-icon" aria-hidden="true">&#128666;</span>
+      <span class="home-tile-text">
+        <span class="home-tile-title">Stoc DBK<span class="home-tile-badge">extern</span></span>
+        <span class="home-tile-sub">Stocul de vehicule disponibile de la DBK</span>
+      </span>
+      <span class="home-tile-arrow" aria-hidden="true">&#8250;</span>
+    </a>
+    <a class="home-tile home-tile--tunland" href="catalog.html">
+      <span class="home-tile-icon" aria-hidden="true">&#128295;</span>
+      <span class="home-tile-text">
+        <span class="home-tile-title">Catalog accesorii Tunland</span>
+        <span class="home-tile-sub">Accesorii disponibile pentru Foton Tunland</span>
+      </span>
+      <span class="home-tile-arrow" aria-hidden="true">&#8250;</span>
+    </a>
+    <button type="button" class="home-tile home-tile--fise" id="homeToFise">
+      <span class="home-tile-icon" aria-hidden="true">&#128196;</span>
+      <span class="home-tile-text">
+        <span class="home-tile-title">Fise tehnice vehicule Foton</span>
+        <span class="home-tile-sub">Specificatii tehnice ale vehiculelor Foton - vezi, descarca sau trimite</span>
+      </span>
+      <span class="home-tile-arrow" aria-hidden="true">&#8250;</span>
+    </button>
+  </div>
+</main>
+
+<main id="view-fise" class="view" hidden>
+  <div class="report-toolbar">
+    <button id="refreshFiseBtn" class="btn-secondary" type="button">Reincarca lista</button>
+    <span id="fiseUpdated" class="muted-text"></span>
+  </div>
+  <div id="fiseList" class="restante-list"></div>
+</main>
+
+<main id="view-form" class="view" hidden>
   <div id="editBanner" class="edit-banner" hidden>
     <span id="editBannerText"></span>
     <button type="button" id="cancelEditBtn" class="btn-secondary">Anuleaza</button>
@@ -108,6 +154,50 @@
   </form>
 </main>
 
+<main id="view-points" class="view" hidden>
+  <section class="card">
+    <h2>Adauga punct de lucru</h2>
+    <p class="muted-text" style="margin:0 0 12px;">Daca un dealer are puncte de lucru suplimentare pe langa sediul principal, adauga-le aici.</p>
+    <form id="punctForm" autocomplete="off">
+      <div class="field">
+        <label for="p_dealer">Dealer / Firma</label>
+        <input type="text" id="p_dealer" list="dealerList" placeholder="Scrie sau alege un dealer existent" required />
+        <datalist id="dealerList"></datalist>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="p_localitate">Localitate</label>
+          <input type="text" id="p_localitate" placeholder="ex: Cluj-Napoca" required />
+        </div>
+        <div class="field">
+          <label for="p_judet">Judet</label>
+          <select id="p_judet" required></select>
+        </div>
+      </div>
+      <div class="field">
+        <label for="p_adresa">Adresa</label>
+        <input type="text" id="p_adresa" placeholder="ex: Str. Exemplu nr. 12" />
+      </div>
+      <div class="field">
+        <label for="p_telefon">Telefon</label>
+        <input type="tel" id="p_telefon" placeholder="07xx xxx xxx" />
+      </div>
+      <div class="field">
+        <label for="p_obs">Observatii</label>
+        <textarea id="p_obs" rows="2" placeholder="Detalii relevante..."></textarea>
+      </div>
+      <button type="submit" class="btn-primary" id="punctSubmitBtn">Salveaza punctul</button>
+      <div id="punctMsg" class="form-msg" role="status" aria-live="polite"></div>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Puncte adaugate</h2>
+    <div id="pointsListNote" class="muted-text" style="margin-bottom:8px;"></div>
+    <div id="pointsList" class="restante-list"></div>
+  </section>
+</main>
+
 <main id="view-report" class="view" hidden>
   <div class="report-toolbar">
     <button id="refreshBtn" class="btn-secondary" type="button">Reincarca raportul</button>
@@ -151,19 +241,19 @@
   </section>
 </main>
 
-<nav class="tab-bar" aria-label="Navigare">
+<nav class="tab-bar" id="tabBar" aria-label="Navigare" hidden>
   <button class="tab-btn active" id="tabFormBtn" type="button">
     <span class="tab-icon" aria-hidden="true">＋</span>
     <span>Adauga</span>
+  </button>
+  <button class="tab-btn" id="tabPointsBtn" type="button">
+    <span class="tab-icon" aria-hidden="true">o</span>
+    <span>Puncte</span>
   </button>
   <button class="tab-btn" id="tabReportBtn" type="button">
     <span class="tab-icon" aria-hidden="true">▤</span>
     <span>Raport</span>
   </button>
-  <a class="tab-btn" href="https://florinx1.github.io/DBK-STOC/" target="_blank" rel="noopener">
-    <span class="tab-icon" aria-hidden="true">🚚</span>
-    <span>Stoc DBK</span>
-  </a>
 </nav>
 
 <script src="lib/leaflet/leaflet.js"></script>

@@ -3,10 +3,12 @@
 
   var CONFIG = window.APP_CONFIG || {};
   var QUEUE_KEY = "foton_pending_entries_v1";
+  var QUEUE_PUNCT_KEY = "foton_pending_puncte_v1";
   var CACHE_META_KEY = "foton_meta_cache_v1";
   var CACHE_REPORT_KEY = "foton_report_cache_v1";
   var CACHE_AGENT_KEY = "foton_last_agent_v1";
   var CACHE_DEALERS_KEY = "foton_dealer_index_v1";
+  var CACHE_FISE_KEY = "foton_fise_cache_v1";
 
   var DEFAULT_META = {
     agenti: Array.from({ length: 15 }, function (_, i) { return "Agent " + (i + 1); }),
@@ -21,6 +23,8 @@
 
   var lastDiscutii = [];
   var lastDiscutiiTotal = 0;
+  var lastPuncte = [];
+  var lastFise = [];
   var dealerIndex = [];
   var editingKey = null; // normalized dealer key of the discussion currently being edited, or null when adding new
 
@@ -62,6 +66,7 @@
   function addToDealerIndexCache(dealer, agent, data) {
     dealerIndex.push({ dealer: dealer, agent: agent, data: data || "" });
     localStorage.setItem(CACHE_DEALERS_KEY, JSON.stringify(dealerIndex));
+    refreshDealerDatalist();
   }
 
   function updateDealerIndexCache(dealer, agent, data) {
@@ -70,10 +75,27 @@
       if (normalizeDealerJS(dealerIndex[i].dealer) === key) {
         dealerIndex[i] = { dealer: dealer, agent: agent, data: data || "" };
         localStorage.setItem(CACHE_DEALERS_KEY, JSON.stringify(dealerIndex));
+        refreshDealerDatalist();
         return;
       }
     }
     addToDealerIndexCache(dealer, agent, data);
+  }
+
+  // Populeaza <datalist id="dealerList"> (folosita de campul "Dealer / Firma" din
+  // formularul de puncte de lucru) din acelasi index de dealeri ca formularul principal.
+  function refreshDealerDatalist() {
+    var list = $("dealerList");
+    if (!list) return;
+    var seen = {};
+    var html = "";
+    dealerIndex.forEach(function (d) {
+      var key = normalizeDealerJS(d.dealer);
+      if (!key || seen[key]) return;
+      seen[key] = true;
+      html += '<option value="' + escapeHtml(d.dealer) + '"></option>';
+    });
+    list.innerHTML = html;
   }
 
   function checkDealerWarning() {
@@ -136,6 +158,7 @@
     fillSelect($("f_judet"), meta.judete, "Selecteaza judetul");
     fillSelect($("f_status"), meta.statusuri, "Selecteaza status");
     fillSelect($("f_potential"), meta.potential, "-");
+    fillSelect($("p_judet"), meta.judete, "Selecteaza judetul");
     var lastAgent = localStorage.getItem(CACHE_AGENT_KEY);
     if (lastAgent) $("f_agent").value = lastAgent;
   }
@@ -168,9 +191,11 @@
         if (data && data.ok && data.dealeri) {
           dealerIndex = data.dealeri;
           localStorage.setItem(CACHE_DEALERS_KEY, JSON.stringify(dealerIndex));
+          refreshDealerDatalist();
         }
       })
       .catch(function () { /* keep cached index, likely offline */ });
+    refreshDealerDatalist();
   }
 
   // ---------------------------------------------------------------------
@@ -292,10 +317,14 @@
 
   function updateOfflineBadge() {
     var q = getQueue();
+    var qp = getPunctQueue();
     var badge = $("offlineBadge");
-    if (q.length > 0) {
+    var parts = [];
+    if (q.length > 0) parts.push(q.length + " discutie(i)");
+    if (qp.length > 0) parts.push(qp.length + " punct(e) de lucru");
+    if (parts.length) {
       badge.hidden = false;
-      badge.textContent = q.length + " discutie(i) nesalvate inca - se trimit automat cand revine internetul";
+      badge.textContent = parts.join(" si ") + " nesalvate inca - se trimit automat cand revine internetul";
     } else {
       badge.hidden = true;
     }
@@ -379,6 +408,128 @@
   }
 
   // ---------------------------------------------------------------------
+  // PUNCTE DE LUCRU (locatii suplimentare ale unui dealer, pe langa sediul principal)
+  // ---------------------------------------------------------------------
+  function getPunctQueue() {
+    try { return JSON.parse(localStorage.getItem(QUEUE_PUNCT_KEY) || "[]"); }
+    catch (e) { return []; }
+  }
+  function savePunctQueue(q) { localStorage.setItem(QUEUE_PUNCT_KEY, JSON.stringify(q)); }
+
+  function queuePunct(entry) {
+    var q = getPunctQueue();
+    q.push(entry);
+    savePunctQueue(q);
+    updateOfflineBadge();
+  }
+
+  function readPunctForm() {
+    return {
+      dealer: $("p_dealer").value.trim(),
+      localitate: $("p_localitate").value.trim(),
+      judet: $("p_judet").value,
+      adresa: $("p_adresa").value.trim(),
+      telefon: $("p_telefon").value.trim(),
+      agent: $("f_agent").value || localStorage.getItem(CACHE_AGENT_KEY) || "",
+      observatii: $("p_obs").value.trim(),
+      clientTs: Date.now(),
+    };
+  }
+
+  function resetPunctForm() { $("punctForm").reset(); }
+
+  function showPunctMsg(text, cls) {
+    var el = $("punctMsg");
+    el.textContent = text;
+    el.className = "form-msg " + cls;
+    setTimeout(function () {
+      if (el.textContent === text) el.textContent = "";
+    }, 6000);
+  }
+
+  function handlePunctSubmit(evt) {
+    evt.preventDefault();
+    var entry = readPunctForm();
+    if (!entry.dealer || !entry.localitate || !entry.judet) {
+      showPunctMsg("Completeaza campurile obligatorii (dealer, localitate, judet).", "err");
+      return;
+    }
+
+    var btn = $("punctSubmitBtn");
+    btn.disabled = true;
+
+    if (!isConfigured()) {
+      queuePunct(entry);
+      showPunctMsg("Aplicatia inca nu e configurata (config.js) - punctul a fost pastrat local.", "pending");
+      resetPunctForm();
+      btn.disabled = false;
+      return;
+    }
+
+    sendEntry(entry, "addpunct").then(function (res) {
+      btn.disabled = false;
+      if (res && res.ok) {
+        lastPuncte.push(entry);
+        showPunctMsg("Punct de lucru salvat cu succes.", "ok");
+        resetPunctForm();
+        renderPointsList();
+      } else {
+        throw new Error((res && res.error) || "eroare necunoscuta");
+      }
+    }).catch(function () {
+      queuePunct(entry);
+      showPunctMsg("Fara conexiune - punctul a fost salvat pe telefon si se va trimite automat.", "pending");
+      resetPunctForm();
+      btn.disabled = false;
+    });
+  }
+
+  function flushPunctQueue() {
+    var q = getPunctQueue();
+    if (!q.length || !isConfigured()) return;
+    var remaining = [];
+    var chain = Promise.resolve();
+    q.forEach(function (entry) {
+      chain = chain.then(function () {
+        return sendEntry(entry, "addpunct").then(function (res) {
+          if (!(res && res.ok)) remaining.push(entry);
+        }).catch(function () {
+          remaining.push(entry);
+        });
+      });
+    });
+    chain.then(function () {
+      savePunctQueue(remaining);
+      updateOfflineBadge();
+    });
+  }
+
+  function renderPointsList() {
+    var q = ($("p_dealer").value || "").trim().toLowerCase();
+    var filtered = !q ? lastPuncte : lastPuncte.filter(function (p) {
+      return (p.dealer || "").toLowerCase().indexOf(q) !== -1;
+    });
+    $("pointsListNote").textContent = lastPuncte.length
+      ? (filtered.length + " punct(e) de lucru" + (q ? " gasite" : " in total") + ".")
+      : "";
+
+    var el = $("pointsList");
+    if (!filtered.length) {
+      el.innerHTML = '<div class="empty-note">Niciun punct de lucru adaugat inca.</div>';
+      return;
+    }
+    el.innerHTML = filtered.slice().reverse().map(function (p) {
+      return '<div class="punct-item">' +
+        '<div class="p-top"><span class="p-dealer">' + escapeHtml(p.dealer) + '</span></div>' +
+        '<div class="p-sub">' + escapeHtml(p.localitate) + (p.judet ? ", " + escapeHtml(p.judet) : "") +
+          (p.telefon ? " &middot; " + escapeHtml(p.telefon) : "") + '</div>' +
+        (p.adresa ? '<div class="p-sub">' + escapeHtml(p.adresa) + '</div>' : "") +
+        (p.observatii ? '<div class="p-obs">' + escapeHtml(p.observatii) + '</div>' : "") +
+      '</div>';
+    }).join("");
+  }
+
+  // ---------------------------------------------------------------------
   // REPORT
   // ---------------------------------------------------------------------
   function bar(row, label, count, max, cls) {
@@ -452,6 +603,9 @@
     lastDiscutiiTotal = data.discutiiTotal || lastDiscutii.length;
     applyListFilter();
     renderDealerMap(lastDiscutii);
+
+    lastPuncte = data.puncte || [];
+    renderPointsList();
   }
 
   function statusPillClass(status) {
@@ -633,26 +787,193 @@
   }
 
   // ---------------------------------------------------------------------
+  // FISE TEHNICE (PDF-uri gazduite intr-un folder Google Drive, servite prin Code.gs)
+  // ---------------------------------------------------------------------
+  function fmtBytes(n) {
+    if (n === undefined || n === null || isNaN(n)) return "";
+    if (n < 1024) return n + " B";
+    if (n < 1024 * 1024) return Math.round(n / 1024) + " KB";
+    return (n / (1024 * 1024)).toFixed(1) + " MB";
+  }
+
+  function renderFise(fisiere) {
+    lastFise = fisiere || [];
+    var listEl = $("fiseList");
+    if (!lastFise.length) {
+      listEl.innerHTML = '<p class="empty-note">Nicio fisa tehnica incarcata inca.</p>';
+      return;
+    }
+    listEl.innerHTML = lastFise.map(function (f) {
+      var meta = [f.data, f.marime ? fmtBytes(f.marime) : ""].filter(Boolean).join(" · ");
+      return '<div class="fisa-item" data-id="' + escapeHtml(f.id) + '">' +
+        '<div class="f-top"><span class="f-name">' + escapeHtml(f.nume) + '</span></div>' +
+        (meta ? '<div class="f-meta">' + escapeHtml(meta) + '</div>' : '') +
+        '<div class="fisa-actions">' +
+          '<button type="button" data-act="vezi">Vezi</button>' +
+          '<button type="button" data-act="descarca">Descarca</button>' +
+          '<button type="button" data-act="trimite">Trimite</button>' +
+        '</div>' +
+        '<div class="fisa-status muted-text" data-role="status"></div>' +
+      '</div>';
+    }).join("");
+  }
+
+  function loadFise(forceRefresh) {
+    var cached = localStorage.getItem(CACHE_FISE_KEY);
+    if (cached && !forceRefresh) {
+      try { renderFise(JSON.parse(cached)); } catch (e) { /* ignora cache corupt */ }
+    }
+    if (!isConfigured()) {
+      if (!cached) $("fiseUpdated").textContent = "Configureaza config.js pentru a vedea fisele tehnice.";
+      return;
+    }
+    $("fiseUpdated").textContent = "Se incarca...";
+    fetch(apiUrl({ action: "fise", token: CONFIG.APP_TOKEN }))
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        if (!res || !res.ok) throw new Error("raspuns invalid");
+        renderFise(res.fisiere);
+        localStorage.setItem(CACHE_FISE_KEY, JSON.stringify(res.fisiere));
+        $("fiseUpdated").textContent = "Actualizat acum";
+      })
+      .catch(function () {
+        $("fiseUpdated").textContent = cached
+          ? "Fara conexiune - se afiseaza ultima lista salvata"
+          : "Fara conexiune si nicio lista salvata local";
+      });
+  }
+
+  function fisaById(id) {
+    for (var i = 0; i < lastFise.length; i++) { if (lastFise[i].id === id) return lastFise[i]; }
+    return null;
+  }
+
+  function base64ToBlob(base64, mime) {
+    var binStr = atob(base64);
+    var len = binStr.length;
+    var bytes = new Uint8Array(len);
+    for (var i = 0; i < len; i++) bytes[i] = binStr.charCodeAt(i);
+    return new Blob([bytes], { type: mime || "application/pdf" });
+  }
+
+  function fetchFisaBlob(id) {
+    return fetch(apiUrl({ action: "fisacontinut", id: id, token: CONFIG.APP_TOKEN }))
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        if (!res || !res.ok) throw new Error((res && res.error) || "eroare la citire");
+        return { blob: base64ToBlob(res.base64, res.mime), nume: res.nume || "fisa-tehnica.pdf" };
+      });
+  }
+
+  function setFisaStatus(card, text) {
+    var el = card.querySelector('[data-role="status"]');
+    if (el) el.textContent = text || "";
+  }
+
+  function downloadBlob(blob, nume) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = nume;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 30000);
+  }
+
+  function handleFisaAction(card, act) {
+    var id = card.getAttribute("data-id");
+    if (!fisaById(id)) return;
+
+    if (act === "vezi") {
+      // Deschidem tab-ul gol IMEDIAT, sincron cu click-ul, altfel Safari/iOS il blocheaza
+      // ca pe un pop-up neasteptat (nu mai stie ca a pornit dintr-o actiune a utilizatorului).
+      var tab = window.open("", "_blank");
+      setFisaStatus(card, "Se incarca...");
+      fetchFisaBlob(id).then(function (r) {
+        if (tab) tab.location.href = URL.createObjectURL(r.blob);
+        setFisaStatus(card, "");
+      }).catch(function (err) {
+        if (tab) tab.close();
+        setFisaStatus(card, "Eroare: " + err.message);
+      });
+      return;
+    }
+
+    if (act === "descarca") {
+      setFisaStatus(card, "Se descarca...");
+      fetchFisaBlob(id).then(function (r) {
+        downloadBlob(r.blob, r.nume);
+        setFisaStatus(card, "");
+      }).catch(function (err) {
+        setFisaStatus(card, "Eroare: " + err.message);
+      });
+      return;
+    }
+
+    if (act === "trimite") {
+      setFisaStatus(card, "Se pregateste...");
+      fetchFisaBlob(id).then(function (r) {
+        var file = new File([r.blob], r.nume, { type: "application/pdf" });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          return navigator.share({ files: [file], title: r.nume })
+            .then(function () { setFisaStatus(card, ""); })
+            .catch(function () { setFisaStatus(card, ""); }); // anulat de utilizator - nu e o eroare
+        }
+        // Fara Share API (de regula pe calculator): descarcam fisierul, ca sa fie atasat manual.
+        downloadBlob(r.blob, r.nume);
+        setFisaStatus(card, "Trimiterea directa nu e disponibila pe acest dispozitiv - fisierul a fost descarcat, il poti atasa manual la email.");
+      }).catch(function (err) {
+        setFisaStatus(card, "Eroare: " + err.message);
+      });
+      return;
+    }
+  }
+
+  // ---------------------------------------------------------------------
   // TABS
   // ---------------------------------------------------------------------
   function showTab(tab) {
-    var isForm = tab === "form";
-    $("view-form").hidden = !isForm;
-    $("view-report").hidden = isForm;
-    $("tabFormBtn").classList.toggle("active", isForm);
-    $("tabReportBtn").classList.toggle("active", !isForm);
-    if (!isForm) loadReport(false);
+    $("view-form").hidden = tab !== "form";
+    $("view-points").hidden = tab !== "points";
+    $("view-report").hidden = tab !== "report";
+    $("tabFormBtn").classList.toggle("active", tab === "form");
+    $("tabPointsBtn").classList.toggle("active", tab === "points");
+    $("tabReportBtn").classList.toggle("active", tab === "report");
+    if (tab === "points") renderPointsList();
+    if (tab !== "form") loadReport(false); // "puncte" vine din acelasi payload ca "raport"
+  }
+
+  // ---------------------------------------------------------------------
+  // ECRAN PRINCIPAL (meniu) - Raportare agenti / Stoc DBK / Catalog Tunland
+  // (Stoc DBK si Catalog Tunland sunt linkuri simple - catre alta pagina/alt site,
+  // nu ecrane interne - deci showScreen gestioneaza doar "home" si "raportare".)
+  // ---------------------------------------------------------------------
+  function showScreen(screen) {
+    $("view-home").hidden = screen !== "home";
+    $("view-fise").hidden = screen !== "fise";
+    var isRaportare = screen === "raportare";
+    if (!isRaportare) {
+      $("view-form").hidden = true;
+      $("view-points").hidden = true;
+      $("view-report").hidden = true;
+    }
+    $("tabBar").hidden = !isRaportare;
+    document.body.classList.toggle("no-tabbar", !isRaportare);
+    $("homeBtn").hidden = screen === "home";
+    $("appTitle").textContent = screen === "home" ? "Foton by Inter Cargo"
+      : screen === "fise" ? "Fise tehnice vehicule Foton"
+      : (CONFIG.APP_NAME || "Raportare Agenti Foton");
+    if (isRaportare) showTab("form");
+    if (screen === "fise") loadFise(false);
   }
 
   // ---------------------------------------------------------------------
   // INIT
   // ---------------------------------------------------------------------
   function init() {
-    $("appTitle").textContent = CONFIG.APP_NAME || "Raportare Agenti Foton";
     $("f_date").value = todayISO();
     loadMeta();
     loadDealerIndex();
     updateOfflineBadge();
+    showScreen("home");
 
     $("entryForm").addEventListener("submit", handleSubmit);
     $("f_dealer").addEventListener("input", checkDealerWarning);
@@ -673,12 +994,29 @@
       if (record) enterEditMode(record);
     });
     $("tabFormBtn").addEventListener("click", function () { showTab("form"); });
+    $("tabPointsBtn").addEventListener("click", function () { showTab("points"); });
     $("tabReportBtn").addEventListener("click", function () { showTab("report"); });
     $("refreshBtn").addEventListener("click", function () { loadReport(true); });
     $("searchInput").addEventListener("input", applyListFilter);
 
-    window.addEventListener("online", flushQueue);
+    $("homeToRaportare").addEventListener("click", function () { showScreen("raportare"); });
+    $("homeToFise").addEventListener("click", function () { showScreen("fise"); });
+    $("homeBtn").addEventListener("click", function () { showScreen("home"); });
+    $("refreshFiseBtn").addEventListener("click", function () { loadFise(true); });
+    $("fiseList").addEventListener("click", function (evt) {
+      var btn = evt.target.closest ? evt.target.closest("button[data-act]") : null;
+      if (!btn) return;
+      var card = btn.closest(".fisa-item");
+      if (!card) return;
+      handleFisaAction(card, btn.getAttribute("data-act"));
+    });
+
+    $("punctForm").addEventListener("submit", handlePunctSubmit);
+    $("p_dealer").addEventListener("input", renderPointsList);
+
+    window.addEventListener("online", function () { flushQueue(); flushPunctQueue(); });
     flushQueue();
+    flushPunctQueue();
 
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("service-worker.js").catch(function () {});
