@@ -115,6 +115,7 @@ body.no-tabbar { padding-bottom: 16px; }
 .home-tile--stoc::before { background: #d9711f; }
 .home-tile--tunland::before { background: #4a8f7c; }
 .home-tile--fise::before { background: #b5891f; }
+.home-tile--ofertare::before { background: #3A4759; }
 .home-tile:hover { box-shadow: 0 2px 4px rgba(11,11,11,0.06), 0 10px 22px rgba(11,11,11,0.09); transform: translateY(-1px); }
 .home-tile:active { transform: translateY(0); box-shadow: 0 1px 2px rgba(11,11,11,0.05), inset 0 0 0 1.5px rgba(31,56,100,0.25); }
 
@@ -134,6 +135,7 @@ body.no-tabbar { padding-bottom: 16px; }
 .home-tile--stoc .home-tile-icon { background: linear-gradient(155deg, #e8842f, #c1591a); box-shadow: 0 3px 8px rgba(193,89,26,0.28); }
 .home-tile--tunland .home-tile-icon { background: linear-gradient(155deg, #5fab97, #3c7263); box-shadow: 0 3px 8px rgba(60,114,99,0.28); }
 .home-tile--fise .home-tile-icon { background: linear-gradient(155deg, #d9a53a, #a9781a); box-shadow: 0 3px 8px rgba(169,120,26,0.28); }
+.home-tile--ofertare .home-tile-icon { background: linear-gradient(155deg, #55657a, #3A4759); box-shadow: 0 3px 8px rgba(58,71,89,0.28); }
 
 .home-tile-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .home-tile-title {
