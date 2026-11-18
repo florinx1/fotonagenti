@@ -787,7 +787,7 @@
   }
 
   // ---------------------------------------------------------------------
-  // FISE TEHNICE (PDF-uri gazduite intr-un folder Google Drive, servite prin Code.gs)
+  // FISE TEHNICE (PDF-uri gazduite in aplicatie: fise-tehnice/ + fise.json)
   // ---------------------------------------------------------------------
   function fmtBytes(n) {
     if (n === undefined || n === null || isNaN(n)) return "";
@@ -801,8 +801,10 @@
   // pentru fisiere de cativa MB: varianta veche (Apps Script trimitea fisierul codificat base64,
   // intr-un singur raspuns JSON uriaș) era lenta si pica des pe retea mobila - Drive e facut sa
   // serveasca fisiere mari rapid si sigur.
-  function fisaViewUrl(id) { return "https://drive.google.com/file/d/" + encodeURIComponent(id) + "/view"; }
-  function fisaDownloadUrl(id) { return "https://drive.google.com/uc?export=download&id=" + encodeURIComponent(id); }
+  // Fisele tehnice sunt PDF-uri puse direct in aplicatie (folderul fise-tehnice/ + fise.json),
+  // servite de GitHub Pages - fara Drive si fara Apps Script, se deschid rapid si merg si offline.
+  function fisaViewUrl(id) { return new URL("fise-tehnice/" + encodeURIComponent(id), location.href).href; }
+  function fisaDownloadUrl(id) { return fisaViewUrl(id); }
 
   function renderFise(fisiere) {
     lastFise = fisiere || [];
@@ -831,17 +833,12 @@
     if (cached && !forceRefresh) {
       try { renderFise(JSON.parse(cached)); } catch (e) { /* ignora cache corupt */ }
     }
-    if (!isConfigured()) {
-      if (!cached) $("fiseUpdated").textContent = "Configureaza config.js pentru a vedea fisele tehnice.";
-      return;
-    }
     $("fiseUpdated").textContent = "Se incarca...";
-    fetch(apiUrl({ action: "fise", token: CONFIG.APP_TOKEN }))
-      .then(function (r) { return r.json(); })
-      .then(function (res) {
-        if (!res || !res.ok) throw new Error("raspuns invalid");
-        renderFise(res.fisiere);
-        localStorage.setItem(CACHE_FISE_KEY, JSON.stringify(res.fisiere));
+    fetch("fise-tehnice/fise.json", { cache: forceRefresh ? "reload" : "no-cache" })
+      .then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.json(); })
+      .then(function (fisiere) {
+        renderFise(fisiere);
+        localStorage.setItem(CACHE_FISE_KEY, JSON.stringify(fisiere));
         $("fiseUpdated").textContent = "Actualizat acum";
       })
       .catch(function () {

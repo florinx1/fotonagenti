@@ -1,4 +1,4 @@
-var CACHE_NAME = "foton-agenti-v14";
+var CACHE_NAME = "foton-agenti-v15";
 var APP_SHELL = [
   "./",
   "./index.html",
