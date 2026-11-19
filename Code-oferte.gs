@@ -11,7 +11,15 @@
  * 3. Implementare → Implementare nouă → Aplicație web · Executare ca: Eu · Acces: Oricine.
  */
 const TOKEN = 'icgoferte2026';      // parola dintre aplicație și arhivă – schimbați-o (și în aplicație)
-const ADMIN_KEY = 'icgadmin2026';   // codul administratorilor care pot aloca serii din Stoc DBK – schimbați-l
+// Conturi de administrator (alocă serii din Stoc DBK). Parolele sunt stocate doar ca hash SHA-256 cu sare.
+// Pentru o parolă nouă: rulați hashParola('utilizator','parola') și copiați rezultatul aici.
+const ADMIN_SALT = '7610e3cae4411dd9';
+const ADMINS = {
+  florin: { nume: 'Florin Loghin',      hash: '36f9863c2ae40a45b475639818c023081208cd6e6c734cd7ed98d84c73c5cce2' },
+  alex:   { nume: 'Alexandru Păunescu', hash: '5c6e830f17b912e8d0ca9d7b9df30ce26169e78de19050b9c36b66223f161616' }
+};
+function hashParola(u, p) { return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, ADMIN_SALT + ':' + u + ':' + p, Utilities.Charset.UTF_8).map(b => ('0' + (b & 255).toString(16)).slice(-2)).join(''); }
+function admin_(u, p) { u = String(u || '').trim().toLowerCase(); const a = ADMINS[u]; return a && p && hashParola(u, String(p)) === a.hash ? a : null; }
 const ADMIN_EMAILS = '';            // opțional: e-mailuri în copie la alertele de expirare, separate prin virgulă
 const OFERTA_NOUA_CATRE = 'florin.loghin@fotonromania.com,alexandru.paunescu@fotonromania.com';
 const SHEET = 'Oferte';
@@ -67,12 +75,13 @@ function doPost(e) {
       if (req.action === 'list')   return out({ ok: true, rows: list() });
       if (req.action === 'save')   { const r = save(req.rec, req); return out(Object.assign({ ok: true }, r)); }
       if (req.action === 'status') { setStatus(req.nr, req.status, req.motiv); return out({ ok: true }); }
-      if (req.action === 'admin')  return out({ ok: req.adminKey === ADMIN_KEY });
+      if (req.action === 'admin')  { const a = admin_(req.adminUser, req.adminKey); return out(a ? { ok: true, nume: a.nume } : { ok: false }); }
       if (req.action === 'anaf')   return out(anaf(req.cui));
       if (req.action === 'aloc') {
         // vânzătorul poate doar CERE alocarea; alocarea/anularea seriei cere codul de administrator
-        if (req.alocare !== 'Cerută' || req.vin) { if (req.adminKey !== ADMIN_KEY) return out({ ok: false, error: 'Doar administratorii pot aloca serii' }); }
-        setAlloc(req.nr, req.alocare, req.vin, req.de); return out({ ok: true });
+        let de = req.de;
+        if (req.alocare !== 'Cerută' || req.vin) { const a = admin_(req.adminUser, req.adminKey); if (!a) return out({ ok: false, error: 'Doar administratorii pot aloca serii' }); de = a.nume; }
+        setAlloc(req.nr, req.alocare, req.vin, de); return out({ ok: true });
       }
       return out({ ok: false, error: 'Acțiune necunoscută' });
     } finally { lock.releaseLock(); }

@@ -150,6 +150,7 @@ h2{font-family:'Barlow Condensed';font-weight:600;font-size:26px;margin:0 0 4px;
  .pg+.pg{break-before:page}
  .pg>.wm{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
+.gate{position:fixed;inset:0;background:rgba(20,28,40,.55);z-index:999;display:grid;place-items:center;padding:16px}.gate.hide{display:none}.gate .gbox{background:#fff;border-radius:14px;max-width:420px;width:100%;padding:20px 20px 22px;box-shadow:0 10px 40px rgba(0,0,0,.25)}.gate label{display:block;margin-top:10px}.gate input{width:100%;box-sizing:border-box}
 </style>
 </head>
 <body>
@@ -163,6 +164,15 @@ h2{font-family:'Barlow Condensed';font-weight:600;font-size:26px;margin:0 0 4px;
 <section id="s1">
 <h2>1. Alege vehiculul</h2>
 <p class="sub">Alege modelul și varianta, apoi culoarea, opționalele și prețul.</p>
+<div id="pfGate" class="gate hide"><div class="gbox">
+<div class="sect" style="margin-top:0">Profil vânzător</div>
+<p class="hint" style="margin-top:0">Înainte de prima ofertă completează-ți datele. Pe acest e-mail primești alertele la expirarea ofertelor și cererile de feedback. Datele apar și în ofertă, la persoana de contact.</p>
+<label class="req">Nume și prenume</label><input id="gN" autocomplete="name">
+<label>Telefon</label><input id="gT" type="tel" autocomplete="tel">
+<label class="req">E-mail pentru alerte</label><input id="gM" type="email" autocomplete="email">
+<div class="err" id="gErr"></div>
+<button class="btn p" id="gSave" style="margin-top:12px;width:100%">Salvează și continuă</button>
+</div></div>
 <div class="mode" id="pfBanner" style="display:none">Completează-ți profilul de vânzător (nume și e-mail) în <a href="#" id="pfGo">⚙ Setări</a>, ca să primești alertele pentru ofertele expirate.</div>
 <div class="models" id="models"></div>
 <input type="hidden" id="vin">
@@ -318,9 +328,9 @@ h2{font-family:'Barlow Condensed';font-weight:600;font-size:26px;margin:0 0 4px;
 <div class="card" style="max-width:640px;margin-top:14px">
 <div class="sect">Administrator</div>
 <p class="hint" style="margin-top:0">Doar administratorii pot aloca serii (VIN) din Stoc DBK pe ofertele pentru care vânzătorii au cerut alocare.</p>
-<div id="admOut"><label>Cod administrator</label><input id="admKey" type="password" autocomplete="off">
+<div id="admOut"><div class="grid2"><div><label>Utilizator</label><input id="admUser" autocomplete="username" autocapitalize="none"></div><div><label>Parolă</label><input id="admKey" type="password" autocomplete="current-password"></div></div>
 <div style="display:flex;gap:10px;margin-top:10px;align-items:center"><button class="btn p" id="admIn">Intră ca administrator</button><span class="hint" id="admMsg"></span></div></div>
-<div id="admInBox" class="hide"><p style="margin:0 0 10px">Ești conectat ca <b>administrator</b>. În Arhivă apare butonul „Alocă serie”.</p><button class="btn s" id="admOutBtn">Ieși din modul administrator</button></div>
+<div id="admInBox" class="hide"><p style="margin:0 0 10px">Ești conectat ca administrator: <b id="admName"></b>. În Arhivă apare butonul „Alocă serie”.</p><button class="btn s" id="admOutBtn">Ieși din modul administrator</button></div>
 </div>
 </section>
 <section id="allocBox" class="hide">
@@ -3260,8 +3270,8 @@ const STORE={remote:()=>!!CFG.url,
  async list(){if(this.remote())return(await this.call({action:'list'})).rows;return lsGet()},
  async save(rec,extra){if(this.remote())return this.call(Object.assign({action:'save',rec},extra||{}));const a=lsGet().slice();const i=a.findIndex(x=>x.nr===rec.nr);
   if(i>=0)a[i]=Object.assign({},a[i],rec,{status:a[i].status,motiv:a[i].motiv,alocare:a[i].alocare||'',vin:a[i].vin||'',alocatDe:a[i].alocatDe||'',alocatLa:a[i].alocatLa||''});else a.push(rec);lsSet(a)},
- async setAlloc(nr,alocare,vin,de){if(this.remote())return this.call({action:'aloc',nr,alocare,vin,de,adminKey:ADM.key});const a=lsGet().slice();const r=a.find(x=>x.nr===nr);if(r){r.alocare=alocare;r.vin=vin||'';r.alocatDe=de||'';r.alocatLa=alocare==='Alocată'?new Date().toISOString():''}lsSet(a)},
- async adminCheck(key){if(this.remote())return(await this.call({action:'admin',adminKey:key})).ok;return key===LOCAL_ADMIN_KEY},
+ async setAlloc(nr,alocare,vin,de){if(this.remote())return this.call({action:'aloc',nr,alocare,vin,de,adminUser:ADM.user,adminKey:ADM.key});const a=lsGet().slice();const r=a.find(x=>x.nr===nr);if(r){r.alocare=alocare;r.vin=vin||'';r.alocatDe=de||'';r.alocatLa=alocare==='Alocată'?new Date().toISOString():''}lsSet(a)},
+ async adminCheck(user,key){if(!this.remote())throw new Error('arhiva online nu este conectată');const r=await this.call({action:'admin',adminUser:user,adminKey:key}).catch(e=>({ok:false}));return r.ok?r.nume:''},
  async setStatus(nr,status,motiv){if(this.remote())return this.call({action:'status',nr,status,motiv});const a=lsGet().slice();const r=a.find(x=>x.nr===nr);if(r){r.status=status;r.motiv=motiv||'';r.actualizat=new Date().toISOString()}lsSet(a)}};
 const iso=d=>d.toISOString().slice(0,10);
 function formState(){const f={};document.querySelectorAll('#s1 input,#s1 select,#s3 input,#s3 select,#s4 input,#s4 select,#s4 textarea').forEach(el=>{if(el.id)f[el.id]=el.type==='checkbox'?el.checked:el.value});return f}
@@ -3343,16 +3353,16 @@ $('demoBtn').onclick=()=>{const vz=['Florin Loghin','Alin Pîrvu','Vânzător 3'
 
 /* ===== alocare serie din Stoc DBK (doar administrator) ===== */
 const DBK={url:'https://script.google.com/macros/s/AKfycbzKKYTUHDYWxsOqZ1wNpQo37K8Wp6Ad-72hwGuVnQdvg8f_6fHGa2i_L8Xa_Gb6f6Hj/exec',token:'dbkstoc2026'};
-const LOCAL_ADMIN_KEY='icgadmin2026'; /* folosit doar când arhiva nu e conectată la Google Sheets; cu Sheets, codul se verifică în Code.gs */
+
 const MODEL_KEY={v9:'TUNLAND V9',g7:'TUNLAND G7',etoano:'TOANO',cavan:'CAVAN',eaumark:'EAUMARK',emiler:'EMILER'};
 const PLC={'Biały':'Alb','Czarny':'Negru','Czerwony':'Roșu','Niebieski':'Albastru','Srebrny':'Argintiu','Szary':'Gri','Zielony':'Verde','Żółty':'Galben','Pomarańczowy':'Portocaliu'};
 let CUR=null,DBKSTOC=null,ALR=null;
-const ADM={on:false,key:''};try{const v=JSON.parse(sessionStorage.getItem('icg_adm')||'null');if(v){ADM.on=true;ADM.key=v.key}}catch(e){}
-function admUI(){$('admOut').classList.toggle('hide',ADM.on);$('admInBox').classList.toggle('hide',!ADM.on)}
-$('admIn').onclick=async()=>{const k=$('admKey').value.trim();if(!k){$('admMsg').textContent='Introdu codul.';return}$('admMsg').textContent='Se verifică…';
- let ok=false;try{ok=await STORE.adminCheck(k)}catch(e){$('admMsg').textContent='Nu am putut verifica: '+e.message;return}
- if(!ok){$('admMsg').textContent='Cod greșit.';return}ADM.on=true;ADM.key=k;try{sessionStorage.setItem('icg_adm',JSON.stringify({key:k}))}catch(e){}$('admKey').value='';$('admMsg').textContent='';admUI()};
-$('admOutBtn').onclick=()=>{ADM.on=false;ADM.key='';try{sessionStorage.removeItem('icg_adm')}catch(e){}admUI()};
+const ADM={on:false,user:'',key:'',name:''};try{const v=JSON.parse(sessionStorage.getItem('icg_adm')||'null');if(v&&v.user){ADM.on=true;ADM.user=v.user;ADM.key=v.key;ADM.name=v.name||v.user}}catch(e){}
+function admUI(){$('admOut').classList.toggle('hide',ADM.on);$('admInBox').classList.toggle('hide',!ADM.on);$('admName').textContent=ADM.name}
+$('admIn').onclick=async()=>{const u=$('admUser').value.trim().toLowerCase(),k=$('admKey').value;if(!u||!k){$('admMsg').textContent='Introdu utilizatorul și parola.';return}$('admMsg').textContent='Se verifică…';
+ let ok='';try{ok=await STORE.adminCheck(u,k)}catch(e){$('admMsg').textContent='Nu am putut verifica: '+e.message;return}
+ if(!ok){$('admMsg').textContent='Utilizator sau parolă greșită.';return}ADM.on=true;ADM.user=u;ADM.key=k;ADM.name=ok;try{sessionStorage.setItem('icg_adm',JSON.stringify({user:u,key:k,name:ok}))}catch(e){}$('admKey').value='';$('admUser').value='';$('admMsg').textContent='';admUI()};
+$('admOutBtn').onclick=()=>{ADM.on=false;ADM.user='';ADM.key='';ADM.name='';try{sessionStorage.removeItem('icg_adm')}catch(e){}admUI()};
 function allocCell(r){
  if(r.alocare==='Alocată')return '<span class="al al-a">Alocată</span><br>'+esc(r.vin)+(ADM.on?'<br><button class="lk" data-alloc="'+esc(r.nr)+'">Schimbă</button> · <button class="lk" data-unalloc="'+esc(r.nr)+'">Anulează</button>':'');
  if(r.alocare==='Cerută')return '<span class="al al-c">Cerere trimisă</span>'+(ADM.on?'<br><button class="lk" data-alloc="'+esc(r.nr)+'">Alocă serie</button>':'');
@@ -3379,7 +3389,7 @@ function renderAlloc(){const r=ALR;if(!r||!DBKSTOC)return;const mid=r.modelId||'
   (u?'<span class="hint">rezervată pe '+esc(u)+'</span>':(v.vin===r.vin?'<span class="al al-a">alocată</span>':'<button class="btn p" style="padding:6px 12px" data-pick="'+esc(v.vin)+'">Alocă</button>'))+'</td></tr>'});
  $('allocTab').innerHTML=h;
  document.querySelectorAll('[data-pick]').forEach(b=>b.onclick=async()=>{const vin=b.dataset.pick;$('allocMsg').textContent='Se alocă…';
-  try{await STORE.setAlloc(r.nr,'Alocată',vin,'administrator');r.alocare='Alocată';r.vin=vin;$('allocMsg').textContent='✓ Seria '+vin+' a fost alocată pe oferta '+r.nr+'.';renderAlloc()}catch(e){$('allocMsg').textContent='Nu s-a putut aloca: '+e.message}})}
+  try{await STORE.setAlloc(r.nr,'Alocată',vin,ADM.name||'administrator');r.alocare='Alocată';r.vin=vin;$('allocMsg').textContent='✓ Seria '+vin+' a fost alocată pe oferta '+r.nr+'.';renderAlloc()}catch(e){$('allocMsg').textContent='Nu s-a putut aloca: '+e.message}})}
 $('allocQ').oninput=renderAlloc;$('allocAll').onchange=renderAlloc;$('allocBack').onclick=()=>show('a');
 
 
@@ -3388,7 +3398,7 @@ function getProf(){try{return JSON.parse(localStorage.getItem('icg_vanzator')||'
 let PROF_MEM={};
 function setProf(p){PROF_MEM=p;try{localStorage.setItem('icg_vanzator',JSON.stringify(p))}catch(e){}}
 function applyProf(){const p=getProf();if(p.n&&!$('vNume').value)$('vNume').value=p.n;if(p.t&&!$('vTel').value)$('vTel').value=p.t;if(p.m&&!$('vMail').value)$('vMail').value=p.m;
- $('pfBanner').style.display=(p.n&&p.m)?'none':'block';$('pfN').value=p.n||'';$('pfT').value=p.t||'';$('pfM').value=p.m||''}
+ $('pfBanner').style.display=(p.n&&p.m)?'none':'block';$('pfGate').classList.toggle('hide',!!(p.n&&MAILRE.test(p.m||'')));if(!(p.n&&MAILRE.test(p.m||''))){$('gN').value=p.n||'';$('gT').value=p.t||'';$('gM').value=p.m||''}$('pfN').value=p.n||'';$('pfT').value=p.t||'';$('pfM').value=p.m||''}
 $('pfSave').onclick=()=>{const n=$('pfN').value.trim(),m=$('pfM').value.trim();if(!n||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m)){$('pfMsg').textContent='Completează numele și un e-mail valid.';return}
  setProf({n,t:$('pfT').value.trim(),m});$('vNume').value=n;$('vTel').value=$('pfT').value.trim();$('vMail').value=m;$('pfMsg').textContent='✓ Profil salvat.';applyProf()};
 $('pfGo').onclick=e=>{e.preventDefault();show('s')};
@@ -3406,6 +3416,11 @@ async function anafLookup(){if(S.ctype!=='pj')return;const cui=$('cCui').value.r
 $('anafBtn').onclick=anafLookup;$('cCui').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();anafLookup()}});
 $('cCui').addEventListener('blur',()=>{if(S.ctype==='pj'&&$('cCui').value.replace(/\D/g,'').length>=4&&!$('cNume').value.trim())anafLookup()});
 
+const MAILRE=/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/;
+$('gSave').onclick=()=>{const n=$('gN').value.trim(),m=$('gM').value.trim(),tl=$('gT').value.trim();
+ if(n.split(/\s+/).length<2){$('gErr').textContent='Scrie numele complet (nume și prenume).';return}
+ if(!MAILRE.test(m)){$('gErr').textContent='Introdu o adresă de e-mail validă.';return}
+ setProf({n,t:tl,m});$('vNume').value=n;$('vTel').value=tl;$('vMail').value=m;$('gErr').textContent='';applyProf()};
 applyProf();
 $('dCond').value=condText();renderModels();renderSteps();updFoot();
 </script>
