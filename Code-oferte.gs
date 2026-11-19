@@ -26,9 +26,21 @@ const COLS = ['nr','data','valabilaPana','vanzator','client','cui','telefon','em
   'emailVanzator','pretLista','pretDiscount','pretSuport','pretFinal','totalFaraTVA','totalCuTVA','avansPct','termen',
   'status','motiv','actualizat','modelId','alocare','vin','alocatDe','alocatLa','notificat','feedback',
   'vanzatorUser','etapa','etapaLa','proformaNr','proformaData','facturaAvansNr','dataIncasare',
-  'comision','comisionNota','comisionPlatit','livratLa','pdfLink','emailOferta','payload'];
+  'comision','comisionNota','comisionPlatit','livratLa','pdfLink','emailOferta','payload',
+  'pretMinim','pretAprobat','aprobare'];
 const UCOLS = ['user','nume','email','telefon','rol','activ','hash','creat'];
 const HCOLS = ['data','nr','etapa','eticheta','de','detalii'];
+// Prețuri (fila „Prețuri” din Sheet – le pot modifica administratorii; aplicația le citește la fiecare deschidere)
+const PRICES = 'Preturi';
+const PCOLS = ['modelId','model','pretLista','discountMaximPct','pretMinim'];
+const PRICES_DEF = [
+  ['g7','Tunland G7',30900,10,27810],
+  ['v9','Tunland V9',41700,14,35862],
+  ['cavan','CAVAN (C1 / C1 PLUS / C1 MAX)',34900,18,28618],
+  ['etoano','eToano Pro',43900,16,36876],
+  ['emiler','eMiler 4,25t',37900,10,34110],
+  ['eaumark','eAumark 7,5t',49900,10,44910],
+  ['aumark','Aumark 7,5t',38900,10,35010]];
 
 // Etapele ofertei. who: v = vânzătorul ofertei, o = operator/administrator, a = doar administrator
 const ET = {
@@ -43,6 +55,8 @@ const ET = {
   pdi:        { l: 'În pregătire PDI / fișă livrare',  who: 'o', next: ['finalizata'] },
   finalizata: { l: 'Livrată – finalizată',             who: 'o', next: [] },
   pierduta:   { l: 'Pierdută',                         who: 'v', next: [], req: ['motiv'] },
+  aprobare:   { l: 'Așteaptă aprobare preț',           who: 'a', next: ['pierduta'] },
+  respinsa:   { l: 'Preț respins – de modificat',      who: 'a', next: ['pierduta'] },
   anulata:    { l: 'Anulată',                          who: 'a', next: [], req: ['motiv'] }
 };
 const LEGACY = { 'Trimisă': 'ofertata', 'În negociere': 'negociere', 'Câștigată': 'avans', 'Pierdută': 'pierduta' };
@@ -67,20 +81,20 @@ function folder_() {
   PROPS.setProperty('FOLDER_ID', f.getId());
   return f;
 }
-function tab_(name, cols, hideLast) {
+function tab_(name, cols, hideCol) {
   const ss = ss_(); let sh = ss.getSheetByName(name);
   if (!sh) sh = ss.insertSheet(name);
   if (sh.getMaxColumns() < cols.length) sh.insertColumnsAfter(sh.getMaxColumns(), cols.length - sh.getMaxColumns());
   const head = sh.getRange(1, 1, 1, cols.length).getValues()[0];
   if (head.join('|') !== cols.join('|')) {
     sh.getRange(1, 1, 1, cols.length).setValues([cols]).setFontWeight('bold'); sh.setFrozenRows(1);
-    if (hideLast) { sh.showColumns(1, sh.getMaxColumns()); sh.hideColumns(cols.length); }
+    if (hideCol) { sh.showColumns(1, sh.getMaxColumns()); sh.hideColumns(cols.indexOf(typeof hideCol === 'string' ? hideCol : cols[cols.length - 1]) + 1); }
   }
   return sh;
 }
 function setup() {
   const ss = ss_();
-  tab_(SHEET, COLS, true); tab_(USERS, UCOLS, false); tab_(HIST, HCOLS, false);
+  tab_(SHEET, COLS, 'payload'); tab_(USERS, UCOLS, false); tab_(HIST, HCOLS, false); prices_();
   const us = ss.getSheetByName(USERS); us.hideColumns(UCOLS.indexOf('hash') + 1);
   const def = ss.getSheetByName('Sheet1') || ss.getSheetByName('Foaie1');
   if (def && def.getLastRow() === 0) ss.deleteSheet(def);
@@ -89,7 +103,15 @@ function setup() {
   ScriptApp.newTrigger('verificaExpirate').timeBased().everyDays(1).atHour(8).inTimezone('Europe/Bucharest').create();
   Logger.log('Sheet: ' + ss.getUrl()); Logger.log('Folder PDF: ' + folder_().getUrl());
 }
-function sheet() { return tab_(SHEET, COLS, true); }
+function sheet() { return tab_(SHEET, COLS, 'payload'); }
+function prices_() {
+  const sh = tab_(PRICES, PCOLS, false);
+  if (sh.getLastRow() < 2) { sh.getRange(2, 1, PRICES_DEF.length, PCOLS.length).setValues(PRICES_DEF); }
+  const v = sh.getRange(2, 1, sh.getLastRow() - 1, PCOLS.length).getValues(); const o = {};
+  v.forEach(r => { const id = String(r[0] || '').trim(); if (id) o[id] = { model: r[1], lista: Number(r[2]) || 0, pct: Number(r[3]) || 0, min: Number(r[4]) || 0 }; });
+  return o;
+}
+function minFor_(modelId) { const p = prices_()[String(modelId || '')]; return p && p.min ? p.min : 0; }
 function azi() { return Utilities.formatDate(new Date(), 'Europe/Bucharest', 'yyyy-MM-dd'); }
 function nowIso() { return new Date().toISOString(); }
 function out(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
@@ -147,6 +169,8 @@ function doPost(e) {
     const lock = LockService.getScriptLock(); lock.waitLock(25000);
     try {
       if (req.action === 'list')      return out(Object.assign({ ok: true }, list_(me)));
+      if (req.action === 'preturi')   return out({ ok: true, preturi: prices_() });
+      if (req.action === 'aprobare')  return out(Object.assign({ ok: true }, aprobare_(me, req.nr, req.decizie, req.motiv)));
       if (req.action === 'save')      return out(Object.assign({ ok: true }, save_(me, req.rec, req)));
       if (req.action === 'etapa')     return out(Object.assign({ ok: true }, etapa_(me, req.nr, req.etapa, req.date || {})));
       if (req.action === 'aloc')      return out(Object.assign({ ok: true }, aloc_(me, req.nr, req.vin)));
@@ -196,11 +220,11 @@ function list_(me) {
     if (!nrs[h[1]]) return; (ist[h[1]] = ist[h[1]] || []).push({ data: h[0] instanceof Date ? h[0].toISOString() : String(h[0]), etapa: h[2], eticheta: h[3], de: h[4], detalii: h[5] });
   });
   rows.forEach(r => { r.ist = ist[r.nr] || []; delete r._row; });
-  return { rows, me: pub_(me) };
+  return { rows, me: pub_(me), preturi: prices_() };
 }
 function getRow_(nr) { const a = rowsAll_(); const r = a.rows.find(x => String(x.nr) === String(nr)); if (!r) throw new Error('Oferta ' + nr + ' nu există'); return { sh: a.sh, r, all: a.rows }; }
 
-const KEEP = ['vanzator','emailVanzator','vanzatorUser','status','etapa','etapaLa','motiv','alocare','vin','alocatDe','alocatLa','notificat','feedback',
+const KEEP = ['vanzator','emailVanzator','vanzatorUser','status','etapa','etapaLa','motiv','alocare','vin','alocatDe','alocatLa','notificat','feedback','pretAprobat','aprobare',
   'proformaNr','proformaData','facturaAvansNr','dataIncasare','comision','comisionNota','comisionPlatit','livratLa','pdfLink','emailOferta','data','valabilaPana'];
 function save_(me, rec, req) {
   const a = rowsAll_(); const cur = a.rows.find(x => String(x.nr) === String(rec.nr));
@@ -208,7 +232,7 @@ function save_(me, rec, req) {
   COLS.forEach(c => o[c] = rec[c]);
   if (cur) {
     if (!(me.rol === 'admin' || owner_(me, cur))) throw new Error('Poți modifica doar ofertele tale');
-    if (['ofertata','negociere','cerere'].indexOf(cur.etapa) < 0 && me.rol !== 'admin') throw new Error('Oferta a trecut în etapa „' + ET[cur.etapa].l + '” și nu mai poate fi modificată');
+    if (['ofertata','negociere','cerere','aprobare','respinsa'].indexOf(cur.etapa) < 0 && me.rol !== 'admin') throw new Error('Oferta a trecut în etapa „' + ET[cur.etapa].l + '” și nu mai poate fi modificată');
     KEEP.forEach(c => o[c] = cur[c]); o._row = cur._row;
     if (rec.valabilaPana && ['ofertata','negociere'].indexOf(cur.etapa) >= 0) o.valabilaPana = rec.valabilaPana;
   } else {
@@ -218,17 +242,32 @@ function save_(me, rec, req) {
   }
   o.actualizat = nowIso();
   const res = {};
+  // control preț minim agent: sub minim → aprobare administrator
+  const min = minFor_(o.modelId); o.pretMinim = min || '';
+  const pf = Number(o.pretFinal) || 0, aprob = Number(o.pretAprobat) || 0;
+  let cerereAprobare = false;
+  if (me.rol !== 'admin' && ['ofertata','negociere','aprobare','respinsa'].indexOf(o.etapa) >= 0) {
+    const sub = !!min && pf > 0 && pf < min && !(aprob && pf >= aprob);
+    if (sub && o.etapa !== 'aprobare') { o.etapa = 'aprobare'; o.status = ET.aprobare.l; o.etapaLa = nowIso(); o.aprobare = ''; cerereAprobare = true; }
+    else if (!sub && (o.etapa === 'aprobare' || o.etapa === 'respinsa')) { o.etapa = 'ofertata'; o.status = ET.ofertata.l; o.etapaLa = nowIso(); res.inLimita = true; }
+    else if (sub && o.etapa === 'aprobare') cerereAprobare = true; // preț schimbat, dar tot sub minim: retrimitem cererea
+  }
   if (req.pdf) {
     try {
       const name = (req.pdfName || ('Oferta ' + rec.nr + '.pdf')).replace(/[\\/:*?"<>|]/g, '-');
       const blob = Utilities.newBlob(Utilities.base64Decode(req.pdf), 'application/pdf', name);
       const file = folder_().createFile(blob);
       o.pdfLink = file.getUrl(); res.pdfLink = o.pdfLink;
-      if (!o.emailOferta) { trimiteOfertaNoua_(o, blob); o.emailOferta = nowIso(); res.emailTrimis = true; }
+      if (cerereAprobare) { trimiteCerereAprobare_(o, blob); o.emailOferta = o.emailOferta || nowIso(); res.emailTrimis = true; res.cerereAprobare = true; }
+      else if (!o.emailOferta) { trimiteOfertaNoua_(o, blob); o.emailOferta = nowIso(); res.emailTrimis = true; }
     } catch (err) { res.emailEroare = String(err); }
   }
   writeRow_(a.sh, o);
   if (!cur) hist_(o.nr, 'ofertata', me.nume, 'Ofertă emisă · ' + (o.model || '') + ' · ' + eur_(o.totalCuTVA) + ' cu TVA');
+  if (cerereAprobare) hist_(o.nr, 'aprobare', me.nume, 'Preț vehicul ' + eur_(pf) + ' sub minimul de agent ' + eur_(min) + ' – cerere aprobare');
+  if (res.inLimita) hist_(o.nr, 'ofertata', me.nume, 'Preț vehicul ' + eur_(pf) + ' în limita de agent');
+  if (cerereAprobare && !req.pdf) trimiteCerereAprobare_(o, null);
+  res.etapa = o.etapa; res.pretMinim = min; res.pretAprobat = o.pretAprobat || '';
   return res;
 }
 
@@ -279,6 +318,37 @@ function aloc_(me, nr, vin) {
     writeRow_(g.sh, r); hist_(nr, 'cerere', me.nume, 'Alocare anulată (seria ' + old + ' eliberată)');
   }
   return {};
+}
+function aprobare_(me, nr, decizie, motiv) {
+  if (me.rol !== 'admin') throw new Error('Doar administratorii aprobă prețuri');
+  const g = getRow_(nr); const r = g.r;
+  if (r.etapa !== 'aprobare') throw new Error('Oferta nu așteaptă aprobare de preț');
+  const pf = Number(r.pretFinal) || 0;
+  if (decizie === 'aproba') {
+    r.pretAprobat = pf; r.aprobare = 'Aprobat de ' + me.nume + ' la ' + fdt_(azi());
+    r.etapa = 'ofertata'; r.status = ET.ofertata.l; r.etapaLa = nowIso(); r.actualizat = nowIso();
+    writeRow_(g.sh, r); hist_(nr, 'ofertata', me.nume, 'Preț aprobat: ' + eur_(pf) + ' (minim agent ' + eur_(r.pretMinim) + ')');
+    mail_(r.emailVanzator, 'Preț aprobat – ' + r.client + ' (' + nr + ')', '<p>' + esc_(me.nume) + ' a aprobat prețul vehiculului de <b>' + eur_(pf) + '</b> fără TVA. Poți descărca și trimite oferta clientului din Arhivă → Ofertă.</p>' + rez_(r));
+  } else {
+    if (!String(motiv || '').trim()) throw new Error('Scrie motivul respingerii');
+    r.aprobare = 'Respins de ' + me.nume + ': ' + String(motiv).trim();
+    r.etapa = 'respinsa'; r.status = ET.respinsa.l; r.etapaLa = nowIso(); r.actualizat = nowIso();
+    writeRow_(g.sh, r); hist_(nr, 'respinsa', me.nume, String(motiv).trim());
+    mail_(r.emailVanzator, 'Preț respins – ' + r.client + ' (' + nr + ')', '<p>' + esc_(me.nume) + ' a respins prețul de <b>' + eur_(pf) + '</b> fără TVA (minim agent ' + eur_(r.pretMinim) + ').</p><p>Motiv: ' + esc_(motiv) + '</p><p>Deschide oferta din Arhivă (butonul Ofertă), modifică prețul și salvează din nou.</p>' + rez_(r));
+  }
+  return { etapa: r.etapa };
+}
+function trimiteCerereAprobare_(r, blob) {
+  const pf = Number(r.pretFinal) || 0, min = Number(r.pretMinim) || 0;
+  const html = '<p><b>' + esc_(r.vanzator) + '</b> cere aprobarea unui preț sub minimul de agent.</p>' +
+    '<table style="border-collapse:collapse"><tr><td style="padding:3px 12px 3px 0;color:#666">Preț vehicul ofertat</td><td><b>' + eur_(pf) + '</b> fără TVA</td></tr>' +
+    '<tr><td style="padding:3px 12px 3px 0;color:#666">Preț minim agent</td><td>' + eur_(min) + '</td></tr>' +
+    '<tr><td style="padding:3px 12px 3px 0;color:#666">Sub minim cu</td><td><b>' + eur_(min - pf) + '</b></td></tr></table><br>' + rez_(r) +
+    '<p>Aprobă sau respinge din aplicație: Arhivă → oferta → Etape.</p>';
+  const opt = { htmlBody: '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222">' + html + '<p><a href="' + APP_URL + '" style="background:#3A4759;color:#fff;padding:9px 14px;border-radius:6px;text-decoration:none">Deschide aplicația</a></p></div>', name: SENDER };
+  if (blob) opt.attachments = [blob];
+  if (r.emailVanzator) opt.replyTo = r.emailVanzator;
+  try { MailApp.sendEmail(OFERTA_NOUA_CATRE, 'Cerere aprobare preț – ' + r.vanzator + ' – ' + r.client, 'Cerere aprobare preț ' + r.nr, opt); } catch (e) { Logger.log(e); }
 }
 function comision_(me, nr, d) {
   if (me.rol !== 'admin') throw new Error('Doar administratorii setează comisioane');
@@ -427,10 +497,10 @@ function verificaExpirate() {
     if (r.etapa === 'proforma' && z >= 5) mail_(r.emailVanzator, 'Reamintire: avans neîncasat – ' + r.client + ' (' + r.nr + ')',
       '<p>Proforma ' + esc_(r.proformaNr) + ' a fost emisă acum ' + z + ' zile lucrătoare, iar avansul nu este marcat ca încasat.</p><p>Verifică plata cu clientul. După încasare, trece în aplicație numărul facturii de avans și data încasării.</p>' + rez_(r), OFERTA_NOUA_CATRE);
     // 4. cereri de alocare în așteptare
-    if (r.etapa === 'cerere' && z >= 1) cereri.push(r);
+    if ((r.etapa === 'cerere' || r.etapa === 'aprobare') && z >= 1) cereri.push(r);
   });
-  if (cereri.length && lucru) mail_(OFERTA_NOUA_CATRE, 'Cereri de alocare serie în așteptare: ' + cereri.length,
-    '<p>Aceste oferte așteaptă alocarea unei serii din Stoc DBK:</p><ul>' + cereri.map(r => '<li><b>' + esc_(r.nr) + '</b> – ' + esc_(r.vanzator) + ' – ' + esc_(r.client) + ' – ' + esc_(r.model) + ' (' + esc_(r.culoare) + ')</li>').join('') + '</ul>');
+  if (cereri.length && lucru) mail_(OFERTA_NOUA_CATRE, 'Cereri în așteptare (alocare serie / aprobare preț): ' + cereri.length,
+    '<p>Aceste oferte așteaptă o decizie de la administrator:</p><ul>' + cereri.map(r => '<li><b>' + esc_(ET[r.etapa].l) + '</b> · <b>' + esc_(r.nr) + '</b> – ' + esc_(r.vanzator) + ' – ' + esc_(r.client) + ' – ' + esc_(r.model) + ' (' + esc_(r.culoare) + ')</li>').join('') + '</ul>');
 }
 
 /* ---------------- formular feedback (link din e-mail) ---------------- */
