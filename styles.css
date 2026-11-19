@@ -528,3 +528,22 @@ input[readonly] { background: var(--gridline); color: var(--text-secondary); }
 .home-tile--photo:hover{box-shadow:0 10px 26px rgba(58,71,89,.28)}
 @media(max-width:520px){.home-tile--photo{min-height:170px;background:linear-gradient(180deg,rgba(58,71,89,.94) 0%,rgba(58,71,89,.75) 48%,rgba(58,71,89,.05) 100%),url(icons/stoc-polonia.jpg) center 70%/cover no-repeat,#3A4759;align-items:flex-start}}
 @media(min-width:521px){.home-tile--photo{min-height:200px;background:linear-gradient(90deg,#3A4759 0%,#3A4759 40%,rgba(58,71,89,0) 58%),url(icons/stoc-polonia.jpg) right 82%/60% auto no-repeat,#3A4759}}
+
+/* meniu: 2 bannere + 3 butoane */
+@media(min-width:760px){.home-menu{grid-template-columns:repeat(6,1fr)}.home-menu>.home-tile{grid-column:span 2}.home-menu>.home-tile--photo,.home-menu>.home-tile--hero{grid-column:1/-1}
+ .home-menu>.home-tile:not(.home-tile--photo):not(.home-tile--hero){flex-direction:column;align-items:flex-start;gap:12px;padding:20px 18px}
+ .home-menu>.home-tile:not(.home-tile--photo):not(.home-tile--hero) .home-tile-arrow{position:absolute;right:14px;bottom:14px}}
+.home-tile--hero{min-height:200px;border:0;padding:22px 20px;color:#fff;overflow:hidden;
+  background:linear-gradient(100deg,#3A4759 0%,#3A4759 46%,#33404f 46.2%,#33404f 58%,#2e3a48 58.2%),#3A4759}
+.home-tile--hero::before{content:"";position:absolute;left:auto;right:-20px;top:auto;bottom:0;width:46%;height:6px;background:#05C3DE;transform:skewX(-35deg);border-radius:0}
+.home-tile--hero .home-tile-text{position:relative;z-index:1}
+.home-tile--hero .home-tile-kicker{color:#05C3DE}
+.home-tile--hero .home-tile-title{color:#fff;font-size:21px;letter-spacing:.04em;font-weight:800}
+.home-tile--hero .home-tile-sub{color:rgba(255,255,255,.85);max-width:340px}
+.home-hero-logo{position:relative;z-index:1;height:150px;width:auto;margin-right:18px;flex-shrink:0}
+.home-tile--hero .home-tile-arrow{background:rgba(255,255,255,.9);color:#3A4759;align-self:flex-end}
+.home-tile--hero:hover{box-shadow:0 10px 26px rgba(58,71,89,.28)}
+.home-tile--hero:hover .home-tile-arrow,.home-tile--photo:hover .home-tile-arrow{background:#05C3DE;color:#fff}
+@media(max-width:620px){.home-tile--hero{flex-direction:column;align-items:flex-start;gap:12px;background:linear-gradient(160deg,#3A4759 0%,#3A4759 60%,#33404f 60.2%)}
+ .home-hero-logo{height:96px;align-self:flex-end;margin:-6px 0 0}.home-tile--hero .home-tile-arrow{position:absolute;left:20px;bottom:20px}}
+@media(min-width:760px){.home-menu>.home-tile:not(.home-tile--photo):not(.home-tile--hero) .home-tile-arrow{top:31px;bottom:auto;right:18px}}
