@@ -1,34 +1,61 @@
 /**
  * Arhivă oferte FOTON – Inter Cargo
- * Backend Google Apps Script pentru aplicația de ofertare.
+ * Backend Google Apps Script pentru aplicația de ofertare (Foton by Inter Cargo).
  *
- * Instalare:
- * 1. Creează un Google Sheet nou, de ex. „Arhivă oferte FOTON”.
- * 2. Extensii → Apps Script, șterge tot și lipește acest fișier.
- * 3. Schimbă TOKEN mai jos cu o parolă a voastră.
- * 4. Rulează o dată funcția setup (alege-o din listă și apasă Run), acceptă permisiunile.
- *    setup creează și verificarea zilnică (ora 8) a ofertelor expirate, care trimite e-mail vânzătorului.
- * 5. Implementare → Implementare nouă → Tip: Aplicație web
- *      Executare ca: Eu · Cine are acces: Oricine
- *    Copiază adresa „Web app URL”.
- * 6. În aplicația de ofertare: ⚙ Setări → lipește adresa și tokenul → Salvează → Testează conexiunea.
+ * Instalare (proiect Apps Script independent sau legat de un Sheet):
+ * 1. script.google.com → Proiect nou → lipește acest fișier.
+ * 2. Rulează o dată funcția setup și acceptă permisiunile. setup creează automat:
+ *      – Google Sheet „Arhivă oferte FOTON” (dacă scriptul nu e legat de un Sheet),
+ *      – folderul Drive „Oferte FOTON – PDF” pentru PDF-urile ofertelor,
+ *      – verificarea zilnică (ora 8) a ofertelor expirate, cu e-mail către vânzător.
+ * 3. Implementare → Implementare nouă → Aplicație web · Executare ca: Eu · Acces: Oricine.
  */
-const TOKEN = 'icgoferte2026';
-const ADMIN_KEY = 'icgadmin2026';
-const ADMIN_EMAILS = ''; // opțional: e-mailuri puse în copie la alertele de expirare, separate prin virgulă // codul administratorilor care pot aloca serii din Stoc DBK – schimbați-l
+const TOKEN = 'icgoferte2026';      // parola dintre aplicație și arhivă – schimbați-o (și în aplicație)
+const ADMIN_KEY = 'icgadmin2026';   // codul administratorilor care pot aloca serii din Stoc DBK – schimbați-l
+const ADMIN_EMAILS = '';            // opțional: e-mailuri în copie la alertele de expirare, separate prin virgulă
+const OFERTA_NOUA_CATRE = 'florin.loghin@fotonromania.com,alexandru.paunescu@fotonromania.com';
 const SHEET = 'Oferte';
 const COLS = ['nr','data','valabilaPana','vanzator','client','cui','telefon','email','model','culoare',
   'emailVanzator','pretLista','pretDiscount','pretSuport','pretFinal','totalFaraTVA','totalCuTVA','avansPct','termen',
-  'status','motiv','actualizat','modelId','alocare','vin','alocatDe','alocatLa','notificat','feedback','payload'];
+  'status','motiv','actualizat','modelId','alocare','vin','alocatDe','alocatLa','notificat','feedback',
+  'pdfLink','emailOferta','payload'];
+
+const PROPS = PropertiesService.getScriptProperties();
+
+function ss_() {
+  let ss = null;
+  try { ss = SpreadsheetApp.getActive(); } catch (e) {}
+  if (ss) return ss;
+  const id = PROPS.getProperty('SHEET_ID');
+  if (id) return SpreadsheetApp.openById(id);
+  ss = SpreadsheetApp.create('Arhivă oferte FOTON');
+  PROPS.setProperty('SHEET_ID', ss.getId());
+  return ss;
+}
+
+function folder_() {
+  const id = PROPS.getProperty('FOLDER_ID');
+  if (id) { try { return DriveApp.getFolderById(id); } catch (e) {} }
+  const f = DriveApp.createFolder('Oferte FOTON – PDF');
+  PROPS.setProperty('FOLDER_ID', f.getId());
+  return f;
+}
 
 function setup() {
-  const ss = SpreadsheetApp.getActive();
+  const ss = ss_();
   const sh = ss.getSheetByName(SHEET) || ss.insertSheet(SHEET);
+  const def = ss.getSheetByName('Sheet1') || ss.getSheetByName('Foaie1');
+  if (def && def.getName() !== SHEET && def.getLastRow() === 0) ss.deleteSheet(def);
+  if (sh.getMaxColumns() < COLS.length) sh.insertColumnsAfter(sh.getMaxColumns(), COLS.length - sh.getMaxColumns());
   sh.getRange(1, 1, 1, COLS.length).setValues([COLS]).setFontWeight('bold');
   sh.setFrozenRows(1);
   sh.hideColumns(COLS.length); // payload (datele complete ale ofertei)
+  folder_();
   ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'verificaExpirate').forEach(t => ScriptApp.deleteTrigger(t));
   ScriptApp.newTrigger('verificaExpirate').timeBased().everyDays(1).atHour(8).inTimezone('Europe/Bucharest').create();
+  Logger.log('Sheet: ' + ss.getUrl());
+  Logger.log('Folder PDF: ' + folder_().getUrl());
+  Logger.log('E-mailuri rămase azi: ' + MailApp.getRemainingDailyQuota());
 }
 
 function doPost(e) {
@@ -38,7 +65,7 @@ function doPost(e) {
     const lock = LockService.getScriptLock(); lock.waitLock(20000);
     try {
       if (req.action === 'list')   return out({ ok: true, rows: list() });
-      if (req.action === 'save')   { save(req.rec); return out({ ok: true }); }
+      if (req.action === 'save')   { const r = save(req.rec, req); return out(Object.assign({ ok: true }, r)); }
       if (req.action === 'status') { setStatus(req.nr, req.status, req.motiv); return out({ ok: true }); }
       if (req.action === 'admin')  return out({ ok: req.adminKey === ADMIN_KEY });
       if (req.action === 'anaf')   return out(anaf(req.cui));
@@ -52,7 +79,7 @@ function doPost(e) {
   } catch (err) { return out({ ok: false, error: String(err) }); }
 }
 
-function sheet() { const sh = SpreadsheetApp.getActive().getSheetByName(SHEET); if (!sh) { setup(); return SpreadsheetApp.getActive().getSheetByName(SHEET); } return sh; }
+function sheet() { const sh = ss_().getSheetByName(SHEET); if (!sh) { setup(); return ss_().getSheetByName(SHEET); } return sh; }
 
 function list() {
   const sh = sheet(); const n = sh.getLastRow(); if (n < 2) return [];
@@ -68,15 +95,44 @@ function findRow(sh, nr) {
   const i = ids.indexOf(String(nr)); return i < 0 ? -1 : i + 2;
 }
 
-function save(rec) {
+function save(rec, req) {
+  req = req || {};
   const sh = sheet(); const row = findRow(sh, rec.nr);
-  if (row > 0) { // oferta re-generată: păstrăm statusul și motivul existente
+  if (row > 0) { // oferta re-generată: păstrăm statusul, alocarea și starea e-mailului
     const cur = sh.getRange(row, 1, 1, COLS.length).getValues()[0];
     rec.status = cur[COLS.indexOf('status')] || rec.status; rec.motiv = cur[COLS.indexOf('motiv')] || '';
-    ['alocare','vin','alocatDe','alocatLa','notificat','feedback'].forEach(c => { rec[c] = cur[COLS.indexOf(c)] || ''; });
+    ['alocare','vin','alocatDe','alocatLa','notificat','feedback','pdfLink','emailOferta'].forEach(c => { rec[c] = cur[COLS.indexOf(c)] || ''; });
+  }
+  const res = {};
+  if (req.pdf) {
+    try {
+      const name = (req.pdfName || ('Oferta ' + rec.nr + '.pdf')).replace(/[\\/:*?"<>|]/g, '-');
+      const blob = Utilities.newBlob(Utilities.base64Decode(req.pdf), 'application/pdf', name);
+      const file = folder_().createFile(blob);
+      rec.pdfLink = file.getUrl(); res.pdfLink = rec.pdfLink;
+      if (!rec.emailOferta) { trimiteOfertaNoua_(rec, blob); rec.emailOferta = new Date().toISOString(); res.emailTrimis = true; }
+    } catch (err) { res.emailEroare = String(err); }
   }
   const vals = [COLS.map(c => rec[c] === undefined ? '' : rec[c])];
   sh.getRange(row > 0 ? row : sh.getLastRow() + 1, 1, 1, COLS.length).setNumberFormat('@').setValues(vals);
+  return res;
+}
+
+function lei_(x) { const n = Number(x); return isNaN(n) || !x ? '' : n.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'; }
+
+function trimiteOfertaNoua_(r, blob, catre) {
+  const subiect = 'Ofertă nouă – ' + (r.vanzator || 'vânzător') + ' – ' + (r.client || 'client');
+  const rand = (k, v) => v ? '<tr><td style="padding:3px 12px 3px 0;color:#666">' + k + '</td><td style="padding:3px 0"><b>' + esc_(v) + '</b></td></tr>' : '';
+  const html = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222">' +
+    '<p>A fost emisă o ofertă nouă în aplicația Foton by Inter Cargo.</p><table style="border-collapse:collapse">' +
+    rand('Nr. ofertă', r.nr) + rand('Vânzător', r.vanzator) + rand('Client', r.client) + rand('CUI', r.cui) +
+    rand('Telefon client', r.telefon) + rand('Model', r.model) + rand('Culoare', r.culoare) +
+    rand('Total fără TVA', lei_(r.totalFaraTVA)) + rand('Total cu TVA', lei_(r.totalCuTVA)) +
+    rand('Termen livrare', r.termen) + rand('Valabilă până la', r.valabilaPana) +
+    '</table><p>Oferta este atașată în PDF' + (r.pdfLink ? ' și salvată în <a href="' + r.pdfLink + '">Drive</a>' : '') + '.</p></div>';
+  const opt = { htmlBody: html, attachments: [blob], name: 'Foton by Inter Cargo' };
+  if (r.emailVanzator) opt.replyTo = r.emailVanzator;
+  MailApp.sendEmail(catre || OFERTA_NOUA_CATRE, subiect, 'Ofertă nouă ' + r.nr + ' – PDF atașat.', opt);
 }
 
 function setStatus(nr, status, motiv) {
@@ -172,3 +228,11 @@ function anaf(cui) {
 }
 
 function out(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
+
+/** Test manual: trimite un e-mail „Ofertă nouă” de probă DOAR către primul destinatar, cu un PDF de test. */
+function testEmailOferta() {
+  const blob = Utilities.newBlob('<h1>Ofertă de test</h1><p>Verificare e-mail Foton by Inter Cargo.</p>', 'text/html', 'test.html').getAs('application/pdf').setName('Oferta TEST - Vanzator Test - Client Test.pdf');
+  const r = { nr: 'ICG-OF-TEST', vanzator: 'Vânzător Test', client: 'Client Test SRL', model: 'FOTON Tunland V9', culoare: 'Alb', totalFaraTVA: 40000, totalCuTVA: 48400, termen: 'Din stoc', valabilaPana: azi() };
+  trimiteOfertaNoua_(r, blob, OFERTA_NOUA_CATRE.split(',')[0]);
+  Logger.log('Trimis test către ' + OFERTA_NOUA_CATRE.split(',')[0] + ' · e-mailuri rămase azi: ' + MailApp.getRemainingDailyQuota());
+}
