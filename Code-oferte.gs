@@ -1,35 +1,55 @@
 /**
- * Arhivă oferte FOTON – Inter Cargo
- * Backend Google Apps Script pentru aplicația de ofertare (Foton by Inter Cargo).
+ * Arhivă oferte FOTON – Inter Cargo · backend Google Apps Script (Foton by Inter Cargo – Ofertare)
  *
- * Instalare (proiect Apps Script independent sau legat de un Sheet):
- * 1. script.google.com → Proiect nou → lipește acest fișier.
- * 2. Rulează o dată funcția setup și acceptă permisiunile. setup creează automat:
- *      – Google Sheet „Arhivă oferte FOTON” (dacă scriptul nu e legat de un Sheet),
- *      – folderul Drive „Oferte FOTON – PDF” pentru PDF-urile ofertelor,
- *      – verificarea zilnică (ora 8) a ofertelor expirate, cu e-mail către vânzător.
- * 3. Implementare → Implementare nouă → Aplicație web · Executare ca: Eu · Acces: Oricine.
+ * Instalare: script.google.com → proiect → lipește fișierul → rulează setup (o dată) →
+ * Implementare → Aplicație web · Executare ca: Eu · Acces: Oricine.
+ *
+ * Roluri:  admin    – vede tot, alocă serii, etapele de livrare, comisioane, utilizatori, rapoarte complete
+ *          operator – etapele de după încasarea avansului (încărcat, acte, PDI, livrat)
+ *          vanzator – doar ofertele proprii; validează etapele până la „Avans încasat – comandă plasată”
  */
-const TOKEN = 'icgoferte2026';      // parola dintre aplicație și arhivă – schimbați-o (și în aplicație)
-// Conturi de administrator (alocă serii din Stoc DBK). Parolele sunt stocate doar ca hash SHA-256 cu sare.
-// Pentru o parolă nouă: rulați hashParola('utilizator','parola') și copiați rezultatul aici.
+const TOKEN = 'icgoferte2026';
+const APP_URL = 'https://florinx1.github.io/fotonagenti/ofertare.html';
+const SENDER = 'FOTON ROMANIA OFERTARE';
+const ADMIN_EMAILS = '';  // opțional: copie la alertele de expirare
+const SHEET = 'Oferte', USERS = 'Utilizatori', HIST = 'Istoric';
+
+// Administratori ficși. Parolele sunt stocate doar ca hash SHA-256 cu sare.
 const ADMIN_SALT = '7610e3cae4411dd9';
 const ADMINS = {
-  florin: { nume: 'Florin Loghin',      hash: '36f9863c2ae40a45b475639818c023081208cd6e6c734cd7ed98d84c73c5cce2' },
-  alex:   { nume: 'Alexandru Păunescu', hash: '5c6e830f17b912e8d0ca9d7b9df30ce26169e78de19050b9c36b66223f161616' }
+  florin: { nume: 'Florin Loghin',      email: 'florin.loghin@fotonromania.com',      hash: '36f9863c2ae40a45b475639818c023081208cd6e6c734cd7ed98d84c73c5cce2' },
+  alex:   { nume: 'Alexandru Păunescu', email: 'alexandru.paunescu@fotonromania.com', hash: '5c6e830f17b912e8d0ca9d7b9df30ce26169e78de19050b9c36b66223f161616' }
 };
-function hashParola(u, p) { return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, ADMIN_SALT + ':' + u + ':' + p, Utilities.Charset.UTF_8).map(b => ('0' + (b & 255).toString(16)).slice(-2)).join(''); }
-function admin_(u, p) { u = String(u || '').trim().toLowerCase(); const a = ADMINS[u]; return a && p && hashParola(u, String(p)) === a.hash ? a : null; }
-const ADMIN_EMAILS = '';            // opțional: e-mailuri în copie la alertele de expirare, separate prin virgulă
-const OFERTA_NOUA_CATRE = 'florin.loghin@fotonromania.com,alexandru.paunescu@fotonromania.com';
-const SHEET = 'Oferte';
+const OFERTA_NOUA_CATRE = Object.keys(ADMINS).map(k => ADMINS[k].email).join(',');
+
 const COLS = ['nr','data','valabilaPana','vanzator','client','cui','telefon','email','model','culoare',
   'emailVanzator','pretLista','pretDiscount','pretSuport','pretFinal','totalFaraTVA','totalCuTVA','avansPct','termen',
   'status','motiv','actualizat','modelId','alocare','vin','alocatDe','alocatLa','notificat','feedback',
-  'pdfLink','emailOferta','payload'];
+  'vanzatorUser','etapa','etapaLa','proformaNr','proformaData','facturaAvansNr','dataIncasare',
+  'comision','comisionNota','comisionPlatit','livratLa','pdfLink','emailOferta','payload'];
+const UCOLS = ['user','nume','email','telefon','rol','activ','hash','creat'];
+const HCOLS = ['data','nr','etapa','eticheta','de','detalii'];
+
+// Etapele ofertei. who: v = vânzătorul ofertei, o = operator/administrator, a = doar administrator
+const ET = {
+  ofertata:   { l: 'Ofertată',                         who: 'v', next: ['negociere','cerere','pierduta'] },
+  negociere:  { l: 'În negociere',                     who: 'v', next: ['cerere','pierduta'] },
+  cerere:     { l: 'Cerere alocare serie',             who: 'v', next: ['pierduta'] },
+  alocata:    { l: 'Serie alocată',                    who: 'a', next: ['proforma','pierduta'] },
+  proforma:   { l: 'Proformă avans emisă',             who: 'v', next: ['avans','pierduta'], req: ['proformaNr','proformaData'] },
+  avans:      { l: 'Avans încasat – comandă plasată',  who: 'v', next: ['incarcat'], req: ['facturaAvansNr','dataIncasare'] },
+  incarcat:   { l: 'Vehicul încărcat spre livrare ICG', who: 'o', next: ['acte'] },
+  acte:       { l: 'Întocmire acte',                   who: 'o', next: ['pdi'] },
+  pdi:        { l: 'În pregătire PDI / fișă livrare',  who: 'o', next: ['finalizata'] },
+  finalizata: { l: 'Livrată – finalizată',             who: 'o', next: [] },
+  pierduta:   { l: 'Pierdută',                         who: 'v', next: [], req: ['motiv'] },
+  anulata:    { l: 'Anulată',                          who: 'a', next: [], req: ['motiv'] }
+};
+const LEGACY = { 'Trimisă': 'ofertata', 'În negociere': 'negociere', 'Câștigată': 'avans', 'Pierdută': 'pierduta' };
 
 const PROPS = PropertiesService.getScriptProperties();
 
+/* ---------------- infrastructură ---------------- */
 function ss_() {
   let ss = null;
   try { ss = SpreadsheetApp.getActive(); } catch (e) {}
@@ -40,7 +60,6 @@ function ss_() {
   PROPS.setProperty('SHEET_ID', ss.getId());
   return ss;
 }
-
 function folder_() {
   const id = PROPS.getProperty('FOLDER_ID');
   if (id) { try { return DriveApp.getFolderById(id); } catch (e) {} }
@@ -48,87 +67,315 @@ function folder_() {
   PROPS.setProperty('FOLDER_ID', f.getId());
   return f;
 }
-
+function tab_(name, cols, hideLast) {
+  const ss = ss_(); let sh = ss.getSheetByName(name);
+  if (!sh) sh = ss.insertSheet(name);
+  if (sh.getMaxColumns() < cols.length) sh.insertColumnsAfter(sh.getMaxColumns(), cols.length - sh.getMaxColumns());
+  const head = sh.getRange(1, 1, 1, cols.length).getValues()[0];
+  if (head.join('|') !== cols.join('|')) {
+    sh.getRange(1, 1, 1, cols.length).setValues([cols]).setFontWeight('bold'); sh.setFrozenRows(1);
+    if (hideLast) { sh.showColumns(1, sh.getMaxColumns()); sh.hideColumns(cols.length); }
+  }
+  return sh;
+}
 function setup() {
   const ss = ss_();
-  const sh = ss.getSheetByName(SHEET) || ss.insertSheet(SHEET);
+  tab_(SHEET, COLS, true); tab_(USERS, UCOLS, false); tab_(HIST, HCOLS, false);
+  const us = ss.getSheetByName(USERS); us.hideColumns(UCOLS.indexOf('hash') + 1);
   const def = ss.getSheetByName('Sheet1') || ss.getSheetByName('Foaie1');
-  if (def && def.getName() !== SHEET && def.getLastRow() === 0) ss.deleteSheet(def);
-  if (sh.getMaxColumns() < COLS.length) sh.insertColumnsAfter(sh.getMaxColumns(), COLS.length - sh.getMaxColumns());
-  sh.getRange(1, 1, 1, COLS.length).setValues([COLS]).setFontWeight('bold');
-  sh.setFrozenRows(1);
-  sh.hideColumns(COLS.length); // payload (datele complete ale ofertei)
-  folder_();
+  if (def && def.getLastRow() === 0) ss.deleteSheet(def);
+  folder_(); secret_();
   ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'verificaExpirate').forEach(t => ScriptApp.deleteTrigger(t));
   ScriptApp.newTrigger('verificaExpirate').timeBased().everyDays(1).atHour(8).inTimezone('Europe/Bucharest').create();
-  Logger.log('Sheet: ' + ss.getUrl());
-  Logger.log('Folder PDF: ' + folder_().getUrl());
-  Logger.log('E-mailuri rămase azi: ' + MailApp.getRemainingDailyQuota());
+  Logger.log('Sheet: ' + ss.getUrl()); Logger.log('Folder PDF: ' + folder_().getUrl());
+}
+function sheet() { return tab_(SHEET, COLS, true); }
+function azi() { return Utilities.formatDate(new Date(), 'Europe/Bucharest', 'yyyy-MM-dd'); }
+function nowIso() { return new Date().toISOString(); }
+function out(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
+function esc_(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function fdt_(s) { s = String(s || ''); return /^\d{4}-\d\d-\d\d/.test(s) ? s.slice(0, 10).split('-').reverse().join('.') : s; }
+function eur_(x) { const n = Number(x); return isNaN(n) || x === '' ? '' : n.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'; }
+const lei_ = eur_;
+
+/* ---------------- conturi și sesiuni ---------------- */
+function hashParola(u, p) { return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, ADMIN_SALT + ':' + u + ':' + p, Utilities.Charset.UTF_8).map(b => ('0' + (b & 255).toString(16)).slice(-2)).join(''); }
+function secret_() { let s = PROPS.getProperty('SESS_SECRET'); if (!s) { s = Utilities.getUuid() + Utilities.getUuid(); PROPS.setProperty('SESS_SECRET', s); } return s; }
+function sign_(x) { return Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(x, secret_())).replace(/=+$/, ''); }
+function mkSess_(u) { const p = u + '.' + (Date.now() + 30 * 864e5); return p + '.' + sign_(p); }
+function lc_(u) { return String(u || '').trim().toLowerCase(); }
+function genPass_() { const a = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789'; let s = ''; for (let i = 0; i < 8; i++) s += a.charAt(Math.floor(Math.random() * a.length)); return 'Foton-' + s.slice(0, 4) + '-' + s.slice(4); }
+function usersAll_() {
+  const sh = tab_(USERS, UCOLS, false); const n = sh.getLastRow(); if (n < 2) return [];
+  return sh.getRange(2, 1, n - 1, UCOLS.length).getValues().map((r, i) => {
+    const o = { _row: i + 2 }; UCOLS.forEach((c, j) => o[c] = r[j]); o.user = lc_(o.user); o.activ = o.activ === true || String(o.activ).toUpperCase() === 'TRUE' || o.activ === 'da'; return o;
+  }).filter(o => o.user);
+}
+function user_(u) {
+  u = lc_(u);
+  if (ADMINS[u]) return { user: u, nume: ADMINS[u].nume, email: ADMINS[u].email, telefon: PROPS.getProperty('TEL_' + u) || '', rol: 'admin', activ: true, fix: true };
+  const r = usersAll_().find(x => x.user === u); return r && r.activ ? r : null;
+}
+function pub_(u) { return u ? { user: u.user, nume: u.nume, email: u.email, telefon: String(u.telefon || ''), rol: u.rol, activ: u.activ, fix: !!u.fix } : null; }
+function me_(sess) {
+  const p = String(sess || '').split('.'); if (p.length !== 3) return null;
+  if (p[2] !== sign_(p[0] + '.' + p[1]) || +p[1] < Date.now()) return null;
+  return user_(p[0]);
+}
+function checkPass_(u, p) {
+  if (!u || !p) return false; const h = hashParola(u, String(p));
+  const ov = PROPS.getProperty('PW_' + u); if (ov) return ov === h;
+  if (ADMINS[u]) return ADMINS[u].hash === h;
+  const r = usersAll_().find(x => x.user === u); return !!(r && r.activ && r.hash === h);
 }
 
+/* ---------------- API ---------------- */
 function doPost(e) {
   try {
     const req = JSON.parse(e.postData.contents || '{}');
     if (req.token !== TOKEN) return out({ ok: false, error: 'Token greșit' });
-    const lock = LockService.getScriptLock(); lock.waitLock(20000);
+    if (req.action === 'login') {
+      const u = lc_(req.user);
+      if (!/^[a-z0-9_-]{2,30}$/.test(u) || !checkPass_(u, req.pass)) return out({ ok: false, error: 'Utilizator sau parolă greșită' });
+      const me = user_(u); if (!me) return out({ ok: false, error: 'Cont inactiv' });
+      return out({ ok: true, sess: mkSess_(u), me: pub_(me) });
+    }
+    const me = me_(req.sess);
+    if (!me) return out({ ok: false, auth: true, error: 'Sesiunea a expirat – autentifică-te din nou' });
+    if (req.action === 'me') return out({ ok: true, me: pub_(me) });
+    if (req.action === 'anaf') return out(anaf(req.cui));
+    const lock = LockService.getScriptLock(); lock.waitLock(25000);
     try {
-      if (req.action === 'list')   return out({ ok: true, rows: list() });
-      if (req.action === 'save')   { const r = save(req.rec, req); return out(Object.assign({ ok: true }, r)); }
-      if (req.action === 'status') { setStatus(req.nr, req.status, req.motiv); return out({ ok: true }); }
-      if (req.action === 'admin')  { const a = admin_(req.adminUser, req.adminKey); return out(a ? { ok: true, nume: a.nume } : { ok: false }); }
-      if (req.action === 'anaf')   return out(anaf(req.cui));
-      if (req.action === 'aloc') {
-        // vânzătorul poate doar CERE alocarea; alocarea/anularea seriei cere codul de administrator
-        let de = req.de;
-        if (req.alocare !== 'Cerută' || req.vin) { const a = admin_(req.adminUser, req.adminKey); if (!a) return out({ ok: false, error: 'Doar administratorii pot aloca serii' }); de = a.nume; }
-        setAlloc(req.nr, req.alocare, req.vin, de); return out({ ok: true });
-      }
+      if (req.action === 'list')      return out(Object.assign({ ok: true }, list_(me)));
+      if (req.action === 'save')      return out(Object.assign({ ok: true }, save_(me, req.rec, req)));
+      if (req.action === 'etapa')     return out(Object.assign({ ok: true }, etapa_(me, req.nr, req.etapa, req.date || {})));
+      if (req.action === 'aloc')      return out(Object.assign({ ok: true }, aloc_(me, req.nr, req.vin)));
+      if (req.action === 'comision')  return out(Object.assign({ ok: true }, comision_(me, req.nr, req.date || {})));
+      if (req.action === 'parola')    return out(Object.assign({ ok: true }, parola_(me, req.vechi, req.noua)));
+      if (req.action === 'telefon')   return out(Object.assign({ ok: true }, telefon_(me, req.telefon)));
+      if (me.rol !== 'admin') return out({ ok: false, error: 'Doar administratorii au acces' });
+      if (req.action === 'users')     return out({ ok: true, users: usersPub_() });
+      if (req.action === 'userSave')  return out(Object.assign({ ok: true }, userSave_(me, req.u || {}, req.trimite)));
+      if (req.action === 'userReset') return out(Object.assign({ ok: true }, userReset_(me, req.user, req.trimite)));
       return out({ ok: false, error: 'Acțiune necunoscută' });
     } finally { lock.releaseLock(); }
-  } catch (err) { return out({ ok: false, error: String(err) }); }
+  } catch (err) { return out({ ok: false, error: String(err && err.message || err) }); }
 }
 
-function sheet() { const sh = ss_().getSheetByName(SHEET); if (!sh) { setup(); return ss_().getSheetByName(SHEET); } return sh; }
-
-function list() {
-  const sh = sheet(); const n = sh.getLastRow(); if (n < 2) return [];
+/* ---------------- oferte ---------------- */
+function rowsAll_() {
+  const sh = sheet(); const n = sh.getLastRow(); if (n < 2) return { sh, rows: [] };
   const v = sh.getRange(2, 1, n - 1, COLS.length).getValues();
-  return v.filter(r => r[0]).map(r => {
-    const o = {}; COLS.forEach((c, i) => { let x = r[i]; if (x instanceof Date) x = Utilities.formatDate(x, 'Europe/Bucharest', 'yyyy-MM-dd'); o[c] = x; }); return o;
+  const rows = [];
+  v.forEach((r, i) => {
+    if (!r[0]) return;
+    const o = { _row: i + 2 };
+    COLS.forEach((c, j) => { let x = r[j]; if (x instanceof Date) x = Utilities.formatDate(x, 'Europe/Bucharest', 'yyyy-MM-dd'); o[c] = x; });
+    if (!o.etapa) o.etapa = LEGACY[o.status] || 'ofertata';
+    rows.push(o);
   });
+  return { sh, rows };
 }
-
-function findRow(sh, nr) {
-  const n = sh.getLastRow(); if (n < 2) return -1;
-  const ids = sh.getRange(2, 1, n - 1, 1).getValues().map(r => String(r[0]));
-  const i = ids.indexOf(String(nr)); return i < 0 ? -1 : i + 2;
+function writeRow_(sh, o) {
+  const vals = [COLS.map(c => o[c] === undefined || o[c] === null ? '' : o[c])];
+  sh.getRange(o._row || sh.getLastRow() + 1, 1, 1, COLS.length).setNumberFormat('@').setValues(vals);
 }
+function owner_(me, r) { return r.vanzatorUser ? r.vanzatorUser === me.user : (!!r.emailVanzator && String(r.emailVanzator).toLowerCase() === String(me.email).toLowerCase()); }
+function visible_(me, r) {
+  if (me.rol === 'admin') return true;
+  if (owner_(me, r)) return true;
+  if (me.rol === 'operator') return ['avans','incarcat','acte','pdi'].indexOf(r.etapa) >= 0;
+  return false;
+}
+function hist_(nr, et, de, det) { tab_(HIST, HCOLS, false).appendRow([nowIso(), nr, et, (ET[et] || {}).l || et, de, det || '']); }
+function list_(me) {
+  const rows = rowsAll_().rows.filter(r => visible_(me, r));
+  const nrs = {}; rows.forEach(r => nrs[r.nr] = true);
+  const hs = tab_(HIST, HCOLS, false); const n = hs.getLastRow(); const ist = {};
+  if (n > 1) hs.getRange(2, 1, n - 1, HCOLS.length).getValues().forEach(h => {
+    if (!nrs[h[1]]) return; (ist[h[1]] = ist[h[1]] || []).push({ data: h[0] instanceof Date ? h[0].toISOString() : String(h[0]), etapa: h[2], eticheta: h[3], de: h[4], detalii: h[5] });
+  });
+  rows.forEach(r => { r.ist = ist[r.nr] || []; delete r._row; });
+  return { rows, me: pub_(me) };
+}
+function getRow_(nr) { const a = rowsAll_(); const r = a.rows.find(x => String(x.nr) === String(nr)); if (!r) throw new Error('Oferta ' + nr + ' nu există'); return { sh: a.sh, r, all: a.rows }; }
 
-function save(rec, req) {
-  req = req || {};
-  const sh = sheet(); const row = findRow(sh, rec.nr);
-  if (row > 0) { // oferta re-generată: păstrăm statusul, alocarea și starea e-mailului
-    const cur = sh.getRange(row, 1, 1, COLS.length).getValues()[0];
-    rec.status = cur[COLS.indexOf('status')] || rec.status; rec.motiv = cur[COLS.indexOf('motiv')] || '';
-    ['alocare','vin','alocatDe','alocatLa','notificat','feedback','pdfLink','emailOferta'].forEach(c => { rec[c] = cur[COLS.indexOf(c)] || ''; });
+const KEEP = ['vanzator','emailVanzator','vanzatorUser','status','etapa','etapaLa','motiv','alocare','vin','alocatDe','alocatLa','notificat','feedback',
+  'proformaNr','proformaData','facturaAvansNr','dataIncasare','comision','comisionNota','comisionPlatit','livratLa','pdfLink','emailOferta','data','valabilaPana'];
+function save_(me, rec, req) {
+  const a = rowsAll_(); const cur = a.rows.find(x => String(x.nr) === String(rec.nr));
+  const o = {};
+  COLS.forEach(c => o[c] = rec[c]);
+  if (cur) {
+    if (!(me.rol === 'admin' || owner_(me, cur))) throw new Error('Poți modifica doar ofertele tale');
+    if (['ofertata','negociere','cerere'].indexOf(cur.etapa) < 0 && me.rol !== 'admin') throw new Error('Oferta a trecut în etapa „' + ET[cur.etapa].l + '” și nu mai poate fi modificată');
+    KEEP.forEach(c => o[c] = cur[c]); o._row = cur._row;
+    if (rec.valabilaPana && ['ofertata','negociere'].indexOf(cur.etapa) >= 0) o.valabilaPana = rec.valabilaPana;
+  } else {
+    KEEP.forEach(c => { if (c !== 'data' && c !== 'valabilaPana') o[c] = ''; });
+    o.vanzator = me.nume; o.emailVanzator = me.email; o.vanzatorUser = me.user;
+    o.etapa = 'ofertata'; o.status = ET.ofertata.l; o.etapaLa = nowIso(); o.alocare = ''; o.vin = '';
   }
+  o.actualizat = nowIso();
   const res = {};
   if (req.pdf) {
     try {
       const name = (req.pdfName || ('Oferta ' + rec.nr + '.pdf')).replace(/[\\/:*?"<>|]/g, '-');
       const blob = Utilities.newBlob(Utilities.base64Decode(req.pdf), 'application/pdf', name);
       const file = folder_().createFile(blob);
-      rec.pdfLink = file.getUrl(); res.pdfLink = rec.pdfLink;
-      if (!rec.emailOferta) { trimiteOfertaNoua_(rec, blob); rec.emailOferta = new Date().toISOString(); res.emailTrimis = true; }
+      o.pdfLink = file.getUrl(); res.pdfLink = o.pdfLink;
+      if (!o.emailOferta) { trimiteOfertaNoua_(o, blob); o.emailOferta = nowIso(); res.emailTrimis = true; }
     } catch (err) { res.emailEroare = String(err); }
   }
-  const vals = [COLS.map(c => rec[c] === undefined ? '' : rec[c])];
-  sh.getRange(row > 0 ? row : sh.getLastRow() + 1, 1, 1, COLS.length).setNumberFormat('@').setValues(vals);
+  writeRow_(a.sh, o);
+  if (!cur) hist_(o.nr, 'ofertata', me.nume, 'Ofertă emisă · ' + (o.model || '') + ' · ' + eur_(o.totalCuTVA) + ' cu TVA');
   return res;
 }
 
-function lei_(x) { const n = Number(x); return isNaN(n) || !x ? '' : n.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'; }
+function validDate_(s) { return /^\d{4}-\d\d-\d\d$/.test(String(s || '')); }
+function etapa_(me, nr, t, d) {
+  const g = getRow_(nr); const r = g.r; const cur = r.etapa; const T = ET[t];
+  if (!T) throw new Error('Etapă necunoscută');
+  if (t === 'alocata') throw new Error('Seria se alocă din ecranul de alocare');
+  const isAdm = me.rol === 'admin', isOwn = owner_(me, r), isOp = me.rol === 'operator';
+  const inFlow = (ET[cur].next || []).indexOf(t) >= 0;
+  const canCancel = t === 'anulata' && isAdm && ['finalizata','anulata','pierduta'].indexOf(cur) < 0;
+  if (!inFlow && !canCancel) throw new Error('Din etapa „' + ET[cur].l + '” nu se poate trece în „' + T.l + '”');
+  if (T.who === 'v' && !(isOwn || isAdm)) throw new Error('Această etapă o validează vânzătorul ofertei');
+  if (T.who === 'o' && !(isOp || isAdm)) throw new Error('Această etapă o validează administratorul');
+  if (T.who === 'a' && !isAdm) throw new Error('Doar administratorii pot face asta');
+  (T.req || []).forEach(f => { if (!String(d[f] || '').trim()) throw new Error('Completează câmpul obligatoriu: ' + ({ proformaNr: 'numărul proformei', proformaData: 'data proformei', facturaAvansNr: 'numărul facturii de avans', dataIncasare: 'data încasării avansului', motiv: 'motivul' }[f] || f)); });
+  ['proformaData','dataIncasare'].forEach(f => { if (d[f] && !validDate_(d[f])) throw new Error('Dată invalidă'); if (d[f] && d[f] > azi()) throw new Error('Data nu poate fi în viitor'); });
+  let det = String(d.nota || '').trim();
+  if (t === 'proforma') { r.proformaNr = String(d.proformaNr).trim(); r.proformaData = d.proformaData; det = 'Proformă ' + r.proformaNr + ' din ' + fdt_(r.proformaData) + (det ? ' · ' + det : ''); }
+  if (t === 'avans') { r.facturaAvansNr = String(d.facturaAvansNr).trim(); r.dataIncasare = d.dataIncasare; det = 'Factură avans ' + r.facturaAvansNr + ', încasat ' + fdt_(r.dataIncasare) + (det ? ' · ' + det : ''); }
+  if (t === 'cerere') r.alocare = 'Cerută';
+  if (t === 'negociere' && String(r.valabilaPana) < azi()) { const x = new Date(); x.setDate(x.getDate() + 7); r.valabilaPana = Utilities.formatDate(x, 'Europe/Bucharest', 'yyyy-MM-dd'); r.notificat = ''; }
+  if (t === 'pierduta' || t === 'anulata') {
+    r.motiv = String(d.motiv).trim(); det = r.motiv + (det ? ' · ' + det : '');
+    if (r.vin) { det += ' · seria ' + r.vin + ' eliberată'; r.alocare = ''; r.vin = ''; }
+  }
+  if (t === 'finalizata') r.livratLa = d.data && validDate_(d.data) ? d.data : azi();
+  r.etapa = t; r.status = T.l; r.etapaLa = nowIso(); r.actualizat = nowIso();
+  writeRow_(g.sh, r); hist_(r.nr, t, me.nume, det);
+  notify_(t, r, me, det);
+  return { etapa: t };
+}
+function aloc_(me, nr, vin) {
+  if (me.rol !== 'admin') throw new Error('Doar administratorii pot aloca serii');
+  const g = getRow_(nr); const r = g.r;
+  if (vin) {
+    if (['ofertata','negociere','cerere','alocata'].indexOf(r.etapa) < 0) throw new Error('Oferta este în etapa „' + ET[r.etapa].l + '” – seria nu mai poate fi schimbată de aici');
+    const other = g.all.find(x => x.vin === vin && x.alocare === 'Alocată' && String(x.nr) !== String(nr) && ['pierduta','anulata'].indexOf(x.etapa) < 0);
+    if (other) throw new Error('Seria ' + vin + ' este deja alocată pe oferta ' + other.nr);
+    r.alocare = 'Alocată'; r.vin = vin; r.alocatDe = me.nume; r.alocatLa = nowIso();
+    r.etapa = 'alocata'; r.status = ET.alocata.l; r.etapaLa = nowIso(); r.actualizat = nowIso();
+    writeRow_(g.sh, r); hist_(nr, 'alocata', me.nume, 'Seria ' + vin);
+    notify_('alocata', r, me, 'Seria ' + vin);
+  } else {
+    if (r.etapa !== 'alocata') throw new Error('Alocarea se poate anula doar înainte de emiterea proformei');
+    const old = r.vin; r.alocare = 'Cerută'; r.vin = ''; r.alocatDe = ''; r.alocatLa = '';
+    r.etapa = 'cerere'; r.status = ET.cerere.l; r.etapaLa = nowIso(); r.actualizat = nowIso();
+    writeRow_(g.sh, r); hist_(nr, 'cerere', me.nume, 'Alocare anulată (seria ' + old + ' eliberată)');
+  }
+  return {};
+}
+function comision_(me, nr, d) {
+  if (me.rol !== 'admin') throw new Error('Doar administratorii setează comisioane');
+  const g = getRow_(nr); const r = g.r;
+  const v = String(d.comision == null ? '' : d.comision).replace(',', '.').trim();
+  if (v && isNaN(Number(v))) throw new Error('Comision invalid');
+  if (d.comisionPlatit && !validDate_(d.comisionPlatit)) throw new Error('Data plății invalidă');
+  r.comision = v; r.comisionNota = String(d.comisionNota || '').trim(); r.comisionPlatit = d.comisionPlatit || ''; r.actualizat = nowIso();
+  writeRow_(g.sh, r); hist_(nr, 'comision', me.nume, 'Comision ' + (v ? eur_(v) : 'șters') + (r.comisionPlatit ? ' · plătit ' + fdt_(r.comisionPlatit) : ''));
+  return {};
+}
 
+/* ---------------- utilizatori ---------------- */
+function usersPub_() {
+  const fixed = Object.keys(ADMINS).map(k => pub_(user_(k)));
+  return fixed.concat(usersAll_().map(pub_));
+}
+function credMail_(u, pass) {
+  mail_(u.email, 'Cont Ofertare FOTON – ' + u.nume,
+    '<p>Bună ziua, ' + esc_(u.nume) + ',</p><p>Ți-a fost creat contul în aplicația de ofertare <b>Foton by Inter Cargo</b>.</p>' +
+    '<table><tr><td style="color:#666;padding-right:12px">Adresă</td><td><a href="' + APP_URL + '">' + APP_URL + '</a></td></tr>' +
+    '<tr><td style="color:#666;padding-right:12px">Utilizator</td><td><b>' + esc_(u.user) + '</b></td></tr>' +
+    '<tr><td style="color:#666;padding-right:12px">Parolă</td><td><b>' + esc_(pass) + '</b></td></tr></table>' +
+    '<p>După prima autentificare îți poți schimba parola din ⚙ Setări.</p>');
+}
+function userSave_(me, u, trimite) {
+  const user = lc_(u.user); const sh = tab_(USERS, UCOLS, false);
+  if (!/^[a-z0-9_-]{2,30}$/.test(user)) throw new Error('Utilizator invalid (litere mici, cifre, - sau _)');
+  if (ADMINS[user]) throw new Error('Acest utilizator este rezervat');
+  if (!String(u.nume || '').trim()) throw new Error('Completează numele');
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(String(u.email || ''))) throw new Error('E-mail invalid');
+  const rol = ['vanzator','operator','admin'].indexOf(u.rol) >= 0 ? u.rol : 'vanzator';
+  const ex = usersAll_().find(x => x.user === user);
+  const res = {};
+  if (ex) {
+    sh.getRange(ex._row, 2, 1, 5).setValues([[String(u.nume).trim(), String(u.email).trim(), String(u.telefon || '').trim(), rol, u.activ === false ? false : true]]);
+  } else {
+    const pass = genPass_();
+    sh.appendRow([user, String(u.nume).trim(), String(u.email).trim(), String(u.telefon || '').trim(), rol, true, hashParola(user, pass), nowIso()]);
+    sh.getRange(sh.getLastRow(), 4).setNumberFormat('@').setValue(String(u.telefon || '').trim());
+    res.parola = pass;
+    if (trimite) { credMail_({ user, nume: u.nume, email: u.email }, pass); res.trimis = true; }
+  }
+  return res;
+}
+function userReset_(me, user, trimite) {
+  user = lc_(user); if (ADMINS[user] && user !== me.user) throw new Error('Parola unui administrator fix o schimbă doar el');
+  const pass = genPass_();
+  if (ADMINS[user]) PROPS.setProperty('PW_' + user, hashParola(user, pass));
+  else {
+    const ex = usersAll_().find(x => x.user === user); if (!ex) throw new Error('Utilizator inexistent');
+    tab_(USERS, UCOLS, false).getRange(ex._row, UCOLS.indexOf('hash') + 1).setValue(hashParola(user, pass));
+    PROPS.deleteProperty('PW_' + user);
+    if (trimite) credMail_(ex, pass);
+  }
+  return { parola: pass, trimis: !!trimite };
+}
+function parola_(me, vechi, noua) {
+  if (!checkPass_(me.user, vechi)) throw new Error('Parola actuală este greșită');
+  if (String(noua || '').length < 8) throw new Error('Parola nouă trebuie să aibă minim 8 caractere');
+  PROPS.setProperty('PW_' + me.user, hashParola(me.user, String(noua)));
+  return {};
+}
+function telefon_(me, tel) {
+  tel = String(tel || '').trim();
+  if (ADMINS[me.user]) PROPS.setProperty('TEL_' + me.user, tel);
+  else { const ex = usersAll_().find(x => x.user === me.user); tab_(USERS, UCOLS, false).getRange(ex._row, UCOLS.indexOf('telefon') + 1).setNumberFormat('@').setValue(tel); }
+  return {};
+}
+
+/* ---------------- e-mailuri ---------------- */
+function mail_(to, subj, html, cc) {
+  if (!to) return;
+  const opt = { htmlBody: '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222">' + html +
+    '<p style="margin-top:18px"><a href="' + APP_URL + '" style="background:#3A4759;color:#fff;padding:9px 14px;border-radius:6px;text-decoration:none">Deschide aplicația de ofertare</a></p>' +
+    '<p style="color:#888;font-size:12px">Inter Cargo Grup · Foton by Inter Cargo</p></div>', name: SENDER };
+  if (cc) opt.cc = cc;
+  try { MailApp.sendEmail(to, subj, html.replace(/<[^>]+>/g, ' '), opt); } catch (e) { Logger.log('mail: ' + e); }
+}
+function rez_(r) {
+  const rand = (k, v) => v ? '<tr><td style="padding:3px 12px 3px 0;color:#666">' + k + '</td><td style="padding:3px 0"><b>' + esc_(v) + '</b></td></tr>' : '';
+  return '<table style="border-collapse:collapse">' + rand('Nr. ofertă', r.nr) + rand('Vânzător', r.vanzator) + rand('Client', r.client) + rand('Model', r.model) +
+    rand('Culoare', r.culoare) + rand('Serie (VIN)', r.vin) + rand('Total cu TVA', eur_(r.totalCuTVA)) + rand('Etapă', ET[r.etapa] ? ET[r.etapa].l : r.status) + '</table>';
+}
+function notify_(t, r, by, det) {
+  const adm = OFERTA_NOUA_CATRE, vz = r.emailVanzator; const cl = r.client || '';
+  const L = ET[t].l;
+  if (t === 'cerere') mail_(adm, 'Cerere alocare serie – ' + r.vanzator + ' – ' + cl, '<p>Clientul a acceptat oferta. Vânzătorul cere alocarea unei serii din Stoc DBK.</p>' + rez_(r));
+  else if (t === 'alocata') mail_(vz, 'Serie alocată ' + r.vin + ' – ' + cl + ': emite proforma de avans', '<p>Seria <b>' + esc_(r.vin) + '</b> a fost alocată pe oferta ta. Pasul următor: emite proforma de avans și trece în aplicație numărul proformei.</p>' + rez_(r));
+  else if (t === 'proforma') mail_(adm, 'Proformă avans emisă – ' + r.vanzator + ' – ' + cl, '<p>' + esc_(det) + '</p>' + rez_(r));
+  else if (t === 'avans') mail_(adm, 'Comandă plasată – avans încasat – ' + r.vanzator + ' – ' + cl, '<p>' + esc_(det) + '</p>' + rez_(r), vz);
+  else if (['incarcat','acte','pdi','finalizata'].indexOf(t) >= 0) mail_(vz, L + ' – ' + cl + ' (' + r.nr + ')', '<p>Comanda clientului tău a trecut în etapa <b>' + esc_(L) + '</b>.' + (det ? ' ' + esc_(det) : '') + '</p>' + rez_(r));
+  else if (t === 'pierduta' || t === 'anulata') {
+    if (by.rol === 'admin' && by.user !== r.vanzatorUser) mail_(vz, 'Ofertă ' + L.toLowerCase() + ' – ' + cl + ' (' + r.nr + ')', '<p>' + esc_(det) + '</p>' + rez_(r));
+    else mail_(adm, 'Ofertă ' + L.toLowerCase() + ' – ' + r.vanzator + ' – ' + cl, '<p>Motiv: ' + esc_(det) + '</p>' + rez_(r));
+  }
+}
 function trimiteOfertaNoua_(r, blob, catre) {
   const subiect = 'Ofertă nouă – ' + (r.vanzator || 'vânzător') + ' – ' + (r.client || 'client');
   const rand = (k, v) => v ? '<tr><td style="padding:3px 12px 3px 0;color:#666">' + k + '</td><td style="padding:3px 0"><b>' + esc_(v) + '</b></td></tr>' : '';
@@ -136,93 +383,97 @@ function trimiteOfertaNoua_(r, blob, catre) {
     '<p>A fost emisă o ofertă nouă în aplicația Foton by Inter Cargo.</p><table style="border-collapse:collapse">' +
     rand('Nr. ofertă', r.nr) + rand('Vânzător', r.vanzator) + rand('Client', r.client) + rand('CUI', r.cui) +
     rand('Telefon client', r.telefon) + rand('Model', r.model) + rand('Culoare', r.culoare) +
-    rand('Total fără TVA', lei_(r.totalFaraTVA)) + rand('Total cu TVA', lei_(r.totalCuTVA)) +
-    rand('Termen livrare', r.termen) + rand('Valabilă până la', r.valabilaPana) +
+    rand('Total fără TVA', eur_(r.totalFaraTVA)) + rand('Total cu TVA', eur_(r.totalCuTVA)) +
+    rand('Termen livrare', r.termen) + rand('Valabilă până la', fdt_(r.valabilaPana)) +
     '</table><p>Oferta este atașată în PDF' + (r.pdfLink ? ' și salvată în <a href="' + r.pdfLink + '">Drive</a>' : '') + '.</p></div>';
-  const opt = { htmlBody: html, attachments: [blob], name: 'FOTON ROMANIA OFERTARE' };
+  const opt = { htmlBody: html, attachments: [blob], name: SENDER };
   if (r.emailVanzator) opt.replyTo = r.emailVanzator;
   MailApp.sendEmail(catre || OFERTA_NOUA_CATRE, subiect, 'Ofertă nouă ' + r.nr + ' – PDF atașat.', opt);
 }
-
-function setStatus(nr, status, motiv) {
-  const sh = sheet(); const row = findRow(sh, nr); if (row < 0) throw new Error('Oferta ' + nr + ' nu există');
-  sh.getRange(row, COLS.indexOf('status') + 1).setValue(status);
-  sh.getRange(row, COLS.indexOf('motiv') + 1).setValue(motiv || '');
-  sh.getRange(row, COLS.indexOf('actualizat') + 1).setValue(new Date().toISOString());
+/** Test manual: e-mail „Ofertă nouă” de probă doar către primul administrator. */
+function testEmailOferta() {
+  const blob = Utilities.newBlob('<h1>Ofertă de test</h1>', 'text/html', 'test.html').getAs('application/pdf').setName('Oferta TEST.pdf');
+  trimiteOfertaNoua_({ nr: 'ICG-OF-TEST', vanzator: 'Vânzător Test', client: 'Client Test SRL', model: 'FOTON Tunland V9', totalCuTVA: 48400 }, blob, OFERTA_NOUA_CATRE.split(',')[0]);
 }
 
-function setAlloc(nr, alocare, vin, de) {
-  const sh = sheet(); const row = findRow(sh, nr); if (row < 0) throw new Error('Oferta ' + nr + ' nu există');
-  if (alocare === 'Alocată' && vin) { // aceeași serie nu poate fi alocată pe două oferte
-    const all = list(); const other = all.find(r => r.vin === vin && r.alocare === 'Alocată' && String(r.nr) !== String(nr));
-    if (other) throw new Error('Seria ' + vin + ' este deja alocată pe oferta ' + other.nr);
-  }
-  const set = (c, v) => sh.getRange(row, COLS.indexOf(c) + 1).setValue(v);
-  set('alocare', alocare || ''); set('vin', vin || ''); set('alocatDe', de || '');
-  set('alocatLa', alocare === 'Alocată' ? new Date().toISOString() : ''); set('actualizat', new Date().toISOString());
-}
-
-// ---------------- expirare + feedback ----------------
-function azi() { return Utilities.formatDate(new Date(), 'Europe/Bucharest', 'yyyy-MM-dd'); }
+/* ---------------- verificare zilnică (trigger ora 8) ---------------- */
 function cheie(nr) { return Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(String(nr), TOKEN)).slice(0, 16); }
-
-/** Rulează zilnic (trigger creat de setup). Trimite e-mail vânzătorului pentru fiecare ofertă expirată fără răspuns. */
+function zileLucr_(iso) { // zile lucrătoare scurse de la iso până azi
+  const a = new Date(iso); if (isNaN(a)) return 0; const b = new Date(); let n = 0; const d = new Date(a);
+  d.setHours(0, 0, 0, 0); b.setHours(0, 0, 0, 0);
+  while (d < b) { d.setDate(d.getDate() + 1); const w = d.getDay(); if (w !== 0 && w !== 6) n++; }
+  return n;
+}
 function verificaExpirate() {
-  const sh = sheet(); const rows = list(); const url = ScriptApp.getService().getUrl(); const today = azi();
-  rows.forEach(r => {
-    const deschisa = r.status === 'Trimisă' || r.status === 'În negociere';
-    if (!deschisa || !r.valabilaPana || String(r.valabilaPana) >= today || r.notificat || !r.emailVanzator) return;
-    const link = url + '?action=feedback&nr=' + encodeURIComponent(r.nr) + '&k=' + cheie(r.nr);
-    const html = '<p>Bună ziua, ' + esc_(r.vanzator) + ',</p>' +
-      '<p>Oferta <b>' + esc_(r.nr) + '</b> pentru <b>' + esc_(r.client) + '</b> (' + esc_(r.model) + ', ' + esc_(r.totalCuTVA) + ' € cu TVA) a expirat pe ' + esc_(r.valabilaPana) + '.</p>' +
-      '<p>Te rugăm să ne spui ce a răspuns clientul: a acceptat oferta, a refuzat-o (și de ce) sau negocierea continuă.</p>' +
-      '<p><a href="' + link + '" style="background:#3A4759;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none">Trimite feedback</a></p>' +
-      '<p style="color:#666;font-size:12px">Inter Cargo Grup · aplicația Foton by Inter Cargo</p>';
-    const opt = { htmlBody: html, name: 'FOTON ROMANIA OFERTARE' }; if (ADMIN_EMAILS) opt.cc = ADMIN_EMAILS;
-    MailApp.sendEmail(r.emailVanzator, 'Ofertă expirată ' + r.nr + ' – ' + r.client + ': ce a răspuns clientul?', 'Oferta ' + r.nr + ' a expirat. Trimite feedback: ' + link, opt);
-    const row = findRow(sh, r.nr); sh.getRange(row, COLS.indexOf('notificat') + 1).setValue(new Date().toISOString());
+  const g = rowsAll_(); const url = ScriptApp.getService().getUrl(); const today = azi();
+  const wd = new Date().getDay(); const lucru = wd !== 0 && wd !== 6;
+  const cereri = [];
+  g.rows.forEach(r => {
+    // 1. ofertă expirată fără răspuns → feedback de la vânzător
+    if (['ofertata','negociere'].indexOf(r.etapa) >= 0 && r.valabilaPana && String(r.valabilaPana) < today && !r.notificat && r.emailVanzator) {
+      const link = url + '?action=feedback&nr=' + encodeURIComponent(r.nr) + '&k=' + cheie(r.nr);
+      const html = '<p>Bună ziua, ' + esc_(r.vanzator) + ',</p><p>Oferta <b>' + esc_(r.nr) + '</b> pentru <b>' + esc_(r.client) + '</b> (' + esc_(r.model) + ', ' + eur_(r.totalCuTVA) + ' cu TVA) a expirat pe ' + fdt_(r.valabilaPana) + '.</p>' +
+        '<p>Spune-ne ce a răspuns clientul: a acceptat (ceri alocare serie), a refuzat (și de ce) sau negocierea continuă.</p>' +
+        '<p><a href="' + link + '" style="background:#05C3DE;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none">Trimite feedback</a></p>';
+      mail_(r.emailVanzator, 'Ofertă expirată ' + r.nr + ' – ' + r.client + ': ce a răspuns clientul?', html, ADMIN_EMAILS || null);
+      r.notificat = nowIso(); writeRow_(g.sh, r);
+    }
+    if (!lucru) return;
+    const z = zileLucr_(r.etapaLa);
+    // 2. serie alocată, fără proformă după 2 zile lucrătoare
+    if (r.etapa === 'alocata' && z >= 2) mail_(r.emailVanzator, 'Reamintire: emite proforma de avans – ' + r.client + ' (' + r.nr + ')',
+      '<p>Seria <b>' + esc_(r.vin) + '</b> este alocată de ' + z + ' zile lucrătoare pe oferta ta, dar proforma de avans nu este trecută în aplicație.</p><p>Emite proforma și completează numărul ei în aplicație (Arhivă → oferta → Etape).</p>' + rez_(r), z >= 4 ? OFERTA_NOUA_CATRE : null);
+    // 3. proformă emisă, avans neîncasat după 5 zile lucrătoare
+    if (r.etapa === 'proforma' && z >= 5) mail_(r.emailVanzator, 'Reamintire: avans neîncasat – ' + r.client + ' (' + r.nr + ')',
+      '<p>Proforma ' + esc_(r.proformaNr) + ' a fost emisă acum ' + z + ' zile lucrătoare, iar avansul nu este marcat ca încasat.</p><p>Verifică plata cu clientul. După încasare, trece în aplicație numărul facturii de avans și data încasării.</p>' + rez_(r), OFERTA_NOUA_CATRE);
+    // 4. cereri de alocare în așteptare
+    if (r.etapa === 'cerere' && z >= 1) cereri.push(r);
   });
+  if (cereri.length && lucru) mail_(OFERTA_NOUA_CATRE, 'Cereri de alocare serie în așteptare: ' + cereri.length,
+    '<p>Aceste oferte așteaptă alocarea unei serii din Stoc DBK:</p><ul>' + cereri.map(r => '<li><b>' + esc_(r.nr) + '</b> – ' + esc_(r.vanzator) + ' – ' + esc_(r.client) + ' – ' + esc_(r.model) + ' (' + esc_(r.culoare) + ')</li>').join('') + '</ul>');
 }
 
+/* ---------------- formular feedback (link din e-mail) ---------------- */
 function doGet(e) {
   const p = e.parameter || {};
   if (p.action !== 'feedback') return HtmlService.createHtmlOutput('Foton by Inter Cargo');
   if (p.k !== cheie(p.nr)) return HtmlService.createHtmlOutput('Link invalid.');
-  const r = list().find(x => String(x.nr) === String(p.nr)); if (!r) return HtmlService.createHtmlOutput('Oferta nu există.');
+  let r; try { r = getRow_(p.nr).r; } catch (err) { return HtmlService.createHtmlOutput('Oferta nu există.'); }
+  const deschisa = ['ofertata','negociere'].indexOf(r.etapa) >= 0;
   const motive = ['Preț','Termen de livrare','A ales concurența','Finanțare / leasing','Clientul a renunțat','Fără răspuns','Altul'];
-  const h = '<meta name="viewport" content="width=device-width,initial-scale=1"><div style="font-family:Arial;max-width:520px;margin:20px auto;padding:0 14px">' +
+  const h = '<div style="font-family:Arial;max-width:520px;margin:20px auto;padding:0 14px">' +
     '<h2 style="color:#3A4759">Feedback ofertă ' + esc_(r.nr) + '</h2><p>' + esc_(r.client) + ' · ' + esc_(r.model) + ' · vânzător ' + esc_(r.vanzator) + '</p>' +
-    (r.feedback ? '<p style="background:#e3f2ea;padding:10px">Feedback deja trimis: ' + esc_(r.feedback) + '</p>' : '') +
-    '<form id="f" onsubmit="event.preventDefault();var f=this;var d={nr:f.nr.value,k:f.k.value,rez:(f.querySelector(\'input[name=rez]:checked\')||{}).value,motiv:f.motiv.value,com:f.com.value};f.querySelector(\'button\').disabled=true;google.script.run.withSuccessHandler(function(m){document.body.innerHTML=\'<h2 style=&quot;font-family:Arial;color:#3A4759;max-width:520px;margin:30px auto&quot;>\'+m+\'</h2>\'}).salveazaFeedback(d)"><input type="hidden" name="nr" value="' + esc_(r.nr) + '"><input type="hidden" name="k" value="' + esc_(p.k) + '">' +
+    (!deschisa ? '<p style="background:#e3f2ea;padding:10px">Oferta este deja în etapa: <b>' + esc_(ET[r.etapa].l) + '</b>.</p></div>' :
+    '<form id="f" onsubmit="event.preventDefault();var f=this;var d={nr:f.nr.value,k:f.k.value,rez:(f.querySelector(\'input[name=rez]:checked\')||{}).value,motiv:f.motiv.value,com:f.com.value};if(d.rez===\'pierduta\'&&!d.motiv){alert(\'Alege motivul refuzului.\');return}f.querySelector(\'button\').disabled=true;google.script.run.withSuccessHandler(function(m){document.body.innerHTML=\'<h2 style=&quot;font-family:Arial;color:#3A4759;max-width:520px;margin:30px auto&quot;>\'+m+\'</h2>\'}).salveazaFeedback(d)"><input type="hidden" name="nr" value="' + esc_(r.nr) + '"><input type="hidden" name="k" value="' + esc_(p.k) + '">' +
     '<p><b>Răspunsul clientului</b><br>' +
-    '<label><input type="radio" name="rez" value="Câștigată" required> A acceptat oferta (comandă)</label><br>' +
-    '<label><input type="radio" name="rez" value="Pierdută"> A refuzat oferta</label><br>' +
-    '<label><input type="radio" name="rez" value="În negociere"> Negocierea continuă</label></p>' +
-    '<p><b>Motiv refuz</b> (dacă e cazul)<br><select name="motiv" style="width:100%;padding:8px"><option value="">–</option>' + motive.map(m => '<option>' + m + '</option>').join('') + '</select></p>' +
+    '<label><input type="radio" name="rez" value="cerere" required> A acceptat oferta – cer alocare serie</label><br>' +
+    '<label><input type="radio" name="rez" value="pierduta"> A refuzat oferta</label><br>' +
+    '<label><input type="radio" name="rez" value="negociere"> Negocierea continuă (+7 zile valabilitate)</label></p>' +
+    '<p><b>Motiv refuz</b> (obligatoriu la refuz)<br><select name="motiv" style="width:100%;padding:8px"><option value="">–</option>' + motive.map(m => '<option>' + m + '</option>').join('') + '</select></p>' +
     '<p><b>Comentariu</b><br><textarea name="com" rows="4" style="width:100%"></textarea></p>' +
-    '<button style="background:#3A4759;color:#fff;border:0;padding:12px 18px;border-radius:6px">Trimite</button></form></div>';
+    '<button style="background:#3A4759;color:#fff;border:0;padding:12px 18px;border-radius:6px">Trimite</button></form></div>');
   return HtmlService.createHtmlOutput(h).setTitle('Feedback ofertă').addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
-
 function salveazaFeedback(p) {
   if (p.k !== cheie(p.nr)) return 'Link invalid.';
-  const sh = sheet(); const row = findRow(sh, p.nr); if (row < 0) return 'Oferta nu există.';
-  const st = ['Câștigată','Pierdută','În negociere'].indexOf(p.rez) >= 0 ? p.rez : 'În negociere';
-  sh.getRange(row, COLS.indexOf('status') + 1).setValue(st);
-  sh.getRange(row, COLS.indexOf('motiv') + 1).setValue(st === 'Pierdută' ? (p.motiv || 'Nespecificat') : '');
-  sh.getRange(row, COLS.indexOf('feedback') + 1).setValue(azi() + ' · ' + st + (p.com ? ' · ' + p.com : ''));
-  sh.getRange(row, COLS.indexOf('actualizat') + 1).setValue(new Date().toISOString());
-  if (st === 'În negociere') { // prelungim oferta cu 7 zile; vânzătorul e întrebat din nou la noua expirare
-    const d = new Date(); d.setDate(d.getDate() + 7);
-    sh.getRange(row, COLS.indexOf('valabilaPana') + 1).setValue(Utilities.formatDate(d, 'Europe/Bucharest', 'yyyy-MM-dd'));
-    sh.getRange(row, COLS.indexOf('notificat') + 1).setValue('');
-  }
-  return 'Mulțumim! Feedback-ul pentru oferta ' + p.nr + ' a fost salvat: ' + st + '.';
+  const lock = LockService.getScriptLock(); lock.waitLock(20000);
+  try {
+    const r = getRow_(p.nr).r; const own = user_(r.vanzatorUser) || { user: r.vanzatorUser, nume: r.vanzator, email: r.emailVanzator, rol: 'vanzator' };
+    const t = ['cerere','pierduta','negociere'].indexOf(p.rez) >= 0 ? p.rez : 'negociere';
+    if (t === 'negociere' && r.etapa === 'negociere') { // prelungire
+      const g = getRow_(p.nr); const x = new Date(); x.setDate(x.getDate() + 7);
+      g.r.valabilaPana = Utilities.formatDate(x, 'Europe/Bucharest', 'yyyy-MM-dd'); g.r.notificat = ''; g.r.feedback = azi() + ' · negociere' + (p.com ? ' · ' + p.com : '');
+      writeRow_(g.sh, g.r); hist_(p.nr, 'negociere', own.nume, 'Feedback: negocierea continuă, +7 zile' + (p.com ? ' · ' + p.com : ''));
+    } else {
+      etapa_(Object.assign({}, own, { rol: 'vanzator', user: r.vanzatorUser || own.user }), p.nr, t, { motiv: p.motiv || '', nota: p.com || '' });
+      const g = getRow_(p.nr); g.r.feedback = azi() + ' · ' + ET[t].l + (p.com ? ' · ' + p.com : ''); writeRow_(g.sh, g.r);
+    }
+    return 'Mulțumim! Răspunsul pentru oferta ' + p.nr + ' a fost salvat: ' + ET[t].l + '.';
+  } catch (err) { return 'Nu s-a putut salva: ' + (err.message || err); }
+  finally { lock.releaseLock(); }
 }
 
-function esc_(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
-
-// ---------------- date firmă din ANAF (serviciul public PlatitorTvaRest v9) ----------------
+/* ---------------- ANAF ---------------- */
 function anaf(cui) {
   const n = String(cui || '').replace(/\D/g, ''); if (!n) return { ok: false, error: 'CUI invalid' };
   const res = UrlFetchApp.fetch('https://webservicesp.anaf.ro/api/PlatitorTvaRest/v9/tva', {
@@ -234,14 +485,4 @@ function anaf(cui) {
   const g = f.date_generale || {}; const tva = (f.inregistrare_scop_Tva || {}).scpTVA;
   return { ok: true, denumire: g.denumire || '', adresa: g.adresa || '', nrRegCom: g.nrRegCom || '', telefon: g.telefon || '',
     cui: (tva ? 'RO' : '') + n, platitorTva: !!tva, inactiv: !!(f.stare_inactiv || {}).statusInactivi };
-}
-
-function out(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
-
-/** Test manual: trimite un e-mail „Ofertă nouă” de probă DOAR către primul destinatar, cu un PDF de test. */
-function testEmailOferta() {
-  const blob = Utilities.newBlob('<h1>Ofertă de test</h1><p>Verificare e-mail Foton by Inter Cargo.</p>', 'text/html', 'test.html').getAs('application/pdf').setName('Oferta TEST - Vanzator Test - Client Test.pdf');
-  const r = { nr: 'ICG-OF-TEST', vanzator: 'Vânzător Test', client: 'Client Test SRL', model: 'FOTON Tunland V9', culoare: 'Alb', totalFaraTVA: 40000, totalCuTVA: 48400, termen: 'Din stoc', valabilaPana: azi() };
-  trimiteOfertaNoua_(r, blob, OFERTA_NOUA_CATRE.split(',')[0]);
-  Logger.log('Trimis test către ' + OFERTA_NOUA_CATRE.split(',')[0] + ' · e-mailuri rămase azi: ' + MailApp.getRemainingDailyQuota());
 }
