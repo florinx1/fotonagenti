@@ -3243,24 +3243,41 @@ async function renderOffer(){const M=S.model,t=totals(),img=await snapshot();if(
  const br=M.brand||'foton';const LS=k=>String(LOGO[k]).startsWith('data:')?LOGO[k]:'data:image/png;base64,'+LOGO[k];const wm='<img class="wm" src="'+LS(br+'E')+'" alt="">';
  const url=M.url||'https://www.fotonromania.com/';const qr=qrSrc(url);
  const head='<div class="oh"><img class="bl" src="'+LS(br)+'" alt="'+br.toUpperCase()+'"><div class="ttl"><div class="t">OFERTĂ</div><div class="sub">Nr. <b>'+OFNO+'</b><br>Data: '+f(d)+' · Valabilă până la: '+f(val)+'</div></div><div class="cr"><b>'+CO.name+'</b><br>'+CO.l1+'<br>'+CO.l2+'<br>'+CO.l3.replace(' · www.fotonromania.com','')+'</div></div>';
- const pfoot=p=>'<div class="pf"><img class="ic" src="'+LS('icg')+'" alt="Inter Cargo"><div class="site"><b>www.fotonromania.com</b><br>Oferta '+OFNO+' · pagina '+p+'/2</div><div class="qr"><span>Scanează și vezi<br><b>'+esc(M.short||M.name)+'</b><br>pe fotonromania.com</span><img src="'+qr+'" alt="QR"></div></div>';
+ const pfoot=p=>'<div class="pf"><img class="ic" src="'+LS('icg')+'" alt="Inter Cargo"><div class="site"><b>www.fotonromania.com</b><br>Oferta '+OFNO+' · pagina <span class="pnum">'+p+'</span></div><div class="qr"><span>Scanează și vezi<br><b>'+esc(M.short||M.name)+'</b><br>pe fotonromania.com</span><img src="'+qr+'" alt="QR"></div></div>';
  const foot_=p=>'<div class="ofoot"><span>'+CO.name+' · importator FOTON și CAVAN</span><span>Oferta '+OFNO+' · pagina '+p+'/2</span></div>';
  const spec=M.spec.map(([s,a])=>'<div><div class="ot" style="font-size:10.5pt;color:#111">'+s+'</div>'+kv(a)+'</div>').join('');
  $('doc').innerHTML='<div class="pg">'+wm+head+
- '<div class="o2" style="margin-top:10px"><div><div class="ot">Client</div>'+kv(cli)+'</div><div><div class="ot">Contact Inter Cargo</div>'+kv(vz)+'</div></div>'+
- '<div class="ot">Vehiculul ofertat</div><div class="veh"><img src="'+img+'"><div><div class="vn">'+esc(M.name)+'</div><div style="color:#444;margin-bottom:6px">'+esc(M.ds)+'</div>'+kv([['Culoare',S.color],['Garanție',$('dGar').value||M.gar],['Termen de livrare',term],['Loc livrare',$('dLoc').value]].concat($('vin').value?[['VIN',$('vin').value]]:[]))+'</div></div>'+
- (M.int&&M.int.length?'<div class="ot">'+(M.intTitle||'Interior')+'</div><div class="intr">'+M.int.map(k=>'<img src="data:image/jpeg;base64,'+IMG[k]+'" style="max-width:'+(M.intMax||'none')+(M.intFit?';object-fit:contain;height:auto;max-height:52mm;background:#fff':'')+'" alt="Interior '+esc(M.name)+'">').join('')+'</div>'+(M.intG?'<div class="intg" style="grid-template-columns:repeat('+M.intG.length+',1fr)">'+M.intG.map(k=>'<img src="data:image/jpeg;base64,'+IMG[k]+'" alt="">').join('')+'</div>':''):'')+
- (ac.length?'<div class="ot">Accesorii Tekmodi incluse</div>'+thumbs:'')+
+ '<div class="bk"><div class="o2" style="margin-top:10px"><div><div class="ot">Client</div>'+kv(cli)+'</div><div><div class="ot">Contact Inter Cargo</div>'+kv(vz)+'</div></div></div>'+
+ '<div class="bk"><div class="ot">Vehiculul ofertat</div><div class="veh"><img src="'+img+'"><div><div class="vn">'+esc(M.name)+'</div><div style="color:#444;margin-bottom:6px">'+esc(M.ds)+'</div>'+kv([['Culoare',S.color],['Garanție',$('dGar').value||M.gar],['Termen de livrare',term],['Loc livrare',$('dLoc').value]].concat($('vin').value?[['VIN',$('vin').value]]:[]))+'</div></div></div>'+
+ (M.int&&M.int.length?'<div class="bk bk-int"><div class="ot">'+(M.intTitle||'Interior')+'</div><div class="intr">'+M.int.map(k=>'<img src="data:image/jpeg;base64,'+IMG[k]+'" style="max-width:'+(M.intMax||'none')+(M.intFit?';object-fit:contain;height:auto;max-height:52mm;background:#fff':'')+'" alt="Interior '+esc(M.name)+'">').join('')+'</div>'+(M.intG?'<div class="intg" style="grid-template-columns:repeat('+M.intG.length+',1fr)">'+M.intG.map(k=>'<img src="data:image/jpeg;base64,'+IMG[k]+'" alt="">').join('')+'</div>':'')+'</div>':'')+
+ (ac.length?'<div class="bk"><div class="ot">Accesorii Tekmodi incluse</div>'+thumbs+'</div>':'')+
  (()=>{const P=t.P,rws=[];const pct=v=>P.L&&v<P.L?' <span style="color:#5a6472">(−'+(Math.round((1-v/P.L)*1000)/10).toLocaleString('ro-RO')+'%)</span>':'';
   if($('pL_s').checked&&P.L)rws.push(['Preț de listă',P.L,'']);if($('pD_s').checked&&P.D)rws.push(['Preț cu discount',P.D,pct(P.D)]);if($('pS_s').checked&&P.S)rws.push(['Preț cu suport importator',P.S,pct(P.S)]);
-  return rws.length?'<div class="ot">Preț vehicul</div><table class="pt"><tr><th>Treaptă de preț</th><th class="r">Fără TVA</th><th class="r">Cu TVA</th></tr>'+rws.map((r,i)=>'<tr'+(i===rws.length-1?' style="font-weight:600"':' class="s"')+'><td>'+r[0]+r[2]+'</td><td class="r">'+eur(r[1])+'</td><td class="r">'+eur(r[1]*(1+VAT))+'</td></tr>').join('')+'</table>':''})()+
- '<div class="ot">Total ofertă</div><table class="pt"><tr><th>Descriere</th><th class="r">Cant.</th><th class="r">Valoare fără TVA</th></tr>'+rows+'</table>'+
- '<div style="font-size:8.8pt;color:#444;margin-top:5px">Prețuri exprimate în EUR; plata se face în lei, la cursul BNR + 1% din ziua emiterii facturii. Avans la comandă: '+esc($('dAv').value||'20')+'% din totalul cu TVA ('+eur(t.gross*num($('dAv').value||20)/100)+').</div>'+
+  return rws.length?'<div class="bk"><div class="ot">Preț vehicul</div><table class="pt"><tr><th>Treaptă de preț</th><th class="r">Fără TVA</th><th class="r">Cu TVA</th></tr>'+rws.map((r,i)=>'<tr'+(i===rws.length-1?' style="font-weight:600"':' class="s"')+'><td>'+r[0]+r[2]+'</td><td class="r">'+eur(r[1])+'</td><td class="r">'+eur(r[1]*(1+VAT))+'</td></tr>').join('')+'</table></div>':''})()+
+ '<div class="bk"><div class="ot">Total ofertă</div><table class="pt"><tr><th>Descriere</th><th class="r">Cant.</th><th class="r">Valoare fără TVA</th></tr>'+rows+'</table>'+
+ '<div style="font-size:8.8pt;color:#444;margin-top:5px">Prețuri exprimate în EUR; plata se face în lei, la cursul BNR + 1% din ziua emiterii facturii. Avans la comandă: '+esc($('dAv').value||'20')+'% din totalul cu TVA ('+eur(t.gross*num($('dAv').value||20)/100)+').</div></div>'+
  pfoot(1)+'</div><div class="pg">'+wm+head+
- '<div class="ot">Date tehnice – '+esc(M.name)+'</div><div class="o2 sp">'+spec+'</div>'+
- '<div class="ot">Dotări de serie</div><ul class="dot">'+M.dot.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>'+
- '<div class="ot">Condiții de comandă</div><div class="cond">'+esc($('dCond').value)+'</div>'+
- '<div class="sig"><div>Pentru '+CO.name+'<br>'+esc($('vNume').value)+'</div><div>Client – nume, semnătură, ștampilă<br>Pentru acceptarea ofertei și plasarea comenzii</div></div>'+pfoot(2)+'</div>'}
+ '<div class="bk"><div class="ot">Date tehnice – '+esc(M.name)+'</div><div class="o2 sp">'+spec+'</div></div>'+
+ '<div class="bk"><div class="ot">Dotări de serie</div><ul class="dot">'+M.dot.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div>'+
+ '<div class="bk"><div class="ot">Condiții de comandă</div><div class="cond">'+esc($('dCond').value)+'</div></div>'+
+ '<div class="bk"><div class="sig"><div>Pentru '+CO.name+'<br>'+esc($('vNume').value)+'</div><div>Client – nume, semnătură, ștampilă<br>Pentru acceptarea ofertei și plasarea comenzii</div></div></div>'+pfoot(2)+'</div>';
+ await paginate()}
+/* așezare automată: ce nu încape pe o pagină trece pe următoarea */
+async function paginate(){const doc=$('doc');
+ await Promise.all([...doc.querySelectorAll('img')].map(i=>i.decode?i.decode().catch(()=>{}):0));try{await document.fonts.ready}catch(e){}
+ let pages=[...doc.querySelectorAll(':scope>.pg')];if(!pages.length)return;
+ const bks=pg=>[...pg.querySelectorAll(':scope>.bk')];
+ const over=pg=>{const b=bks(pg);if(!b.length)return false;const lim=pg.querySelector(':scope>.pf').getBoundingClientRect().top-8;return b[b.length-1].getBoundingClientRect().bottom>lim};
+ const mk=()=>{const src=pages[0],pg=document.createElement('div');pg.className='pg';[':scope>.wm',':scope>.oh',':scope>.pf'].forEach(s=>{const e=src.querySelector(s);if(e)pg.appendChild(e.cloneNode(true))});return pg};
+ const first=(pg)=>bks(pg)[0]||pg.querySelector(':scope>.pf');
+ // 1. interiorul trece primul pe pagina următoare, ca prețurile să rămână pe prima pagină
+ if(over(pages[0])){const it=pages[0].querySelector(':scope>.bk-int');if(it&&pages[1])pages[1].insertBefore(it,first(pages[1]))}
+ for(let i=0;i<pages.length;i++){let g=0;
+  while(over(pages[i])&&g++<30){const b=bks(pages[i]);if(b.length<=1)break;
+   if(!pages[i+1]){const n=mk();pages[i].after(n);pages.splice(i+1,0,n)}
+   pages[i+1].insertBefore(b[b.length-1],first(pages[i+1]))}}
+ pages=[...doc.querySelectorAll(':scope>.pg')].filter(pg=>{if(!bks(pg).length&&pg!==doc.querySelector('.pg')){pg.remove();return false}return true});
+ pages.forEach((pg,i)=>{const n=pg.querySelector('.pnum');if(n)n.textContent=(i+1)+'/'+pages.length})}
 $('printBtn').onclick=()=>{const old=document.title;document.title='Oferta '+OFNO+' - '+($('vNume').value||'')+' - '+($('cNume').value||'');setTimeout(()=>{document.title=old},4000);$('printMsg').textContent='';try{window.print()}catch(e){}setTimeout(()=>{$('printMsg').textContent='Dacă fereastra de printare nu s-a deschis, deschide pagina în aplicația Inter Cargo sau ca fișier HTML în Chrome: în previzualizarea de aici printarea poate fi blocată.'},800)};
 
 /* nav + validation */
