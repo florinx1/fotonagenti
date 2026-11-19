@@ -547,3 +547,18 @@ input[readonly] { background: var(--gridline); color: var(--text-secondary); }
 @media(max-width:620px){.home-tile--hero{flex-direction:column;align-items:flex-start;gap:12px;background:linear-gradient(160deg,#3A4759 0%,#3A4759 60%,#33404f 60.2%)}
  .home-hero-logo{height:96px;align-self:flex-end;margin:-6px 0 0}.home-tile--hero .home-tile-arrow{position:absolute;left:20px;bottom:20px}}
 @media(min-width:760px){.home-menu>.home-tile:not(.home-tile--photo):not(.home-tile--hero) .home-tile-arrow{top:31px;bottom:auto;right:18px}}
+
+/* bannere cu logo: raportare (Inter Cargo), accesorii (Tekmodi), fișe tehnice (FOTON) */
+.home-tile--brand{border:0;color:#fff;min-height:190px;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:16px;padding:20px 18px;
+  background:linear-gradient(115deg,#3A4759 0%,#3A4759 55%,#33404f 55.2%,#33404f 75%,#2e3a48 75.2%)}
+.home-tile--brand .home-tile-kicker{color:#05C3DE}
+.home-tile--brand .home-tile-title{color:#fff;font-size:17px;letter-spacing:.03em;font-weight:800;text-transform:uppercase}
+.home-tile--brand .home-tile-sub{color:rgba(255,255,255,.82)}
+.home-tile--brand .home-tile-text{padding-right:40px}
+.home-brand-logo{align-self:flex-end;height:46px;width:auto;max-width:72%;object-fit:contain;opacity:.95}
+.home-tile--tunland .home-brand-logo{height:72px}
+.home-tile--fise .home-brand-logo{height:40px}
+.home-tile--brand .home-tile-arrow{position:absolute;top:18px;right:16px;background:rgba(255,255,255,.9);color:#3A4759}
+.home-tile--brand:hover{box-shadow:0 10px 26px rgba(58,71,89,.28)}.home-tile--brand:hover .home-tile-arrow{background:#05C3DE;color:#fff}
+@media(min-width:760px){.home-menu>.home-tile.home-tile--brand{flex-direction:column;align-items:flex-start;padding:20px 18px}
+ .home-menu>.home-tile.home-tile--brand .home-tile-arrow{top:18px;right:16px;bottom:auto}}

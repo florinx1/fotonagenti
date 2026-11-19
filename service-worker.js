@@ -1,4 +1,4 @@
-var CACHE_NAME = "foton-agenti-v24";
+var CACHE_NAME = "foton-agenti-v25";
 var APP_SHELL = [
   "./",
   "./index.html",
@@ -14,6 +14,7 @@ var APP_SHELL = [
   "./icons/brand/tekmodi-w.png",
   "./icons/stoc-polonia.jpg",
   "./icons/brand/easymove-w.png",
+  "./icons/brand/tekmodi-full-w.png",
   "./lib/leaflet/leaflet.js",
   "./lib/leaflet/leaflet.css",
   "./lib/leaflet/images/marker-icon.png",
