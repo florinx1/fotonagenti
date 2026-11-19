@@ -562,3 +562,46 @@ input[readonly] { background: var(--gridline); color: var(--text-secondary); }
 .home-tile--brand:hover{box-shadow:0 10px 26px rgba(58,71,89,.28)}.home-tile--brand:hover .home-tile-arrow{background:#05C3DE;color:#fff}
 @media(min-width:760px){.home-menu>.home-tile.home-tile--brand{flex-direction:column;align-items:flex-start;padding:20px 18px}
  .home-menu>.home-tile.home-tile--brand .home-tile-arrow{top:18px;right:16px;bottom:auto}}
+
+
+/* ===== FOTON SI – temă pentru toate ecranele ===== */
+:root{--navy:#3A4759;--blue:#0396aa;--blue-dark:#3A4759;--foton:#3A4759;--foton-cyan:#05C3DE;--page:#f4f6f8;--gridline:#e1e5ea}
+input:focus,select:focus,textarea:focus{border-color:#05C3DE!important;box-shadow:0 0 0 3px rgba(5,195,222,.18)!important;outline:none}
+label{color:#4a5561;letter-spacing:.01em}
+.btn-primary{background:#3A4759;border-radius:10px;letter-spacing:.02em;position:relative;overflow:hidden}
+.btn-primary::after{content:"";position:absolute;right:-10px;bottom:0;width:70px;height:4px;background:#05C3DE;transform:skewX(-35deg)}
+.btn-primary:hover{background:#2f3a48}.btn-primary:active{background:#283240}
+.btn-secondary{border-color:#cfd6dd;color:#3A4759}.btn-secondary:hover{border-color:#05C3DE}
+.card{border:1px solid var(--gridline);border-radius:14px;box-shadow:0 1px 2px rgba(58,71,89,.05)}
+.card h2{font-size:12.5px!important;text-transform:uppercase;letter-spacing:.12em;color:#3A4759;display:flex;align-items:center;gap:10px}
+.card h2::before{content:"";width:18px;height:3px;background:#05C3DE;transform:skewX(-35deg);flex:none}
+.kpi-tile{border:1px solid var(--gridline);border-radius:12px;position:relative;overflow:hidden}
+.kpi-tile::before{content:"";position:absolute;top:0;right:-8px;width:40px;height:4px;background:#05C3DE;transform:skewX(-35deg)}
+.kpi-label{text-transform:uppercase;letter-spacing:.06em;font-size:11px;color:#5d6670}
+.kpi-value,.kpi-value.blue{color:#3A4759}
+.bar-fill{background:#3A4759}.bar-track{background:#e8ecf0}
+.status-pill.neutral{background:rgba(5,195,222,.14);color:#0b6b78}
+.btn-edit{color:#3A4759;border-color:#cfd6dd}
+.edit-banner{border-left:4px solid #05C3DE}
+.fisa-item,.restanta-item,.discutie-item,.punct-item{border:1px solid var(--gridline);border-radius:12px;background:#fff}
+.fisa-item .f-top::before{content:"";width:22px;height:22px;flex:none;border-radius:6px;background:#3A4759 url(icons/brand/foton-emblem-w.png) center/15px no-repeat}
+.fisa-actions button,.fisa-actions a{border-radius:8px;color:#3A4759;border-color:#cfd6dd}
+.fisa-actions button[data-act="trimite"]{color:#0b6b78;border-color:rgba(5,195,222,.5)}
+/* bara de jos (Raportare) */
+.tab-bar{background:#fff;border-top:1px solid var(--gridline);box-shadow:0 -4px 16px rgba(58,71,89,.06)}
+.tab-btn{color:#8a929b;position:relative;font-weight:600}
+.tab-btn .tab-icon svg{width:22px;height:22px;display:block}
+.tab-btn.active{color:#3A4759}
+.tab-btn.active::before{content:"";position:absolute;top:0;left:50%;width:38px;height:3px;margin-left:-19px;background:#05C3DE;transform:skewX(-35deg)}
+/* banner de secțiune sub antet */
+.page-hero{position:relative;overflow:hidden;color:#fff;padding:16px 20px 18px;
+  background:linear-gradient(110deg,#3A4759 0%,#3A4759 58%,#33404f 58.2%,#33404f 78%,#2e3a48 78.2%)}
+.page-hero-in{max-width:920px;margin:0 auto;display:flex;align-items:center;gap:16px;justify-content:space-between}
+.page-hero-k{display:block;font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#05C3DE}
+.page-hero-t{display:block;font-size:19px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;margin-top:2px}
+.page-hero-s{display:block;font-size:12.5px;color:rgba(255,255,255,.8);margin-top:3px}
+.page-hero img{height:38px;width:auto;max-width:42%;object-fit:contain;flex:none}
+.page-hero img.tall{height:56px}
+.page-hero::after{content:"";position:absolute;right:-16px;bottom:0;width:38%;height:4px;background:#05C3DE;transform:skewX(-35deg)}
+.app-header:has(+ .page-hero){border-bottom:0}
+@media(max-width:620px){.app-header:has(~ .page-hero:not([hidden])) .app-header-brands{display:none}.page-hero img{height:30px}.page-hero img.tall{height:46px}}

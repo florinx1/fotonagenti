@@ -909,9 +909,14 @@
     $("tabBar").hidden = !isRaportare;
     document.body.classList.toggle("no-tabbar", !isRaportare);
     $("homeBtn").hidden = screen === "home";
-    $("appTitle").textContent = screen === "home" ? "Foton by Inter Cargo"
-      : screen === "fise" ? "Fise tehnice vehicule Foton"
-      : (CONFIG.APP_NAME || "Raportare Agenti Foton");
+    $("appTitle").textContent = "Foton by Inter Cargo";
+    var HERO = {
+      raportare: ["Vânzări · teren", "Raportare agenți", "Discuții cu clienții, puncte de lucru și raport", "icons/brand/intercargo.png", ""],
+      fise: ["Documentație FOTON", "Fișe tehnice", "Vezi, descarcă sau trimite fișa tehnică", "icons/brand/foton.png", ""]
+    };
+    var h = HERO[screen];
+    $("pageHero").hidden = !h;
+    if (h) { $("phK").textContent = h[0]; $("phT").textContent = h[1]; $("phS").textContent = h[2]; $("phL").src = h[3]; $("phL").className = h[4]; }
     if (isRaportare) showTab("form");
     if (screen === "fise") loadFise(false);
   }
