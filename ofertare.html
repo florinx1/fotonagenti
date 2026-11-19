@@ -223,7 +223,7 @@ h2{font-family:'Barlow Condensed';font-weight:600;font-size:26px;margin:0 0 4px;
 </table>
 <div class="err" id="ePret"></div>
 <div class="hint">Prețul final al vehiculului este ultimul completat: suport importator, apoi discount, apoi listă. Bifează ce trepte de preț vrei să vadă clientul în ofertă.</div>
-<div style="margin-top:12px;max-width:320px"><label>Monedă de plată</label><select id="pCur"><option>EUR</option><option>RON la cursul BNR din ziua facturării</option></select></div>
+<div style="margin-top:12px;max-width:320px"><label>Monedă de plată</label><select id="pCur"><option>EUR</option></select></div>
 <div class="tot" style="margin-top:14px" id="totBox"></div>
 </div>
 </div>
@@ -3172,7 +3172,7 @@ document.querySelectorAll('#ctype button').forEach(b=>b.onclick=()=>{S.ctype=b.d
 function condText(){const av=$('dAv').value||'20';return[
 '1. Comanda devine fermă la semnarea ei de către client și la plata avansului de '+av+'% din valoarea totală cu TVA.',
 '2. Diferența de preț se achită integral înainte de predarea vehiculului.',
-'3. Prețurile sunt exprimate în euro. Plata se poate face în lei, la cursul BNR din ziua emiterii facturii.',
+'3. Prețurile sunt exprimate în euro. Plata se face în lei, la cursul BNR + 1% din ziua emiterii facturii.',
 '4. Termenul de livrare curge de la data încasării avansului. Accesoriile se montează înainte de predare.',
 '5. Vehiculul se predă după inspecția PDI, pe bază de proces-verbal de predare-primire.',
 '6. Garanția vehiculului se acordă conform certificatului de garanție FOTON.',
@@ -3214,7 +3214,7 @@ async function renderOffer(){const M=S.model,t=totals(),img=await snapshot();if(
   if($('pL_s').checked&&P.L)rws.push(['Preț de listă',P.L,'']);if($('pD_s').checked&&P.D)rws.push(['Preț cu discount',P.D,pct(P.D)]);if($('pS_s').checked&&P.S)rws.push(['Preț cu suport importator',P.S,pct(P.S)]);
   return rws.length?'<div class="ot">Preț vehicul</div><table class="pt"><tr><th>Treaptă de preț</th><th class="r">Fără TVA</th><th class="r">Cu TVA</th></tr>'+rws.map((r,i)=>'<tr'+(i===rws.length-1?' style="font-weight:600"':' class="s"')+'><td>'+r[0]+r[2]+'</td><td class="r">'+eur(r[1])+'</td><td class="r">'+eur(r[1]*(1+VAT))+'</td></tr>').join('')+'</table>':''})()+
  '<div class="ot">Total ofertă</div><table class="pt"><tr><th>Descriere</th><th class="r">Cant.</th><th class="r">Valoare fără TVA</th></tr>'+rows+'</table>'+
- '<div style="font-size:8.8pt;color:#444;margin-top:5px">Moneda: '+esc($('pCur').value)+'. Avans la comandă: '+esc($('dAv').value||'20')+'% din totalul cu TVA ('+eur(t.gross*num($('dAv').value||20)/100)+').</div>'+
+ '<div style="font-size:8.8pt;color:#444;margin-top:5px">Prețuri exprimate în EUR; plata se face în lei, la cursul BNR + 1% din ziua emiterii facturii. Avans la comandă: '+esc($('dAv').value||'20')+'% din totalul cu TVA ('+eur(t.gross*num($('dAv').value||20)/100)+').</div>'+
  pfoot(1)+'</div><div class="pg">'+wm+head+
  '<div class="ot">Date tehnice – '+esc(M.name)+'</div><div class="o2 sp">'+spec+'</div>'+
  '<div class="ot">Dotări de serie</div><ul class="dot">'+M.dot.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>'+
