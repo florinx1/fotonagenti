@@ -130,7 +130,7 @@ function trimiteOfertaNoua_(r, blob, catre) {
     rand('Total fără TVA', lei_(r.totalFaraTVA)) + rand('Total cu TVA', lei_(r.totalCuTVA)) +
     rand('Termen livrare', r.termen) + rand('Valabilă până la', r.valabilaPana) +
     '</table><p>Oferta este atașată în PDF' + (r.pdfLink ? ' și salvată în <a href="' + r.pdfLink + '">Drive</a>' : '') + '.</p></div>';
-  const opt = { htmlBody: html, attachments: [blob], name: 'Foton by Inter Cargo' };
+  const opt = { htmlBody: html, attachments: [blob], name: 'FOTON ROMANIA OFERTARE' };
   if (r.emailVanzator) opt.replyTo = r.emailVanzator;
   MailApp.sendEmail(catre || OFERTA_NOUA_CATRE, subiect, 'Ofertă nouă ' + r.nr + ' – PDF atașat.', opt);
 }
@@ -169,7 +169,7 @@ function verificaExpirate() {
       '<p>Te rugăm să ne spui ce a răspuns clientul: a acceptat oferta, a refuzat-o (și de ce) sau negocierea continuă.</p>' +
       '<p><a href="' + link + '" style="background:#3A4759;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none">Trimite feedback</a></p>' +
       '<p style="color:#666;font-size:12px">Inter Cargo Grup · aplicația Foton by Inter Cargo</p>';
-    const opt = { htmlBody: html, name: 'Foton by Inter Cargo' }; if (ADMIN_EMAILS) opt.cc = ADMIN_EMAILS;
+    const opt = { htmlBody: html, name: 'FOTON ROMANIA OFERTARE' }; if (ADMIN_EMAILS) opt.cc = ADMIN_EMAILS;
     MailApp.sendEmail(r.emailVanzator, 'Ofertă expirată ' + r.nr + ' – ' + r.client + ': ce a răspuns clientul?', 'Oferta ' + r.nr + ' a expirat. Trimite feedback: ' + link, opt);
     const row = findRow(sh, r.nr); sh.getRange(row, COLS.indexOf('notificat') + 1).setValue(new Date().toISOString());
   });
