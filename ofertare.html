@@ -174,6 +174,10 @@ table.lines td{padding:5px 8px 5px 0;vertical-align:top}code{background:#eef0f2;
 input:focus,select:focus,textarea:focus{border-color:#05C3DE;box-shadow:0 0 0 3px rgba(5,195,222,.18);outline:none}
 .kpi{position:relative;overflow:hidden}.kpi::before{content:"";position:absolute;top:0;right:-8px;width:40px;height:4px;background:#05C3DE;transform:skewX(-35deg)}
 @media(max-width:900px){.brand-em{height:32px}.brand-t{font-size:13px}.top{gap:10px 12px;padding:10px 12px}.top .brand{order:1}.top .who{order:2}.top .steps{order:3;width:100%;flex-wrap:nowrap;overflow-x:auto;margin-left:0;scrollbar-width:none}.top .steps::-webkit-scrollbar{display:none}.top .steps button{white-space:nowrap;flex:none}.top .nav{order:4}.top .backhome{order:0}}
+.ints{display:flex;gap:10px;flex-wrap:wrap}.ints button{border:2px solid #e1e5ea;background:#fff;border-radius:10px;padding:0;overflow:hidden;cursor:pointer;width:150px;text-align:left}
+.ints button img{display:block;width:100%;height:92px;object-fit:cover}.ints button span{display:block;padding:6px 9px;font-weight:600;font-size:13.5px;color:#3A4759}
+.ints button.on{border-color:#05C3DE;box-shadow:0 0 0 3px rgba(5,195,222,.2)}
+.int1{display:grid;grid-template-columns:1.25fr 1fr;gap:12px;align-items:center}.int1 img{width:100%;height:40mm;object-fit:cover;border-radius:6px;display:block}
 </style>
 </head>
 <body>
@@ -209,6 +213,10 @@ input:focus,select:focus,textarea:focus{border-color:#05C3DE;box-shadow:0 0 0 3p
 <div class="stage">
 <canvas id="cv"></canvas>
 <div class="bar"><div class="tabs" id="vtabs"></div><div class="sws" id="sws"></div><div class="cname" id="cname"></div></div>
+</div>
+<div class="card hide" id="intCard" style="margin-top:14px">
+<div class="sect">Culoare interior</div>
+<div class="ints" id="ints"></div>
 </div>
 <div class="card" style="margin-top:14px">
 <div class="sect">Selecția clientului</div>
@@ -3111,7 +3119,7 @@ const V9DOT=["Climatizare automată","Scaune față reglaj electric, încălzite
 const G7SPEC=[["Motor și transmisie",[["Motor","2.0 Turbodiesel Common Rail (16V)"],["Capacitate cilindrică","1968 cm³"],["Putere maximă","159 CP (117 kW) @ 3600 rpm"],["Cuplu maxim","390 Nm @ 1500–2400 rpm"],["Transmisie","Automată 8AT – ZF"],["Tracțiune","4x4 (2H, 4H, 4L, Auto)"],["Blocare diferențial spate","Mecanică"],["Omologare","N1G"],["Viteză maximă","160 km/h"]]],["Capacități transport",[["Masă totală autorizată","2980 kg"],["Sarcină utilă","până la 955 kg"],["Configurație locuri","3 sau 5"],["Remorcare cu frână / fără frână","până la 3000 kg / 750 kg"],["Rezervor combustibil","76 l"]]],["Dimensiuni",[["Lungime × lățime × înălțime","5340 × 1940 × 1870 mm"],["Ampatament","3110 mm"],["Rază de viraj minimă","6,6 m"],["Benă (L × l × h)","1580 × 1520 × 440 mm"]]],["Capabilități off-road",[["Unghi atac / ieșire / rampă","30° / 24° / 21°"],["Gardă la sol","210 mm"],["Adâncime vadare","600 mm"],["Asistență","HHC / HDC"]]]];
 const G7DOT=["Climatizare automată","Scaun șofer reglare electrică","Scaune față încălzite","Tapițerie eco-piele","Trapă electrică cu roletă","Acces fără cheie (Keyless)","Frână de parcare electrică cu Auto Hold","Volan multifuncțional eco-piele","Ecran tactil 10,25″, radio DAB+","Bluetooth, Mirror Link (CarBit)","Cameră 360° + senzori parcare față/spate","4 porturi USB","Jante aliaj 18″, anvelope 265/60 R18","Relinguri plafon, trepte laterale","Bare protecție culoare caroserie","Roată de rezervă dimensiune completă","Faruri LED de zi, lumini automate, senzor ploaie","6 airbag-uri","ABS, EBD, ESP, TCS, BAS/BOS","BSD, RCTA, FCW, TPMS"];
 const MODELS=[
- {id:'v9',brand:'foton',url:'https://www.fotonromania.com/vehicule-comerciale/tunland-v9/',int:['v9int'],intG:['v9i1','v9i2','v9i3'],name:'FOTON Tunland V9',ds:'2.0 Turbodiesel MHEV · 8AT ZF · 4x4 · pick-up premium',tek:true,on:true,thumb:'side',gar:'5 ani / 200.000 km',spec:V9SPEC,dot:V9DOT,
+ {id:'v9',brand:'foton',url:'https://www.fotonromania.com/vehicule-comerciale/tunland-v9/',ints:[['Negru','v9i3'],['Maro','v9i1'],['Caramel','v9i2']],name:'FOTON Tunland V9',ds:'2.0 Turbodiesel MHEV · 8AT ZF · 4x4 · pick-up premium',tek:true,on:true,thumb:'side',gar:'5 ani / 200.000 km',spec:V9SPEC,dot:V9DOT,
   views:[{k:'side',img:'side',mask:'sideM',Lref:163.25/255,g:1,orig:'Galaxy Silver',label:'Lateral'}],
   colors:[["Flare White","#f4f5f5"],["Galaxy Silver","#9ea3a8"],["Titanium Grey","#5c6167"],["Fire Red","#a2201f"],["Phantom Black","#1b1d20"],["Diamond Blue","#1d4e8a"],["Lightning Purple","#4a2340"],["Aurora Green","#2e5c66"]]},
  {id:'g7',brand:'foton',url:'https://www.fotonromania.com/vehicule-comerciale/tunland-g7/',int:['g7int','g7i1'],name:'FOTON Tunland G7',ds:'2.0 Turbodiesel 159 CP · 8AT ZF · 4x4 · N1G',tek:true,on:true,thumb:'g7',gar:'5 ani / 200.000 km',spec:G7SPEC,dot:G7DOT,
@@ -3156,7 +3164,7 @@ async function snapshot(){const M=S.model;if(!M.views)return 'data:image/jpeg;ba
 function renderModels(){const el=$('models');el.innerHTML='';
  MODELS.forEach(m=>{const b=document.createElement('button');b.className='model'+(m.on?'':' off')+(S.model&&(S.model.base||S.model.id)===m.id?' sel':'');
   b.innerHTML='<div class="pic" style="'+(m.thumb?'background-image:url(data:image/jpeg;base64,'+IMG[m.thumb]+')':'')+'"></div><div class="tx"><div class="nm">'+m.name+'</div><div class="ds">'+m.ds+'</div>'+(m.on?(m.variants&&m.variants.length>1?'<span class="badge">'+m.variants.map(v=>v.name).join(' · ')+'</span>':'')+(m.tek&&TEKMODI_ON?'<span class="badge">culori + accesorii Tekmodi</span>':'<span class="badge g">culori + opționale</span>'):'<span class="badge g">în curând</span>')+'</div>';
-  if(m.on)b.onclick=()=>{if(!S.model||(S.model.base||S.model.id)!==m.id){S.model=eff(m);S.color=m.views?m.views[0].orig:m.colors[0][0];S.view=0;S.acc={};}renderModels();updFoot()};el.appendChild(b)})}
+  if(m.on)b.onclick=()=>{if(!S.model||(S.model.base||S.model.id)!==m.id){S.model=eff(m);S.color=m.views?m.views[0].orig:m.colors[0][0];S.view=0;S.acc={};S.intC='';}renderModels();updFoot()};el.appendChild(b)})}
 
 /* step 2 */
 function renderCfg(){const M=S.model;$('s2t').textContent='2. Configurare – '+M.name;
@@ -3164,7 +3172,7 @@ function renderCfg(){const M=S.model;$('s2t').textContent='2. Configurare – '+
  if(B.variants&&B.variants.length>1)B.variants.forEach(v=>{const b=document.createElement('button');b.className=v.id===M.vid?'on':'';b.innerHTML='<b>'+esc(v.name)+'</b><span>'+esc(v.sub||'')+'</span>';b.onclick=()=>{S.model=eff(B,v.id);renderCfg();updFoot()};vc.appendChild(b)});
  const vt=$('vtabs');vt.innerHTML='';(M.views||[]).forEach((v,i)=>{const b=document.createElement('button');b.textContent=v.label;b.className=i===S.view?'on':'';b.onclick=()=>{S.view=i;renderCfg()};vt.appendChild(b)});vt.style.display=(M.views||[]).length>1?'':'none';
  const sw=$('sws');sw.innerHTML='';M.colors.forEach(([n,h])=>{const b=document.createElement('button');b.className='sw'+(n===S.color?' on':'');b.style.background=h;b.title=n;b.setAttribute('aria-label',n);b.onclick=()=>{S.color=n;renderCfg()};sw.appendChild(b)});
- $('cname').textContent=S.color;$('tekCard').classList.toggle('hide',!(M.tek&&TEKMODI_ON));document.querySelector('.cfg').style.gridTemplateColumns=(M.tek&&TEKMODI_ON)?'':'minmax(0,1fr)';draw();renderTek();renderSel()}
+ $('cname').textContent=S.color;if(M.ints&&M.ints.length){if(!M.ints.some(x=>x[0]===S.intC))S.intC=M.ints[0][0];$('ints').innerHTML=M.ints.map(([n,k])=>'<button type="button" class="'+(n===S.intC?'on':'')+'" data-int="'+esc(n)+'"><img alt="" src="data:image/jpeg;base64,'+IMG[k]+'"><span>'+esc(n)+'</span></button>').join('');$('ints').querySelectorAll('[data-int]').forEach(b=>b.onclick=()=>{S.intC=b.dataset.int;renderCfg();updFoot()})}else S.intC='';$('intCard').classList.toggle('hide',!(M.ints&&M.ints.length));$('tekCard').classList.toggle('hide',!(M.tek&&TEKMODI_ON));document.querySelector('.cfg').style.gridTemplateColumns=(M.tek&&TEKMODI_ON)?'':'minmax(0,1fr)';draw();renderTek();renderSel()}
 function renderTek(){const cats=['Toate',...new Set(TEK.map(t=>t.cat))];const ch=$('chips');ch.innerHTML='';
  cats.forEach(c=>{const b=document.createElement('button');b.textContent=c;b.className=c===S.cat?'on':'';b.onclick=()=>{S.cat=c;renderTek()};ch.appendChild(b)});
  const q=S.q.toLowerCase();const el=$('acc');el.innerHTML='';
@@ -3177,7 +3185,7 @@ function toggle(c){const msg=$('msg');msg.textContent='';const R=RULES[c]||{};
   S.acc[c]='';(R.r||[]).forEach(z=>{if(!(z in S.acc)){S.acc[z]='';msg.textContent='Am adăugat și „'+tek(z).n+'”, necesar pentru montaj.'}})}
  renderTek();renderSel()}
 function renderSel(){const t=$('selTable');let h='';
- h+='<tr><td><b>'+S.model.name+'</b><br><span class="hint">Culoare: '+esc(S.color)+'</span></td><td class="pr hint" style="text-align:right">preț în pasul 3</td><td class="x"></td></tr>';
+ h+='<tr><td><b>'+S.model.name+'</b><br><span class="hint">Culoare: '+esc(S.color)+(S.intC?' · interior '+esc(S.intC):'')+'</span></td><td class="pr hint" style="text-align:right">preț în pasul 3</td><td class="x"></td></tr>';
  Object.keys(S.acc).forEach(c=>{const a=tek(c);h+='<tr><td>'+esc(a.n)+' <span class="hint">'+c+'</span></td><td class="pr"><input data-acc="'+c+'" value="'+esc(S.acc[c])+'" placeholder="€ fără TVA" inputmode="decimal"></td><td class="x"><button class="xb" data-rm="'+c+'" aria-label="Scoate">×</button></td></tr>'});
  S.opts.forEach((o,i)=>{h+='<tr><td><input data-on="'+i+'" value="'+esc(o.n)+'" placeholder="ex. Montaj accesorii, Folie protecție, Covorașe"></td><td class="pr"><input data-op="'+i+'" value="'+esc(o.p)+'" placeholder="€ fără TVA" inputmode="decimal"></td><td class="x"><button class="xb" data-ro="'+i+'" aria-label="Scoate">×</button></td></tr>'});
  t.innerHTML=h;
@@ -3248,7 +3256,8 @@ async function renderOffer(){const M=S.model,t=totals(),img=await snapshot();if(
  const spec=M.spec.map(([s,a])=>'<div><div class="ot" style="font-size:10.5pt;color:#111">'+s+'</div>'+kv(a)+'</div>').join('');
  $('doc').innerHTML='<div class="pg">'+wm+head+
  '<div class="bk"><div class="o2" style="margin-top:10px"><div><div class="ot">Client</div>'+kv(cli)+'</div><div><div class="ot">Contact Inter Cargo</div>'+kv(vz)+'</div></div></div>'+
- '<div class="bk"><div class="ot">Vehiculul ofertat</div><div class="veh"><img src="'+img+'"><div><div class="vn">'+esc(M.name)+'</div><div style="color:#444;margin-bottom:6px">'+esc(M.ds)+'</div>'+kv([['Culoare',S.color],['Garanție',$('dGar').value||M.gar],['Termen de livrare',term],['Loc livrare',$('dLoc').value]].concat($('vin').value?[['VIN',$('vin').value]]:[]))+'</div></div></div>'+
+ '<div class="bk"><div class="ot">Vehiculul ofertat</div><div class="veh"><img src="'+img+'"><div><div class="vn">'+esc(M.name)+'</div><div style="color:#444;margin-bottom:6px">'+esc(M.ds)+'</div>'+kv([['Culoare',S.color]].concat(S.intC?[['Interior',S.intC]]:[]).concat([['Garanție',$('dGar').value||M.gar],['Termen de livrare',term],['Loc livrare',$('dLoc').value]].concat($('vin').value?[['VIN',$('vin').value]]:[])))+'</div></div></div>'+
+ (M.ints&&S.intC?(()=>{const it=M.ints.find(x=>x[0]===S.intC)||M.ints[0];return '<div class="bk bk-int"><div class="ot">Interior – '+esc(it[0])+'</div><div class="int1"><img src="data:image/jpeg;base64,'+IMG[it[1]]+'" alt="Interior '+esc(it[0])+'"><div>'+kv([['Culoare interior',it[0]],['Model',M.name]])+'</div></div></div>'})():'')+
  (M.int&&M.int.length?'<div class="bk bk-int"><div class="ot">'+(M.intTitle||'Interior')+'</div><div class="intr">'+M.int.map(k=>'<img src="data:image/jpeg;base64,'+IMG[k]+'" style="max-width:'+(M.intMax||'none')+(M.intFit?';object-fit:contain;height:auto;max-height:52mm;background:#fff':'')+'" alt="Interior '+esc(M.name)+'">').join('')+'</div>'+(M.intG?'<div class="intg" style="grid-template-columns:repeat('+M.intG.length+',1fr)">'+M.intG.map(k=>'<img src="data:image/jpeg;base64,'+IMG[k]+'" alt="">').join('')+'</div>':'')+'</div>':'')+
  (ac.length?'<div class="bk"><div class="ot">Accesorii Tekmodi incluse</div>'+thumbs+'</div>':'')+
  (()=>{const P=t.P,rws=[];const pct=v=>P.L&&v<P.L?' <span style="color:#5a6472">(−'+(Math.round((1-v/P.L)*1000)/10).toLocaleString('ro-RO')+'%)</span>':'';
@@ -3294,7 +3303,7 @@ function go(n){if(n>S.step){for(let i=S.step;i<n;i++)if(!valid(i)){if(i!==S.step
 function renderSteps(){const el=$('steps');el.innerHTML='';STEPS.forEach((s,i)=>{const b=document.createElement('button');b.className=(i+1===S.step?'on':'')+(i+1<S.step?' done':'');b.innerHTML='<b>'+(i+1<S.step?'✓':i+1)+'</b>'+s;b.onclick=()=>{if(S.model||i===0)go(i+1)};el.appendChild(b)})}
 function updFoot(){$('back').style.visibility=S.step>1?'visible':'hidden';$('next').style.display=S.step<5?'':'none';
  $('next').textContent=S.step===4?'Generează oferta':'Continuă';$('next').disabled=S.step===1&&!S.model;$('next').style.opacity=$('next').disabled?.5:1;
- const t=totals();$('fsum').innerHTML=S.model?'<b>'+S.model.name+'</b> · '+esc(S.color)+(Object.keys(S.acc).length?' · '+Object.keys(S.acc).length+' accesorii':'')+(t.net?' · total cu TVA <b>'+eur(t.gross)+'</b>':''):'Alege un vehicul ca să începi.'}
+ const t=totals();$('fsum').innerHTML=S.model?'<b>'+S.model.name+'</b> · '+esc(S.color)+(S.intC?' · interior '+esc(S.intC):'')+(Object.keys(S.acc).length?' · '+Object.keys(S.acc).length+' accesorii':'')+(t.net?' · total cu TVA <b>'+eur(t.gross)+'</b>':''):'Alege un vehicul ca să începi.'}
 $('next').onclick=()=>go(S.step+1);$('back').onclick=()=>go(S.step-1);
 document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(+b.dataset.go));
 
@@ -3345,7 +3354,7 @@ function buildRec(){const M=S.model,t=totals(),d=new Date(),val=new Date(d.getTi
  return{nr:OFNO,data:iso(d),valabilaPana:iso(val),vanzator:$('vNume').value.trim(),emailVanzator:$('vMail').value.trim(),client:$('cNume').value.trim(),cui:$('cCui').value.trim(),telefon:$('cTel').value.trim(),email:$('cMail').value.trim(),
   model:M.name,culoare:S.color,pretLista:t.P.L,pretDiscount:t.P.D,pretSuport:t.P.S,pretFinal:t.veh,totalFaraTVA:Math.round(t.net*100)/100,totalCuTVA:Math.round(t.gross*100)/100,
   avansPct:num($('dAv').value),termen:$('dTerm').value==='x'?$('dTermX').value:$('dTerm').value,modelId:M.base||M.id,
-  payload:JSON.stringify({model:M.base||M.id,vid:M.vid||'',color:S.color,opts:S.opts,acc:S.acc,ctype:S.ctype,f:formState()})}}
+  payload:JSON.stringify({model:M.base||M.id,vid:M.vid||'',color:S.color,intC:S.intC||'',opts:S.opts,acc:S.acc,ctype:S.ctype,f:formState()})}}
 const locked=r=>!!r&&!['ofertata','negociere','cerere'].includes(r.etapa)&&!isAdm();
 async function saveCurrent(){const m=$('saveMsg');updReq();
  if(CUR&&locked(CUR)){m.style.color='var(--mut)';m.textContent='Oferta este în etapa „'+ET[CUR.etapa].l+'” – doar vizualizare.';return}
@@ -3387,7 +3396,7 @@ function renderArch(){const q=$('aq').value.toLowerCase(),st=$('ast').value,vz=$
  document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openOffer(ROWS.find(x=>x.nr===b.dataset.open)));
  document.querySelectorAll('[data-det]').forEach(b=>b.onclick=()=>openDet(b.dataset.det))}
 function openOffer(r){let p;try{p=JSON.parse(r.payload)}catch(e){return alertBox('Oferta nu are date complete.')}
- const B=MODELS.find(m=>m.id===p.model);if(!B)return;const M=eff(B,p.vid);S.model=M;S.color=p.color;S.opts=p.opts||[];S.acc=p.acc||{};S.ctype=p.ctype||'pj';S.view=0;S.condEdited=true;
+ const B=MODELS.find(m=>m.id===p.model);if(!B)return;const M=eff(B,p.vid);S.model=M;S.color=p.color;S.intC=p.intC||'';S.opts=p.opts||[];S.acc=p.acc||{};S.ctype=p.ctype||'pj';S.view=0;S.condEdited=true;
  Object.entries(p.f||{}).forEach(([id,v])=>{const el=$(id);if(!el||['vNume','vTel','vMail'].includes(id))return;if(el.type==='checkbox')el.checked=!!v;else el.value=v});
  $('vNume').value=r.vanzator||'';$('vMail').value=r.emailVanzator||'';
  document.querySelectorAll('#ctype button').forEach(x=>{if(x.dataset.t===S.ctype)x.click()});$('wTermX').classList.toggle('hide',$('dTerm').value!=='x');
