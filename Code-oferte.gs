@@ -178,6 +178,7 @@ function doPost(e) {
       if (req.action === 'parola')    return out(Object.assign({ ok: true }, parola_(me, req.vechi, req.noua)));
       if (req.action === 'telefon')   return out(Object.assign({ ok: true }, telefon_(me, req.telefon)));
       if (me.rol !== 'admin') return out({ ok: false, error: 'Doar administratorii au acces' });
+      if (req.action === 'sterge')    return out(Object.assign({ ok: true }, sterge_(me, req.nrs || [])));
       if (req.action === 'users')     return out({ ok: true, users: usersPub_() });
       if (req.action === 'userSave')  return out(Object.assign({ ok: true }, userSave_(me, req.u || {}, req.trimite)));
       if (req.action === 'userReset') return out(Object.assign({ ok: true }, userReset_(me, req.user, req.trimite)));
@@ -349,6 +350,22 @@ function trimiteCerereAprobare_(r, blob) {
   if (blob) opt.attachments = [blob];
   if (r.emailVanzator) opt.replyTo = r.emailVanzator;
   try { MailApp.sendEmail(OFERTA_NOUA_CATRE, 'Cerere aprobare preț – ' + r.vanzator + ' – ' + r.client, 'Cerere aprobare preț ' + r.nr, opt); } catch (e) { Logger.log(e); }
+}
+function sterge_(me, nrs) {
+  if (me.rol !== 'admin') throw new Error('Doar administratorii pot șterge oferte');
+  nrs = (nrs || []).map(String).filter(Boolean); if (!nrs.length) throw new Error('Nicio ofertă selectată');
+  const set = {}; nrs.forEach(n => set[n] = true);
+  const a = rowsAll_(); const del = a.rows.filter(r => set[String(r.nr)]).sort((x, y) => y._row - x._row);
+  let pdf = 0;
+  del.forEach(r => {
+    const m = String(r.pdfLink || '').match(/[-\w]{25,}/);
+    if (m) { try { DriveApp.getFileById(m[0]).setTrashed(true); pdf++; } catch (e) {} }
+    a.sh.deleteRow(r._row);
+  });
+  const hs = tab_(HIST, HCOLS, false); const n = hs.getLastRow();
+  if (n > 1) { const v = hs.getRange(2, 2, n - 1, 1).getValues(); for (let i = v.length - 1; i >= 0; i--) if (set[String(v[i][0])]) hs.deleteRow(i + 2); }
+  Logger.log(me.nume + ' a șters ofertele: ' + del.map(r => r.nr).join(', '));
+  return { sterse: del.length, pdf };
 }
 function comision_(me, nr, d) {
   if (me.rol !== 'admin') throw new Error('Doar administratorii setează comisioane');
