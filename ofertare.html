@@ -151,29 +151,35 @@ h2{font-family:'Barlow Condensed';font-weight:600;font-size:26px;margin:0 0 4px;
  .pg>.wm{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
 .gate{position:fixed;inset:0;background:rgba(20,28,40,.55);z-index:999;display:grid;place-items:center;padding:16px}.gate.hide{display:none}.gate .gbox{background:#fff;border-radius:14px;max-width:420px;width:100%;padding:20px 20px 22px;box-shadow:0 10px 40px rgba(0,0,0,.25)}.gate label{display:block;margin-top:10px}.gate input{width:100%;box-sizing:border-box}
+.who{margin-left:auto;text-align:right;font-size:13.5px;font-weight:600;color:var(--brand);line-height:1.15}.who small{display:block;font-weight:400;color:var(--mut);font-size:11.5px}
+.tl{display:flex;flex-direction:column;gap:2px}.tli{display:flex;gap:10px;align-items:flex-start;padding:7px 0;position:relative}.tli i{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:700;background:#eef0f2;color:var(--mut)}
+.tli b{display:block;font-size:14px;font-weight:600;color:#9aa0a6}.tli span{display:block;font-size:12.5px;color:var(--mut)}.tli.ok i{background:var(--ok);color:#fff}.tli.ok b{color:var(--ink)}.tli.cur i{box-shadow:0 0 0 3px #05C3DE55}.tli.cur b{color:var(--brand)}.tli.bad i{background:#9b1c1c;color:#fff}.tli.bad b{color:#9b1c1c}
+.dgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:16px;margin-top:14px}@media(max-width:900px){.dgrid{grid-template-columns:1fr}}
+.dhead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.acts{display:flex;gap:8px;flex-wrap:wrap}.aform{margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:10px;background:#fafbfc}.aform label{display:block;margin-top:10px}
+.chk{display:flex!important;gap:8px;align-items:flex-start;font-size:14px}.chk input{width:auto;margin-top:3px}.kv{font-size:15px}
+table.lines td{padding:5px 8px 5px 0;vertical-align:top}code{background:#eef0f2;padding:2px 6px;border-radius:5px;font-size:13px}
+.adm-only{display:none}body.is-adm .adm-only{display:block}
 </style>
 </head>
 <body>
 <div class="top">
 <a href="./" class="backhome" aria-label="Meniu principal">&#8592;</a><div class="brand">INTER CARGO · FOTON<small>Ofertare vehicule</small></div>
 <div class="steps" id="steps"></div>
-<div class="nav" id="nav"><button data-v="w" class="on">Ofertă nouă</button><button data-v="a">Arhivă oferte</button><button data-v="r">Raport</button><button data-v="s" title="Setări" aria-label="Setări">⚙</button></div>
+<div class="who" id="who"></div><div class="nav" id="nav"><button data-v="w" class="on">Ofertă nouă</button><button data-v="a">Arhivă oferte</button><button data-v="r">Raport</button><button data-v="s" title="Setări" aria-label="Setări">⚙</button></div>
 </div>
 <main>
 
 <section id="s1">
 <h2>1. Alege vehiculul</h2>
 <p class="sub">Alege modelul și varianta, apoi culoarea, opționalele și prețul.</p>
-<div id="pfGate" class="gate hide"><div class="gbox">
-<div class="sect" style="margin-top:0">Profil vânzător</div>
-<p class="hint" style="margin-top:0">Înainte de prima ofertă completează-ți datele. Pe acest e-mail primești alertele la expirarea ofertelor și cererile de feedback. Datele apar și în ofertă, la persoana de contact.</p>
-<label class="req">Nume și prenume</label><input id="gN" autocomplete="name">
-<label>Telefon</label><input id="gT" type="tel" autocomplete="tel">
-<label class="req">E-mail pentru alerte</label><input id="gM" type="email" autocomplete="email">
-<div class="err" id="gErr"></div>
-<button class="btn p" id="gSave" style="margin-top:12px;width:100%">Salvează și continuă</button>
+<div id="lgGate" class="gate hide"><div class="gbox">
+<div class="brand" style="margin-bottom:6px">INTER CARGO · FOTON<small>Ofertare vehicule</small></div>
+<p class="hint" style="margin-top:0">Autentifică-te cu contul primit de la administrator (Florin Loghin sau Alexandru Păunescu).</p>
+<label>Utilizator</label><input id="lgU" autocomplete="username" autocapitalize="none" spellcheck="false">
+<label>Parolă</label><input id="lgP" type="password" autocomplete="current-password">
+<div class="err" id="lgErr"></div>
+<button class="btn p" id="lgB" style="margin-top:12px;width:100%">Intră în aplicație</button>
 </div></div>
-<div class="mode" id="pfBanner" style="display:none">Completează-ți profilul de vânzător (nume și e-mail) în <a href="#" id="pfGo">⚙ Setări</a>, ca să primești alertele pentru ofertele expirate.</div>
 <div class="models" id="models"></div>
 <input type="hidden" id="vin">
 <div class="hint" style="margin-top:12px">Seria (VIN) din Stoc DBK o alocă administratorul, după ce trimiți cererea de alocare din oferta generată.</div>
@@ -274,7 +280,7 @@ h2{font-family:'Barlow Condensed';font-weight:600;font-size:26px;margin:0 0 4px;
 <section id="s5" class="hide">
 <div class="noprint" style="display:flex;gap:10px;align-items:center;margin:0 auto 14px;max-width:210mm;flex-wrap:wrap">
 <h2 style="margin:0;margin-right:auto">5. Oferta</h2>
-<span class="savemsg" id="saveMsg"></span><button class="btn s" id="reqAlloc">Cere alocare serie</button><button class="btn s" data-go="4">Înapoi la editare</button>
+<span class="savemsg" id="saveMsg"></span><button class="btn p hide" id="reqAlloc">Clientul acceptă – cere alocare serie</button><button class="btn s" data-go="4">Înapoi la editare</button>
 <button class="btn s" id="pdfBtn">Descarcă PDF</button><button class="btn r" id="printBtn">Printează</button>
 </div>
 <div class="noprint hint" id="printMsg" style="max-width:210mm;margin:0 auto 10px"></div>
@@ -282,55 +288,65 @@ h2{font-family:'Barlow Condensed';font-weight:600;font-size:26px;margin:0 0 4px;
 </section>
 <section id="arch" class="hide">
 <h2>Arhivă oferte</h2>
-<p class="sub">Toate ofertele generate. Schimbă statusul pe măsură ce clientul răspunde; ofertele trimise și nefinalizate trec automat pe „Expirată” după data de valabilitate.</p>
-<div class="mode" id="modeA"></div>
+<p class="sub" id="archSub"></p>
 <div class="flt">
-<div style="flex:1;min-width:220px"><label>Caută</label><input id="aq" placeholder="client, CUI, nr. ofertă, vânzător, model"></div>
-<div><label>Status</label><select id="ast"><option value="">Toate</option><option>Trimisă</option><option>În negociere</option><option>Câștigată</option><option>Pierdută</option><option>Expirată</option></select></div>
-<div><label>Vânzător</label><select id="avz"><option value="">Toți</option></select></div>
+<div style="flex:1;min-width:220px"><label>Caută</label><input id="aq" placeholder="client, CUI, nr. ofertă, VIN, proformă, factură"></div>
+<div><label>Etapa</label><select id="ast"><option value="">Toate</option><option value="open">În lucru (până la avans)</option><option value="won">Comenzi (avans încasat +)</option>
+<option value="ofertata">Ofertată</option><option value="negociere">În negociere</option><option value="expirata">Expirată – cere feedback</option><option value="cerere">Cerere alocare serie</option><option value="alocata">Serie alocată</option><option value="proforma">Proformă avans emisă</option><option value="avans">Avans încasat – comandă plasată</option><option value="incarcat">Vehicul încărcat spre livrare ICG</option><option value="acte">Întocmire acte</option><option value="pdi">În pregătire PDI / fișă livrare</option><option value="finalizata">Livrată – finalizată</option><option value="pierduta">Pierdută</option><option value="anulata">Anulată</option></select></div>
+<div id="avzW"><label>Vânzător</label><select id="avz"><option value="">Toți</option></select></div>
 <div><label>Perioadă</label><select id="aper"><option value="">Tot</option><option value="m">Luna curentă</option><option value="q">Ultimele 3 luni</option><option value="y">Anul curent</option></select></div>
 </div>
 <div style="overflow:auto"><table class="atab" id="atab"></table></div>
 <div class="hint" id="acount" style="margin-top:8px"></div>
 </section>
+<section id="detBox" class="hide">
+<button class="btn s" id="detBack" style="margin-bottom:12px">← Înapoi la arhivă</button>
+<div id="detBody"></div>
+</section>
 <section id="rep" class="hide">
-<h2>Raport oferte</h2>
-<p class="sub">Rata de succes = oferte câștigate din ofertele închise (câștigate + pierdute + expirate).</p>
-<div class="mode" id="modeR"></div>
+<h2>Raport</h2>
+<p class="sub" id="repSub"></p>
 <div class="flt">
 <div><label>Perioadă</label><select id="rper"><option value="">Tot</option><option value="m">Luna curentă</option><option value="q">Ultimele 3 luni</option><option value="y" selected>Anul curent</option></select></div>
-<div><label>Vânzător</label><select id="rvz"><option value="">Toți</option></select></div>
+<div id="rvzW"><label>Vânzător</label><select id="rvz"><option value="">Toți</option></select></div>
 <div><label>Model</label><select id="rmd"><option value="">Toate</option></select></div>
-<button class="btn s hide" id="demoBtn">Încarcă oferte de test</button>
 </div>
 <div class="kpis" id="kpis"></div>
+<div class="card" id="cVz" style="margin-bottom:16px;overflow:auto"><div class="sect">Performanță pe vânzător</div><table class="lines" id="rVz" style="width:100%"></table></div>
 <div class="grid2">
-<div class="card"><div class="sect">Oferte pe lună</div><div class="lg2"><span><i style="background:#b9c3cf"></i>Oferte</span><span><i style="background:var(--brand)"></i>Câștigate</span></div><div class="bars" id="rMonth"></div></div>
-<div class="card"><div class="sect">Pe vânzător</div><table class="lines" id="rVz"></table></div>
-<div class="card"><div class="sect">Pe model</div><table class="lines" id="rMd"></table></div>
+<div class="card"><div class="sect">Oferte pe etape</div><div class="bars" id="rFun"></div></div>
+<div class="card"><div class="sect">Oferte pe lună</div><div class="lg2"><span><i style="background:#b9c3cf"></i>Oferte</span><span><i style="background:var(--brand)"></i>Comenzi</span></div><div class="bars" id="rMonth"></div></div>
+<div class="card"><div class="sect">Pe model</div><table class="lines" id="rMd" style="width:100%"></table></div>
 <div class="card"><div class="sect">Motive oferte pierdute</div><div class="bars" id="rLost"></div></div>
+<div class="card" style="grid-column:1/-1;overflow:auto"><div class="sect">Comisioane</div><table class="lines" id="rCom" style="width:100%"></table></div>
 </div>
 </section>
 <section id="sett" class="hide">
 <h2>Setări</h2>
-<p class="sub">Ofertele se salvează în Google Sheets prin scriptul Apps Script al Inter Cargo. Fără adresă de script, ofertele se păstrează doar în acest browser.</p>
 <div class="card" style="max-width:640px">
-<label>Adresa scriptului Apps Script (Web app URL)</label><input id="cfgUrl" placeholder="https://script.google.com/macros/s/.../exec">
-<div style="margin-top:10px"><label>Cheie de acces (token)</label><input id="cfgTok" placeholder="icgoferte2026"></div>
-<div style="display:flex;gap:10px;margin-top:14px;align-items:center"><button class="btn p" id="cfgSave">Salvează</button><button class="btn s" id="cfgTest">Testează conexiunea</button><span class="hint" id="cfgMsg"></span></div>
+<div class="sect">Contul meu</div>
+<table class="lines" id="acInfo"></table>
+<p class="hint">Numele și e-mailul le modifică administratorul. Pe e-mail primești alertele: ofertă expirată, serie alocată, reamintiri pentru proformă și avans.</p>
+<div class="grid2"><div><label>Telefon (apare în ofertă)</label><input id="acTel" type="tel"></div><div style="display:flex;align-items:flex-end"><button class="btn s" id="acTelS">Salvează telefonul</button></div></div>
+<div class="grid2" style="margin-top:6px"><div><label>Parola actuală</label><input id="acPw0" type="password" autocomplete="current-password"></div><div><label>Parola nouă (min. 8 caractere)</label><input id="acPw1" type="password" autocomplete="new-password"></div></div>
+<div style="display:flex;gap:10px;margin-top:12px;align-items:center;flex-wrap:wrap"><button class="btn p" id="acPwS">Schimbă parola</button><button class="btn s" id="acOut">Deconectare</button><span class="hint" id="acMsg"></span></div>
 </div>
-<div class="card" style="max-width:640px;margin-top:14px" id="profCard">
-<div class="sect">Profilul meu (vânzător)</div>
-<p class="hint" style="margin-top:0">Pe acest e-mail primești alertele când o ofertă de-a ta expiră și rugămințile de feedback / date de raportare. Datele se completează automat în fiecare ofertă.</p>
-<div class="grid2"><div style="grid-column:1/-1"><label class="req">Nume și prenume</label><input id="pfN"></div><div><label>Telefon</label><input id="pfT"></div><div><label class="req">E-mail pentru alerte</label><input id="pfM" type="email"></div></div>
-<div style="display:flex;gap:10px;margin-top:12px;align-items:center"><button class="btn p" id="pfSave">Salvează profilul</button><span class="hint" id="pfMsg"></span></div>
+<div class="card hide" id="usrCard" style="margin-top:14px">
+<div class="sect">Utilizatori (doar administratori)</div>
+<p class="hint" style="margin-top:0">Vânzătorii văd doar ofertele, comisioanele și rezultatele lor. Operatorii livrări validează etapele de după încasarea avansului. Administratorii văd tot.</p>
+<div style="overflow:auto"><table class="atab" id="usTab"></table></div>
+<div class="aform">
+<div class="grid2">
+<div><label class="req">Nume și prenume</label><input id="uN"></div>
+<div><label class="req">Utilizator</label><input id="uU" autocapitalize="none" spellcheck="false" placeholder="ex. ion-popescu"></div>
+<div><label class="req">E-mail</label><input id="uE" type="email"></div>
+<div><label>Telefon</label><input id="uT" type="tel"></div>
+<div><label>Rol</label><select id="uR"><option value="vanzator">Vânzător</option><option value="operator">Operator livrări</option><option value="admin">Administrator</option></select></div>
+<div style="display:flex;flex-direction:column;justify-content:flex-end;gap:6px"><label class="chk"><input type="checkbox" id="uA" checked> Cont activ</label><label class="chk"><input type="checkbox" id="uSend" checked> Trimite datele de acces pe e-mail</label></div>
 </div>
-<div class="card" style="max-width:640px;margin-top:14px">
-<div class="sect">Administrator</div>
-<p class="hint" style="margin-top:0">Doar administratorii pot aloca serii (VIN) din Stoc DBK pe ofertele pentru care vânzătorii au cerut alocare.</p>
-<div id="admOut"><div class="grid2"><div><label>Utilizator</label><input id="admUser" autocomplete="username" autocapitalize="none"></div><div><label>Parolă</label><input id="admKey" type="password" autocomplete="current-password"></div></div>
-<div style="display:flex;gap:10px;margin-top:10px;align-items:center"><button class="btn p" id="admIn">Intră ca administrator</button><span class="hint" id="admMsg"></span></div></div>
-<div id="admInBox" class="hide"><p style="margin:0 0 10px">Ești conectat ca administrator: <b id="admName"></b>. În Arhivă apare butonul „Alocă serie”.</p><button class="btn s" id="admOutBtn">Ieși din modul administrator</button></div>
+<div style="display:flex;gap:10px;margin-top:12px;align-items:center;flex-wrap:wrap"><button class="btn p" id="uSave">Creează contul</button><button class="btn s" id="uNew">Formular nou</button></div>
+<div class="hint" id="usMsg" style="margin-top:8px"></div>
+</div>
 </div>
 </section>
 <section id="allocBox" class="hide">
@@ -3238,7 +3254,7 @@ function setErr(id,m){$(id).textContent=m||'';return !m}
 function valid(n){if(n===1)return !!S.model;
  if(n===3){let ok=setErr('eNume',$('cNume').value.trim()?'':'Completează numele clientului.');ok=setErr('eTel',$('cTel').value.trim()?'':'Completează telefonul.')&&ok;ok=setErr('ePret',num($('pL_n').value)>0?'':'Completează prețul de listă.')&&ok;return ok}
  if(n===4){let ok=setErr('eVNume',$('vNume').value.trim()?'':'Completează numele vânzătorului.');ok=setErr('eVMail',/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test($('vMail').value.trim())?'':'Completează e-mailul vânzătorului – pe el primești alerta la expirarea ofertei.')&&ok;
-  if(ok){setProf({n:$('vNume').value.trim(),t:$('vTel').value.trim(),m:$('vMail').value.trim()});applyProf()}return ok}return true}
+  return ok}return true}
 function go(n){if(n>S.step){for(let i=S.step;i<n;i++)if(!valid(i)){if(i!==S.step)go(i);return}}
  S.step=n;for(let i=1;i<=5;i++)$('s'+i).classList.toggle('hide',i!==n);
  if(n===2)renderCfg();if(n===3)renderTot();if(n===4&&!$('dGar').value)$('dGar').value=S.model.gar;if(n===5)renderOffer().then(saveCurrent);
@@ -3258,150 +3274,261 @@ async function offerPdf(){const {jsPDF}=window.jspdf;const pdf=new jsPDF({unit:'
 function pdfName(){return ('Oferta '+OFNO+' - '+($('vNume').value||'')+' - '+($('cNume').value||'')).replace(/[\\/:*?"<>|]+/g,' ').trim()+'.pdf'}
 $('pdfBtn').onclick=async()=>{const b=$('pdfBtn');b.disabled=true;b.textContent='Se generează…';try{(await offerPdf()).save(pdfName())}catch(e){$('printMsg').textContent='PDF-ul nu a putut fi generat: '+e.message}b.disabled=false;b.textContent='Descarcă PDF'};
 
-/* ===== arhivă + raport ===== */
-const STATUSES=['Trimisă','În negociere','Câștigată','Pierdută'];
+/* ===== cont, arhivă, etape, comisioane, rapoarte ===== */
+const CFG={url:'https://script.google.com/macros/s/AKfycbxqXnTyYUkbXpr9yCNddc2v4nw3qRIb2F9GiU_bB7BmmyHWgap4zYQCYRDNe1dHX_l9/exec',token:'icgoferte2026'};
+const ET={
+ ofertata:{l:'Ofertată',who:'v',next:['negociere','cerere','pierduta']},
+ negociere:{l:'În negociere',who:'v',next:['cerere','pierduta']},
+ cerere:{l:'Cerere alocare serie',who:'v',next:['pierduta']},
+ alocata:{l:'Serie alocată',who:'a',next:['proforma','pierduta']},
+ proforma:{l:'Proformă avans emisă',who:'v',next:['avans','pierduta']},
+ avans:{l:'Avans încasat – comandă plasată',who:'v',next:['incarcat']},
+ incarcat:{l:'Vehicul încărcat spre livrare ICG',who:'o',next:['acte']},
+ acte:{l:'Întocmire acte',who:'o',next:['pdi']},
+ pdi:{l:'În pregătire PDI / fișă livrare',who:'o',next:['finalizata']},
+ finalizata:{l:'Livrată – finalizată',who:'o',next:[]},
+ pierduta:{l:'Pierdută',who:'v',next:[]},
+ anulata:{l:'Anulată',who:'a',next:[]}};
+const FLOW=['ofertata','cerere','alocata','proforma','avans','incarcat','acte','pdi','finalizata'];
+const WON=['avans','incarcat','acte','pdi','finalizata'],OPEN=['ofertata','negociere','cerere','alocata','proforma'];
+const ACT={negociere:'Clientul negociază',cerere:'Clientul acceptă – cere alocare serie',pierduta:'Clientul refuză',proforma:'Am emis proforma de avans',avans:'Avans încasat – comandă plasată',
+ incarcat:'Vehicul încărcat spre livrare ICG',acte:'Întocmire acte',pdi:'În pregătire PDI / fișă livrare',finalizata:'Vehicul livrat – finalizează',anulata:'Anulează comanda'};
+const ECOL={ofertata:'#e9edf2;color:#3A4759',negociere:'#fff3d6;color:#7a5200',cerere:'#fff3d6;color:#7a5200',alocata:'#dff6fa;color:#0b5f6b',proforma:'#dff6fa;color:#0b5f6b',
+ avans:'#e3f2ea;color:#1d6b43',incarcat:'#e3f2ea;color:#1d6b43',acte:'#e3f2ea;color:#1d6b43',pdi:'#e3f2ea;color:#1d6b43',finalizata:'#1d6b43;color:#fff',pierduta:'#fbe5e5;color:#9b1c1c',anulata:'#fbe5e5;color:#9b1c1c',expirata:'#efefef;color:#666'};
 const MOTIVE=['Preț','Termen de livrare','A ales concurența','Finanțare / leasing','Clientul a renunțat','Fără răspuns','Altul'];
-const CFG_DEF={url:'https://script.google.com/macros/s/AKfycbxqXnTyYUkbXpr9yCNddc2v4nw3qRIb2F9GiU_bB7BmmyHWgap4zYQCYRDNe1dHX_l9/exec',token:'icgoferte2026'};const CFG=Object.assign({},CFG_DEF);try{const s=JSON.parse(localStorage.getItem('icg_of_cfg')||'{}');if(s.url)CFG.url=s.url;if(s.token)CFG.token=s.token}catch(e){}
-let MEM=[];const LSK='icg_oferte_arhiva';
-function lsGet(){try{const v=localStorage.getItem(LSK);if(v)return JSON.parse(v)}catch(e){}return MEM}
-function lsSet(a){MEM=a;try{localStorage.setItem(LSK,JSON.stringify(a))}catch(e){}}
-const STORE={remote:()=>!!CFG.url,
- async call(body){const r=await fetch(CFG.url,{method:'POST',body:JSON.stringify(Object.assign({token:CFG.token},body))});const j=await r.json();if(!j.ok)throw new Error(j.error||'Eroare server');return j},
- async list(){if(this.remote())return(await this.call({action:'list'})).rows;return lsGet()},
- async save(rec,extra){if(this.remote())return this.call(Object.assign({action:'save',rec},extra||{}));const a=lsGet().slice();const i=a.findIndex(x=>x.nr===rec.nr);
-  if(i>=0)a[i]=Object.assign({},a[i],rec,{status:a[i].status,motiv:a[i].motiv,alocare:a[i].alocare||'',vin:a[i].vin||'',alocatDe:a[i].alocatDe||'',alocatLa:a[i].alocatLa||''});else a.push(rec);lsSet(a)},
- async setAlloc(nr,alocare,vin,de){if(this.remote())return this.call({action:'aloc',nr,alocare,vin,de,adminUser:ADM.user,adminKey:ADM.key});const a=lsGet().slice();const r=a.find(x=>x.nr===nr);if(r){r.alocare=alocare;r.vin=vin||'';r.alocatDe=de||'';r.alocatLa=alocare==='Alocată'?new Date().toISOString():''}lsSet(a)},
- async adminCheck(user,key){if(!this.remote())throw new Error('arhiva online nu este conectată');const r=await this.call({action:'admin',adminUser:user,adminKey:key}).catch(e=>({ok:false}));return r.ok?r.nume:''},
- async setStatus(nr,status,motiv){if(this.remote())return this.call({action:'status',nr,status,motiv});const a=lsGet().slice();const r=a.find(x=>x.nr===nr);if(r){r.status=status;r.motiv=motiv||'';r.actualizat=new Date().toISOString()}lsSet(a)}};
+const ROL={admin:'Administrator',operator:'Operator livrări',vanzator:'Vânzător'};
+const AUTH={sess:'',me:null};try{const v=JSON.parse(localStorage.getItem('icg_auth')||'null');if(v&&v.sess){AUTH.sess=v.sess;AUTH.me=v.me}}catch(e){}
+const isAdm=()=>!!AUTH.me&&AUTH.me.rol==='admin',isOp=()=>!!AUTH.me&&AUTH.me.rol==='operator';
+function saveAuth(){try{localStorage.setItem('icg_auth',JSON.stringify({sess:AUTH.sess,me:AUTH.me}))}catch(e){}}
+const STORE={remote:()=>true,
+ async call(body){const r=await fetch(CFG.url,{method:'POST',body:JSON.stringify(Object.assign({token:CFG.token,sess:AUTH.sess},body))});const j=await r.json();
+  if(j.auth){logout('Sesiunea a expirat. Autentifică-te din nou.');throw new Error(j.error)}if(!j.ok)throw new Error(j.error||'Eroare server');return j},
+ async list(){const j=await this.call({action:'list'});if(j.me){AUTH.me=j.me;saveAuth()}return j.rows},
+ save(rec,extra){return this.call(Object.assign({action:'save',rec},extra||{}))},
+ etapa(nr,etapa,date){return this.call({action:'etapa',nr,etapa,date})},
+ aloc(nr,vin){return this.call({action:'aloc',nr,vin})}};
 const iso=d=>d.toISOString().slice(0,10);
 function formState(){const f={};document.querySelectorAll('#s1 input,#s1 select,#s3 input,#s3 select,#s4 input,#s4 select,#s4 textarea').forEach(el=>{if(el.id)f[el.id]=el.type==='checkbox'?el.checked:el.value});return f}
 function buildRec(){const M=S.model,t=totals(),d=new Date(),val=new Date(d.getTime()+num($('dVal').value||15)*864e5);
  return{nr:OFNO,data:iso(d),valabilaPana:iso(val),vanzator:$('vNume').value.trim(),emailVanzator:$('vMail').value.trim(),client:$('cNume').value.trim(),cui:$('cCui').value.trim(),telefon:$('cTel').value.trim(),email:$('cMail').value.trim(),
   model:M.name,culoare:S.color,pretLista:t.P.L,pretDiscount:t.P.D,pretSuport:t.P.S,pretFinal:t.veh,totalFaraTVA:Math.round(t.net*100)/100,totalCuTVA:Math.round(t.gross*100)/100,
-  avansPct:num($('dAv').value),termen:$('dTerm').value==='x'?$('dTermX').value:$('dTerm').value,status:'Trimisă',motiv:'',actualizat:d.toISOString(),modelId:M.base||M.id,alocare:'',vin:$('vin').value||'',alocatDe:'',alocatLa:'',
+  avansPct:num($('dAv').value),termen:$('dTerm').value==='x'?$('dTermX').value:$('dTerm').value,modelId:M.base||M.id,
   payload:JSON.stringify({model:M.base||M.id,vid:M.vid||'',color:S.color,opts:S.opts,acc:S.acc,ctype:S.ctype,f:formState()})}}
-async function saveCurrent(){const m=$('saveMsg');m.style.color='var(--mut)';m.textContent='Se salvează în arhivă…';
- try{const rec=buildRec();let extra={};
-  if(STORE.remote()){m.textContent='Se generează PDF-ul și se trimite…';try{const p=await offerPdf();extra={pdf:p.output('datauristring').split(',')[1],pdfName:pdfName()}}catch(e){console.warn('pdf',e)}}
-  const sr=await STORE.save(rec,extra)||{};m.style.color='var(--ok)';m.textContent='✓ Salvată în arhivă'+(STORE.remote()?(sr.emailTrimis?' · e-mail cu PDF trimis conducerii':(sr.emailEroare?' · atenție, e-mailul nu a plecat: '+sr.emailEroare:'')):' (doar în acest browser)')}
+const locked=r=>!!r&&!['ofertata','negociere','cerere'].includes(r.etapa)&&!isAdm();
+async function saveCurrent(){const m=$('saveMsg');updReq();
+ if(CUR&&locked(CUR)){m.style.color='var(--mut)';m.textContent='Oferta este în etapa „'+ET[CUR.etapa].l+'” – doar vizualizare.';return}
+ m.style.color='var(--mut)';m.textContent='Se generează PDF-ul și se salvează…';
+ try{const rec=buildRec();let extra={};try{const p=await offerPdf();extra={pdf:p.output('datauristring').split(',')[1],pdfName:pdfName()}}catch(e){console.warn('pdf',e)}
+  const sr=await STORE.save(rec,extra)||{};if(!CUR)CUR={nr:OFNO,etapa:'ofertata',vanzatorUser:AUTH.me.user};updReq();
+  m.style.color='var(--ok)';m.textContent='✓ Salvată în arhivă'+(sr.emailTrimis?' · e-mail cu PDF trimis conducerii':(sr.emailEroare?' · atenție, e-mailul nu a plecat: '+sr.emailEroare:''))}
  catch(e){m.style.color='var(--acc)';m.textContent='Nu s-a putut salva: '+e.message}}
-function effStatus(r){if((r.status==='Trimisă'||r.status==='În negociere')&&r.valabilaPana&&r.valabilaPana<iso(new Date()))return'Expirată';return r.status||'Trimisă'}
+function updReq(){const b=$('reqAlloc');const e=CUR?CUR.etapa:'';b.classList.toggle('hide',!(CUR&&['ofertata','negociere'].includes(e)));}
+function stg(r){if(['ofertata','negociere'].includes(r.etapa)&&r.valabilaPana&&r.valabilaPana<iso(new Date()))return'expirata';return r.etapa||'ofertata'}
+function stLabel(k){return k==='expirata'?'Expirată – cere feedback':(ET[k]||{}).l||k}
+function badge(k){return '<span class="st" style="background:'+(ECOL[k]||ECOL.ofertata)+'">'+esc(stLabel(k))+'</span>'}
 function inPer(r,p){if(!p)return true;const d=new Date(r.data),n=new Date();if(p==='m')return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth();
  if(p==='q'){const s=new Date(n.getFullYear(),n.getMonth()-2,1);return d>=s}if(p==='y')return d.getFullYear()===n.getFullYear();return true}
-const fdt=s=>s?s.split('-').reverse().join('.'):'';
+const fdt=s=>s?String(s).slice(0,10).split('-').reverse().join('.'):'';
+const fdtt=s=>{const d=new Date(s);return isNaN(d)?fdt(s):d.toLocaleDateString('ro-RO')+' '+d.toLocaleTimeString('ro-RO',{hour:'2-digit',minute:'2-digit'})};
 let ROWS=[];
-function modeBox(id){const b=$(id);b.className='mode'+(STORE.remote()?' ok':'');b.textContent=STORE.remote()?'Arhiva este conectată la Google Sheets: o văd toți vânzătorii.':'Arhiva e salvată momentan doar în acest browser. Conectează scriptul Google Sheets din Setări (⚙) ca să fie comună pentru toată echipa.'}
 async function loadRows(){try{ROWS=await STORE.list()}catch(e){ROWS=[];alertBox('Nu am putut citi arhiva: '+e.message)}
  const vz=[...new Set(ROWS.map(r=>r.vanzator).filter(Boolean))].sort(),md=[...new Set(ROWS.map(r=>r.model).filter(Boolean))].sort();
  [['avz',vz,'Toți'],['rvz',vz,'Toți'],['rmd',md,'Toate']].forEach(([id,a,all])=>{const s=$(id),cur=s.value;s.innerHTML='<option value="">'+all+'</option>'+a.map(x=>'<option>'+esc(x)+'</option>').join('');s.value=a.includes(cur)?cur:''})}
 function alertBox(m){$('acount').textContent=m}
-function renderArch(){modeBox('modeA');const q=$('aq').value.toLowerCase(),st=$('ast').value,vz=$('avz').value,per=$('aper').value;
- const rows=ROWS.filter(r=>(!q||[r.nr,r.client,r.cui,r.model,r.telefon,r.vanzator].join(' ').toLowerCase().includes(q))&&(!st||effStatus(r)===st)&&(!vz||r.vanzator===vz)&&inPer(r,per)).sort((a,b)=>(b.nr||'').localeCompare(a.nr||''));
- let h='<tr><th>Nr. ofertă</th><th>Data</th><th>Client</th><th>Model</th><th>Vânzător</th><th class="r">Total cu TVA</th><th>Serie (VIN)</th><th>Status</th><th></th></tr>';
- if(!rows.length)h+='<tr><td colspan="9" style="color:var(--mut);padding:18px">'+(ROWS.length?'Nicio ofertă pentru filtrele alese.':'Încă nu există oferte în arhivă. Ofertele se salvează automat când ajungi la pasul 5.')+'</td></tr>';
- rows.forEach(r=>{const es=effStatus(r);h+='<tr><td><b>'+esc(r.nr)+'</b>'+(es==='Expirată'?'<br><span class="al al-c">cere feedback</span>':'')+'</td><td>'+fdt(r.data)+'</td><td>'+esc(r.client)+'<br><span class="hint">'+esc(r.cui||'')+' '+esc(r.telefon||'')+'</span></td><td>'+esc(r.model)+'<br><span class="hint">'+esc(r.culoare||'')+'</span></td><td>'+esc(r.vanzator||'')+'</td><td class="r">'+eur(+r.totalCuTVA||0)+'</td><td class="vin">'+allocCell(r)+'</td><td>'+
-  '<span class="st st-'+es.replace(' ','.')+'">'+es+'</span><br><select data-nr="'+esc(r.nr)+'" class="sts" style="margin-top:4px">'+STATUSES.map(s=>'<option'+(s===r.status?' selected':'')+'>'+s+'</option>').join('')+'</select>'+
-  (r.feedback?'<br><span class="hint">Feedback: '+esc(r.feedback)+'</span>':'')+(r.notificat&&!r.feedback?'<br><span class="hint">alertă trimisă vânzătorului</span>':'')+(r.status==='Pierdută'?'<br><select data-mnr="'+esc(r.nr)+'" class="mts" style="margin-top:4px"><option value="">Motiv…</option>'+MOTIVE.map(m=>'<option'+(m===r.motiv?' selected':'')+'>'+m+'</option>').join('')+'</select>':'')+
-  '</td><td><button class="lk" data-open="'+esc(r.nr)+'">Deschide</button></td></tr>'});
- $('atab').innerHTML=h;$('acount').textContent=rows.length+' oferte afișate din '+ROWS.length+'.';
- document.querySelectorAll('.sts').forEach(s=>s.onchange=async()=>{const r=ROWS.find(x=>x.nr===s.dataset.nr);r.status=s.value;if(s.value!=='Pierdută')r.motiv='';await STORE.setStatus(r.nr,r.status,r.motiv).catch(e=>alertBox(e.message));renderArch()});
- document.querySelectorAll('.mts').forEach(s=>s.onchange=async()=>{const r=ROWS.find(x=>x.nr===s.dataset.mnr);r.motiv=s.value;await STORE.setStatus(r.nr,r.status,r.motiv).catch(e=>alertBox(e.message))});
+function nextHint(r){const k=stg(r),mine=r.vanzatorUser===AUTH.me.user;
+ if(k==='expirata')return mine?'Spune ce a răspuns clientul':'Așteaptă feedback de la vânzător';
+ if(k==='ofertata'||k==='negociere')return mine?'Când clientul acceptă: cere alocare serie':'';
+ if(k==='cerere')return isAdm()?'Alocă o serie din Stoc DBK':'Așteaptă alocarea seriei';
+ if(k==='alocata')return mine||isAdm()?'Emite proforma de avans și trece numărul':'';
+ if(k==='proforma')return mine||isAdm()?'După încasare: trece factura de avans':'';
+ if(['avans','incarcat','acte','pdi'].includes(k))return isAdm()||isOp()?'Următoarea etapă: '+ET[ET[k].next[0]].l:'Livrarea e gestionată de ICG';return''}
+function renderArch(){const q=$('aq').value.toLowerCase(),st=$('ast').value,vz=$('avz').value,per=$('aper').value;const adm=isAdm()||isOp();
+ $('avzW').classList.toggle('hide',!adm);$('archSub').textContent=adm?'Toate ofertele și comenzile. Apasă „Etape” ca să vezi istoricul și să treci oferta în etapa următoare.':'Ofertele tale. Apasă „Etape” ca să treci oferta în etapa următoare: alocare serie, proformă, avans încasat.';
+ const rows=ROWS.filter(r=>(!q||[r.nr,r.client,r.cui,r.model,r.telefon,r.vanzator,r.vin,r.proformaNr,r.facturaAvansNr].join(' ').toLowerCase().includes(q))&&(!st||stg(r)===st||(st==='won'&&WON.includes(r.etapa))||(st==='open'&&OPEN.includes(r.etapa)))&&(!vz||r.vanzator===vz)&&inPer(r,per)).sort((a,b)=>(b.nr||'').localeCompare(a.nr||''));
+ let h='<tr><th>Nr. ofertă</th><th>Data</th><th>Client</th><th>Model</th>'+(adm?'<th>Vânzător</th>':'')+'<th class="r">Total cu TVA</th><th>Serie (VIN)</th><th>Etapa</th><th class="r">Comision</th><th></th></tr>';
+ if(!rows.length)h+='<tr><td colspan="10" style="color:var(--mut);padding:18px">'+(ROWS.length?'Nicio ofertă pentru filtrele alese.':'Încă nu există oferte. Ofertele se salvează automat când ajungi la pasul 5.')+'</td></tr>';
+ rows.forEach(r=>{const k=stg(r),nh=nextHint(r);h+='<tr><td><b>'+esc(r.nr)+'</b></td><td>'+fdt(r.data)+'</td><td>'+esc(r.client)+'<br><span class="hint">'+esc(r.cui||'')+' '+esc(r.telefon||'')+'</span></td><td>'+esc(r.model)+'<br><span class="hint">'+esc(r.culoare||'')+'</span></td>'+
+  (adm?'<td>'+esc(r.vanzator||'')+'</td>':'')+'<td class="r">'+eur(+r.totalCuTVA||0)+'</td><td class="vin">'+(r.vin?esc(r.vin):'<span class="hint">–</span>')+'</td><td>'+badge(k)+(nh?'<br><span class="hint">'+esc(nh)+'</span>':'')+'</td>'+
+  '<td class="r">'+(r.comision!==''&&r.comision!=null?eur(+r.comision)+'<br><span class="hint">'+(r.comisionPlatit?'plătit '+fdt(r.comisionPlatit):'de plătit')+'</span>':'<span class="hint">–</span>')+'</td>'+
+  '<td style="white-space:nowrap"><button class="btn p" style="padding:6px 12px" data-det="'+esc(r.nr)+'">Etape</button> <button class="lk" data-open="'+esc(r.nr)+'">Ofertă</button></td></tr>'});
+ $('atab').innerHTML=h;$('acount').textContent=rows.length+' afișate din '+ROWS.length+'.';
  document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openOffer(ROWS.find(x=>x.nr===b.dataset.open)));
- document.querySelectorAll('[data-alloc]').forEach(b=>b.onclick=()=>openAlloc(ROWS.find(x=>x.nr===b.dataset.alloc)));
- document.querySelectorAll('[data-unalloc]').forEach(b=>b.onclick=async()=>{const r=ROWS.find(x=>x.nr===b.dataset.unalloc);r.alocare='Cerută';r.vin='';await STORE.setAlloc(r.nr,'Cerută','','').catch(e=>alertBox(e.message));renderArch()})}
+ document.querySelectorAll('[data-det]').forEach(b=>b.onclick=()=>openDet(b.dataset.det))}
 function openOffer(r){let p;try{p=JSON.parse(r.payload)}catch(e){return alertBox('Oferta nu are date complete.')}
  const B=MODELS.find(m=>m.id===p.model);if(!B)return;const M=eff(B,p.vid);S.model=M;S.color=p.color;S.opts=p.opts||[];S.acc=p.acc||{};S.ctype=p.ctype||'pj';S.view=0;S.condEdited=true;
- Object.entries(p.f||{}).forEach(([id,v])=>{const el=$(id);if(!el)return;if(el.type==='checkbox')el.checked=!!v;else el.value=v});
+ Object.entries(p.f||{}).forEach(([id,v])=>{const el=$(id);if(!el||['vNume','vTel','vMail'].includes(id))return;if(el.type==='checkbox')el.checked=!!v;else el.value=v});
+ $('vNume').value=r.vanzator||'';$('vMail').value=r.emailVanzator||'';
  document.querySelectorAll('#ctype button').forEach(x=>{if(x.dataset.t===S.ctype)x.click()});$('wTermX').classList.toggle('hide',$('dTerm').value!=='x');
  $('vin').value=r.vin||'';OFNO=r.nr;CUR=r;renderModels();show('w');S.step=1;go(5)}
-function cnt(rows){const won=rows.filter(r=>effStatus(r)==='Câștigată'),lost=rows.filter(r=>effStatus(r)==='Pierdută'),exp=rows.filter(r=>effStatus(r)==='Expirată'),open=rows.filter(r=>['Trimisă','În negociere'].includes(effStatus(r)));
- const closed=won.length+lost.length+exp.length;const sum=a=>a.reduce((s,r)=>s+(+r.totalCuTVA||0),0);
- return{n:rows.length,won,lost,exp,open,closed,rate:closed?won.length/closed:null,val:sum(rows),wonVal:sum(won),openVal:sum(open)}}
+
+/* ----- detaliu ofertă: etape ----- */
+let DET=null;
+function canDo(r,t){const T=ET[t];if(!T)return false;const own=r.vanzatorUser===AUTH.me.user;
+ if(t==='anulata')return isAdm()&&!['finalizata','anulata','pierduta'].includes(r.etapa);
+ if(!(ET[r.etapa].next||[]).includes(t))return false;
+ if(T.who==='v')return own||isAdm();if(T.who==='o')return isAdm()||isOp();return isAdm()}
+function openDet(nr){DET=ROWS.find(x=>x.nr===nr);if(!DET)return;show('det');renderDet()}
+function renderDet(){const r=DET,k=stg(r);const ist=(r.ist||[]);
+ const when=e=>{const h=ist.filter(x=>x.etapa===e).slice(-1)[0];return h?h:null};
+ const reached=e=>{if(e==='ofertata')return true;const i=FLOW.indexOf(e),c=FLOW.indexOf(r.etapa==='negociere'?'ofertata':r.etapa);return c>=0&&i<=c};
+ const dead=['pierduta','anulata'].includes(r.etapa);
+ let tl='<div class="tl">'+FLOW.map((e,i)=>{const ok=reached(e)&&!(dead&&!when(e));const cur=(r.etapa===e)||(r.etapa==='negociere'&&e==='ofertata');const h=when(e);
+  return '<div class="tli'+(ok?' ok':'')+(cur&&!dead?' cur':'')+'"><i>'+(ok?'✓':i+1)+'</i><div><b>'+esc(ET[e].l)+'</b>'+(h?'<span>'+fdtt(h.data)+' · '+esc(h.de)+(h.detalii?' · '+esc(h.detalii):'')+'</span>':'<span class="hint">'+({v:'validează vânzătorul',a:'alocă administratorul',o:'validează administratorul'}[ET[e].who])+'</span>')+'</div></div>'}).join('')+
+  (dead?'<div class="tli bad cur"><i>✕</i><div><b>'+esc(ET[r.etapa].l)+'</b><span>'+esc(r.motiv||'')+'</span></div></div>':'')+'</div>';
+ const acts=[...(ET[r.etapa].next||[]),'anulata'].filter((t,i,a)=>a.indexOf(t)===i&&canDo(r,t));
+ let ah='';
+ if(isAdm()&&['ofertata','negociere','cerere','alocata'].includes(r.etapa))ah+='<button class="btn p" id="dAlloc">'+(r.vin?'Schimbă seria alocată':'Alocă serie din Stoc DBK')+'</button>'+(r.etapa==='alocata'?' <button class="btn s" id="dUnalloc">Anulează alocarea</button>':'');
+ ah+=acts.map(t=>'<button class="btn '+(['pierduta','anulata'].includes(t)?'s':'p')+'" data-act="'+t+'">'+esc(ACT[t]||ET[t].l)+'</button>').join(' ');
+ if(!ah)ah='<span class="hint">'+(dead||r.etapa==='finalizata'?'Oferta este închisă.':(nextHint(r)||'Nu ai acțiuni de făcut în această etapă.'))+'</span>';
+ const info=[['Client',r.client+(r.cui?' · '+r.cui:'')],['Telefon',r.telefon],['Model',r.model+(r.culoare?' · '+r.culoare:'')],['Total cu TVA',eur(+r.totalCuTVA||0)],['Vânzător',r.vanzator],['Valabilă până la',fdt(r.valabilaPana)],
+  ['Serie (VIN)',r.vin],['Proformă avans',r.proformaNr?r.proformaNr+' din '+fdt(r.proformaData):''],['Factură avans',r.facturaAvansNr?r.facturaAvansNr+' · încasat '+fdt(r.dataIncasare):''],['Livrat la',fdt(r.livratLa)],['PDF ofertă',r.pdfLink?'<a href="'+esc(r.pdfLink)+'" target="_blank">deschide din Drive</a>':'']]
+  .filter(x=>x[1]).map(([a,b])=>'<tr><td class="hint">'+a+'</td><td>'+(a==='PDF ofertă'?b:esc(b))+'</td></tr>').join('');
+ const com=isAdm()?'<div class="grid2"><div><label>Comision vânzător (EUR)</label><input id="cmV" inputmode="decimal" value="'+esc(r.comision??'')+'"></div><div><label>Plătit la data</label><input id="cmP" type="date" value="'+esc(String(r.comisionPlatit||'').slice(0,10))+'"></div><div style="grid-column:1/-1"><label>Notă</label><input id="cmN" value="'+esc(r.comisionNota||'')+'" placeholder="ex. 1% din valoarea fără TVA"></div></div><div style="display:flex;gap:10px;align-items:center;margin-top:10px"><button class="btn p" id="cmS">Salvează comisionul</button><span class="hint" id="cmM"></span></div><p class="hint">Comisionul îl vede doar vânzătorul ofertei și administratorii.</p>'
+  :(r.comision!==''&&r.comision!=null?'<div class="kv"><b>'+eur(+r.comision)+'</b> · '+(r.comisionPlatit?'plătit la '+fdt(r.comisionPlatit):'de plătit')+(r.comisionNota?'<br><span class="hint">'+esc(r.comisionNota)+'</span>':'')+'</div>':'<span class="hint">Comisionul nu a fost stabilit încă.</span>');
+ $('detBody').innerHTML='<div class="dhead"><div><h2 style="margin:0">'+esc(r.nr)+'</h2><div class="hint">'+esc(r.client)+' · '+esc(r.model)+'</div></div>'+badge(k)+'</div>'+
+  '<div class="dgrid"><div class="card"><div class="sect">Etape</div>'+tl+'</div><div>'+
+  '<div class="card"><div class="sect">Pasul următor</div><div class="acts">'+ah+'</div><div id="actForm"></div><div class="msg" id="detMsg"></div></div>'+
+  '<div class="card" style="margin-top:14px"><div class="sect">Comision</div>'+com+'</div>'+
+  '<div class="card" style="margin-top:14px"><div class="sect">Detalii</div><table class="lines">'+info+'</table></div></div></div>';
+ document.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>actForm(b.dataset.act));
+ if($('dAlloc'))$('dAlloc').onclick=()=>openAlloc(r);
+ if($('dUnalloc'))$('dUnalloc').onclick=()=>doAct(()=>STORE.aloc(r.nr,''),'Alocarea a fost anulată, seria a fost eliberată.');
+ if($('cmS'))$('cmS').onclick=async()=>{$('cmM').textContent='Se salvează…';try{await STORE.call({action:'comision',nr:r.nr,date:{comision:$('cmV').value,comisionNota:$('cmN').value,comisionPlatit:$('cmP').value}});await reloadDet();$('cmM').textContent='✓ Salvat'}catch(e){$('cmM').textContent=e.message}}}
+function actForm(t){const today=iso(new Date());let f='';
+ if(t==='cerere')f='<label class="chk"><input type="checkbox" id="fConf"> Clientul a confirmat acceptarea ofertei (semnată / e-mail / comandă).</label><label>Notă (opțional)</label><input id="fNota">';
+ else if(t==='proforma')f='<div class="grid2"><div><label class="req">Număr proformă</label><input id="fNr"></div><div><label class="req">Data proformei</label><input id="fDt" type="date" max="'+today+'" value="'+today+'"></div></div>';
+ else if(t==='avans')f='<div class="grid2"><div><label class="req">Număr factură avans</label><input id="fNr"></div><div><label class="req">Data încasării avansului</label><input id="fDt" type="date" max="'+today+'" value="'+today+'"></div></div><label>Notă (opțional)</label><input id="fNota">';
+ else if(t==='pierduta')f='<label class="req">Motivul refuzului</label><select id="fMot"><option value="">Alege…</option>'+MOTIVE.map(m=>'<option>'+m+'</option>').join('')+'</select><label>Detalii (opțional)</label><input id="fNota" placeholder="ex. preț concurență, model ales">';
+ else if(t==='anulata')f='<label class="req">Motivul anulării</label><input id="fMot"><label>Notă (opțional)</label><input id="fNota">';
+ else if(t==='finalizata')f='<label class="req">Data livrării</label><input id="fDt" type="date" max="'+today+'" value="'+today+'"><label>Notă (opțional)</label><input id="fNota" placeholder="ex. proces-verbal predare nr.">';
+ else f='<label>Notă (opțional)</label><input id="fNota">';
+ $('actForm').innerHTML='<div class="aform"><b>'+esc(ACT[t]||ET[t].l)+'</b>'+f+'<div style="display:flex;gap:10px;margin-top:10px"><button class="btn p" id="fOk">Confirmă</button><button class="btn s" id="fNo">Renunță</button></div></div>';
+ $('fNo').onclick=()=>{$('actForm').innerHTML=''};
+ $('fOk').onclick=()=>{const v=id=>($(id)?$(id).value.trim():'');const d={nota:v('fNota')};const m=$('detMsg');m.style.color='var(--acc)';
+  if(t==='cerere'&&!$('fConf').checked){m.textContent='Bifează confirmarea clientului.';return}
+  if(t==='proforma'){d.proformaNr=v('fNr');d.proformaData=v('fDt');if(!d.proformaNr||!d.proformaData){m.textContent='Completează numărul și data proformei.';return}}
+  if(t==='avans'){d.facturaAvansNr=v('fNr');d.dataIncasare=v('fDt');if(!d.facturaAvansNr||!d.dataIncasare){m.textContent='Completează numărul facturii de avans și data încasării.';return}}
+  if(t==='pierduta'||t==='anulata'){d.motiv=v('fMot');if(!d.motiv){m.textContent='Completează motivul.';return}}
+  if(t==='finalizata')d.data=v('fDt');
+  doAct(()=>STORE.etapa(DET.nr,t,d),'✓ Oferta a trecut în etapa „'+ET[t].l+'”.')}}
+async function doAct(fn,okMsg){const m=$('detMsg');m.style.color='var(--mut)';m.textContent='Se salvează…';
+ try{await fn();await reloadDet();$('detMsg').style.color='var(--ok)';$('detMsg').textContent=okMsg}catch(e){m.style.color='var(--acc)';m.textContent=e.message}}
+async function reloadDet(){const nr=DET.nr;ROWS=await STORE.list();DET=ROWS.find(x=>x.nr===nr);if(DET)renderDet()}
+$('reqAlloc').onclick=async()=>{if(!OFNO)return;await loadRows();const r=ROWS.find(x=>x.nr===OFNO);if(r)openDet(r.nr)};
+
+/* ----- rapoarte ----- */
 const pctf=x=>x==null?'–':(Math.round(x*1000)/10).toLocaleString('ro-RO')+'%';
-function renderRep(){modeBox('modeR');const per=$('rper').value,vz=$('rvz').value,md=$('rmd').value;
+const sumv=(a,f)=>a.reduce((s,r)=>s+(+(f?f(r):r.totalCuTVA)||0),0);
+function cnt(rows){const won=rows.filter(r=>WON.includes(r.etapa)),lost=rows.filter(r=>['pierduta','anulata'].includes(r.etapa)),exp=rows.filter(r=>stg(r)==='expirata'),open=rows.filter(r=>OPEN.includes(r.etapa)&&stg(r)!=='expirata');
+ const closed=won.length+lost.length+exp.length;const com=rows.filter(r=>r.comision!==''&&r.comision!=null);
+ return{n:rows.length,won,lost,exp,open,closed,rate:closed?won.length/closed:null,val:sumv(rows),wonVal:sumv(won),openVal:sumv(open),com:sumv(com,r=>r.comision),comPaid:sumv(com.filter(r=>r.comisionPlatit),r=>r.comision)}}
+function days(r,a,b){const t=e=>{const h=(r.ist||[]).find(x=>x.etapa===e);return h?new Date(h.data):null};const x=a==='data'?new Date(r.data):t(a),y=t(b);return x&&y?(y-x)/864e5:null}
+function avg(a){a=a.filter(x=>x!=null&&x>=0);return a.length?a.reduce((s,x)=>s+x,0)/a.length:null}
+function renderRep(){const adm=isAdm()||isOp();const per=$('rper').value,vz=adm?$('rvz').value:'',md=$('rmd').value;
+ $('rvzW').classList.toggle('hide',!adm);$('repSub').textContent=adm?'Performanța echipei. Rata de succes = comenzi (avans încasat) din ofertele închise (comenzi + pierdute + expirate).':'Rezultatele tale. Rata de succes = comenzi (avans încasat) din ofertele tale închise.';
  const rows=ROWS.filter(r=>inPer(r,per)&&(!vz||r.vanzator===vz)&&(!md||r.model===md));const c=cnt(rows);
- $('demoBtn').classList.toggle('hide',STORE.remote()||ROWS.length>0);
- const pend=rows.filter(r=>r.alocare==='Cerută').length;
- $('kpis').innerHTML=[['Oferte emise',c.n,eur(c.val)+' cu TVA'],['Cereri alocare serie',pend,pend?'așteaptă administratorul':'nicio cerere în așteptare'],['Rata de succes',pctf(c.rate),c.won.length+' câștigate din '+c.closed+' închise'],['Câștigate',c.won.length,eur(c.wonVal)],['În lucru',c.open.length,eur(c.openVal)],['Pierdute',c.lost.length,''],['Expirate',c.exp.length,'fără răspuns în termen']]
-  .map(([l,v,s])=>'<div class="kpi"><div class="l">'+l+'</div><div class="v">'+v+'</div><div class="s">'+s+'</div></div>').join('');
- const months={};rows.forEach(r=>{const k=(r.data||'').slice(0,7);if(!k)return;months[k]=months[k]||{n:0,w:0};months[k].n++;if(effStatus(r)==='Câștigată')months[k].w++});
- const mk=Object.keys(months).sort().slice(-12),mx=Math.max(1,...mk.map(k=>months[k].n));const ln=['ian','feb','mar','apr','mai','iun','iul','aug','sep','oct','nov','dec'];
- $('rMonth').innerHTML=mk.length?mk.map(k=>'<div class="row"><span>'+ln[+k.slice(5)-1]+' '+k.slice(0,4)+'</span><div class="trk"><div class="b1" style="width:'+(months[k].n/mx*100)+'%"></div><div class="b2" style="width:'+(months[k].w/mx*100)+'%"></div></div><span>'+months[k].w+' / '+months[k].n+'</span></div>').join(''):'<div class="hint">Nicio ofertă în perioada aleasă.</div>';
- const grp=(key)=>{const g={};rows.forEach(r=>{const k=r[key]||'—';(g[k]=g[k]||[]).push(r)});return Object.entries(g).map(([k,a])=>[k,cnt(a)]).sort((a,b)=>b[1].n-a[1].n)};
- const tbl=(id,key,lab)=>{const g=grp(key);$(id).innerHTML='<tr><td class="hint">'+lab+'</td><td class="hint" style="text-align:right">Oferte</td><td class="hint" style="text-align:right">Câștigate</td><td class="hint" style="text-align:right">Rată</td><td class="hint" style="text-align:right">Valoare câștigată</td></tr>'+
-  (g.length?g.map(([k,c])=>'<tr><td>'+esc(k)+'</td><td style="text-align:right">'+c.n+'</td><td style="text-align:right">'+c.won.length+'</td><td style="text-align:right"><b>'+pctf(c.rate)+'</b></td><td style="text-align:right">'+eur(c.wonVal)+'</td></tr>').join(''):'<tr><td colspan="5" class="hint">–</td></tr>')};
- tbl('rVz','vanzator','Vânzător');tbl('rMd','model','Model');
- const lm={};rows.filter(r=>effStatus(r)==='Pierdută').forEach(r=>{const k=r.motiv||'Nespecificat';lm[k]=(lm[k]||0)+1});const le=Object.entries(lm).sort((a,b)=>b[1]-a[1]),lmx=Math.max(1,...le.map(x=>x[1]));
- $('rLost').innerHTML=le.length?le.map(([k,v])=>'<div class="row"><span>'+esc(k)+'</span><div class="trk"><div class="b2" style="width:'+(v/lmx*100)+'%;background:#9b1c1c"></div></div><span>'+v+'</span></div>').join(''):'<div class="hint">Nicio ofertă pierdută în perioada aleasă.</div>'}
-async function show(v){document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+ const pend=rows.filter(r=>r.etapa==='cerere').length;
+ const k=[['Oferte emise',c.n,eur(c.val)+' cu TVA'],['Rata de succes',pctf(c.rate),c.won.length+' comenzi din '+c.closed+' închise'],['Comenzi (avans încasat)',c.won.length,eur(c.wonVal)],
+  ['În lucru',c.open.length,eur(c.openVal)],['Pierdute / anulate',c.lost.length,''],['Expirate fără răspuns',c.exp.length,'cer feedback'],
+  [adm?'Cereri alocare serie':'Așteaptă alocare',pend,pend?(adm?'de alocat din Stoc DBK':'la administrator'):'nicio cerere'],
+  [adm?'Comisioane':'Comisionul meu',eur(c.com),'plătit '+eur(c.comPaid)+' · de plătit '+eur(c.com-c.comPaid)],
+  ['Ofertă → avans',avg(rows.map(r=>days(r,'data','avans')))==null?'–':Math.round(avg(rows.map(r=>days(r,'data','avans'))))+' zile','medie'],
+  ['Avans → livrare',avg(rows.map(r=>days(r,'avans','finalizata')))==null?'–':Math.round(avg(rows.map(r=>days(r,'avans','finalizata'))))+' zile','medie']];
+ $('kpis').innerHTML=k.map(([l,v,s])=>'<div class="kpi"><div class="l">'+l+'</div><div class="v">'+v+'</div><div class="s">'+s+'</div></div>').join('');
+ const fk=['ofertata','negociere','cerere','alocata','proforma','avans','incarcat','acte','pdi','finalizata','pierduta','anulata'];const fc={};rows.forEach(r=>{fc[r.etapa]=(fc[r.etapa]||0)+1});const fmx=Math.max(1,...fk.map(x=>fc[x]||0));
+ $('rFun').innerHTML=fk.map(x=>'<div class="row"><span>'+esc(ET[x].l)+'</span><div class="trk"><div class="b2" style="width:'+((fc[x]||0)/fmx*100)+'%;background:'+(['pierduta','anulata'].includes(x)?'#9b1c1c':WON.includes(x)?'var(--ok)':'var(--brand)')+'"></div></div><span>'+(fc[x]||0)+'</span></div>').join('');
+ const months={};rows.forEach(r=>{const kk=(r.data||'').slice(0,7);if(!kk)return;months[kk]=months[kk]||{n:0,w:0};months[kk].n++;if(WON.includes(r.etapa))months[kk].w++});
+ const mk=Object.keys(months).sort().slice(-12),mx=Math.max(1,...mk.map(x=>months[x].n));const ln=['ian','feb','mar','apr','mai','iun','iul','aug','sep','oct','nov','dec'];
+ $('rMonth').innerHTML=mk.length?mk.map(x=>'<div class="row"><span>'+ln[+x.slice(5)-1]+' '+x.slice(0,4)+'</span><div class="trk"><div class="b1" style="width:'+(months[x].n/mx*100)+'%"></div><div class="b2" style="width:'+(months[x].w/mx*100)+'%"></div></div><span>'+months[x].w+' / '+months[x].n+'</span></div>').join(''):'<div class="hint">Nicio ofertă în perioada aleasă.</div>';
+ const grp=key=>{const g={};rows.forEach(r=>{const kk=r[key]||'—';(g[kk]=g[kk]||[]).push(r)});return Object.entries(g).map(([kk,a])=>[kk,cnt(a)]).sort((a,b)=>b[1].wonVal-a[1].wonVal||b[1].n-a[1].n)};
+ const R=x=>'<td style="text-align:right">'+x+'</td>';
+ $('cVz').classList.toggle('hide',!adm);
+ if(adm){const g=grp('vanzator');$('rVz').innerHTML='<tr><td class="hint">Vânzător</td>'+['Oferte','Comenzi','Rată','Valoare comenzi','Pierdute','Expirate','Comision','De plătit'].map(x=>'<td class="hint" style="text-align:right">'+x+'</td>').join('')+'</tr>'+
+  (g.length?g.map(([kk,c])=>'<tr><td>'+esc(kk)+'</td>'+R(c.n)+R(c.won.length)+R('<b>'+pctf(c.rate)+'</b>')+R(eur(c.wonVal))+R(c.lost.length)+R(c.exp.length)+R(eur(c.com))+R(eur(c.com-c.comPaid))+'</tr>').join(''):'<tr><td colspan="9" class="hint">–</td></tr>')}
+ const gm=grp('model');$('rMd').innerHTML='<tr><td class="hint">Model</td><td class="hint" style="text-align:right">Oferte</td><td class="hint" style="text-align:right">Comenzi</td><td class="hint" style="text-align:right">Rată</td><td class="hint" style="text-align:right">Valoare comenzi</td></tr>'+
+  (gm.length?gm.map(([kk,c])=>'<tr><td>'+esc(kk)+'</td>'+R(c.n)+R(c.won.length)+R('<b>'+pctf(c.rate)+'</b>')+R(eur(c.wonVal))+'</tr>').join(''):'<tr><td colspan="5" class="hint">–</td></tr>');
+ const cr=rows.filter(r=>r.comision!==''&&r.comision!=null).sort((a,b)=>(b.nr||'').localeCompare(a.nr||''));
+ $('rCom').innerHTML='<tr><td class="hint">Ofertă</td>'+(adm?'<td class="hint">Vânzător</td>':'')+'<td class="hint">Client</td><td class="hint" style="text-align:right">Comision</td><td class="hint" style="text-align:right">Stare</td></tr>'+
+  (cr.length?cr.map(r=>'<tr><td>'+esc(r.nr)+'</td>'+(adm?'<td>'+esc(r.vanzator)+'</td>':'')+'<td>'+esc(r.client)+'</td>'+R(eur(+r.comision))+R(r.comisionPlatit?'plătit '+fdt(r.comisionPlatit):'<b>de plătit</b>')+'</tr>').join(''):'<tr><td colspan="5" class="hint">Niciun comision stabilit în perioada aleasă.</td></tr>');
+ const lm={};rows.filter(r=>['pierduta','anulata'].includes(r.etapa)).forEach(r=>{const kk=r.motiv||'Nespecificat';lm[kk]=(lm[kk]||0)+1});c.exp.forEach(()=>{lm['Expirată fără feedback']=(lm['Expirată fără feedback']||0)+1});
+ const le=Object.entries(lm).sort((a,b)=>b[1]-a[1]),lmx=Math.max(1,...le.map(x=>x[1]));
+ $('rLost').innerHTML=le.length?le.map(([kk,v])=>'<div class="row"><span>'+esc(kk)+'</span><div class="trk"><div class="b2" style="width:'+(v/lmx*100)+'%;background:#9b1c1c"></div></div><span>'+v+'</span></div>').join(''):'<div class="hint">Nicio ofertă pierdută în perioada aleasă.</div>'}
+
+/* ----- navigare ----- */
+async function show(v){document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v||(v==='det'&&b.dataset.v==='a')));
  const w=v==='w';$('steps').classList.toggle('hide',!w);document.querySelector('.foot').classList.toggle('hide',!w);
- for(let i=1;i<=5;i++)$('s'+i).classList.toggle('hide',!w||i!==S.step);$('arch').classList.toggle('hide',v!=='a');$('rep').classList.toggle('hide',v!=='r');$('sett').classList.toggle('hide',v!=='s');$('allocBox').classList.toggle('hide',v!=='al');
- if(v==='a'){await loadRows();renderArch()}if(v==='r'){await loadRows();renderRep()}if(v==='s'){$('cfgUrl').value=CFG.url;$('cfgTok').value=CFG.token;admUI()}window.scrollTo(0,0)}
+ for(let i=1;i<=5;i++)$('s'+i).classList.toggle('hide',!w||i!==S.step);['arch:a','rep:r','sett:s','allocBox:al','detBox:det'].forEach(x=>{const[id,k]=x.split(':');$(id).classList.toggle('hide',v!==k)});
+ if(v==='a'){await loadRows();renderArch()}if(v==='r'){await loadRows();renderRep()}if(v==='s')renderSett();window.scrollTo(0,0)}
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{if(b.dataset.v==='w'&&S.step===5){if(confirmNew())return}show(b.dataset.v)});
-function confirmNew(){/* ofertă nouă după una generată: pornește de la zero */S.model=null;S.color=null;S.acc={};S.opts=[];OFNO='';CUR=null;$('vin').value='';S.condEdited=false;
+function confirmNew(){S.model=null;S.color=null;S.acc={};S.opts=[];OFNO='';CUR=null;$('vin').value='';S.condEdited=false;
  document.querySelectorAll('#s1 input,#s3 input,#s4 input').forEach(el=>{if(el.type==='checkbox')el.checked=false;else if(!['dVal','dAv','vNume','vTel','vMail'].includes(el.id))el.value=''});
  $('dCond').value=condText();$('saveMsg').textContent='';applyProf();renderModels();S.step=1;show('w');return true}
 ['aq','ast','avz','aper'].forEach(id=>$(id).addEventListener(id==='aq'?'input':'change',renderArch));
 ['rper','rvz','rmd'].forEach(id=>$(id).onchange=renderRep);
-$('cfgSave').onclick=()=>{CFG.url=$('cfgUrl').value.trim();CFG.token=$('cfgTok').value.trim();try{localStorage.setItem('icg_of_cfg',JSON.stringify(CFG))}catch(e){}$('cfgMsg').textContent='Salvat.'};
-$('cfgTest').onclick=async()=>{CFG.url=$('cfgUrl').value.trim();CFG.token=$('cfgTok').value.trim();$('cfgMsg').textContent='Se testează…';
- try{const r=await STORE.list();$('cfgMsg').textContent='Conexiune reușită: '+r.length+' oferte în arhivă.'}catch(e){$('cfgMsg').textContent='Nu merge: '+e.message}};
-$('demoBtn').onclick=()=>{const vz=['Florin Loghin','Alin Pîrvu','Vânzător 3'],md=['FOTON Tunland V9','FOTON Tunland G7'],cl=['Agro Est SRL','Construct Plus SRL','Transport Rapid SRL','Ion Popescu','Montan Forest SRL','Electro Instal SRL','Ferma Verde SRL','Logistic Sud SRL'];
- const a=[],n=new Date();for(let i=0;i<34;i++){const d=new Date(n.getFullYear(),n.getMonth()-Math.floor(i/4),Math.max(1,n.getDate()-(i*3)%27));const st=i<5?'Trimisă':['Câștigată','Pierdută','Câștigată','În negociere','Pierdută','Câștigată','Trimisă'][i%7];const val=new Date(d.getTime()+15*864e5);const v=md[i%2].includes('V9')?42000+(i%5)*900:33000+(i%4)*700;
-  a.push({nr:'DEMO-'+String(i+1).padStart(3,'0'),data:iso(d),valabilaPana:iso(val),vanzator:vz[i%3],client:cl[i%8],cui:'RO'+(10000000+i*7919),telefon:'07'+String(20000000+i*1234567).slice(0,8),email:'',model:md[i%2],culoare:'—',pretLista:v,pretDiscount:0,pretSuport:0,pretFinal:v,totalFaraTVA:v,totalCuTVA:Math.round(v*1.21),avansPct:20,termen:'',status:st,motiv:st==='Pierdută'?MOTIVE[i%4]:'',actualizat:iso(n),payload:''})}
- lsSet(a);loadRows().then(renderRep)};
+$('detBack').onclick=()=>show('a');
 
-/* ===== alocare serie din Stoc DBK (doar administrator) ===== */
+/* ----- alocare serie din Stoc DBK (doar administrator) ----- */
 const DBK={url:'https://script.google.com/macros/s/AKfycbzKKYTUHDYWxsOqZ1wNpQo37K8Wp6Ad-72hwGuVnQdvg8f_6fHGa2i_L8Xa_Gb6f6Hj/exec',token:'dbkstoc2026'};
-
 const MODEL_KEY={v9:'TUNLAND V9',g7:'TUNLAND G7',etoano:'TOANO',cavan:'CAVAN',eaumark:'EAUMARK',emiler:'EMILER'};
 const PLC={'Biały':'Alb','Czarny':'Negru','Czerwony':'Roșu','Niebieski':'Albastru','Srebrny':'Argintiu','Szary':'Gri','Zielony':'Verde','Żółty':'Galben','Pomarańczowy':'Portocaliu'};
 let CUR=null,DBKSTOC=null,ALR=null;
-const ADM={on:false,user:'',key:'',name:''};try{const v=JSON.parse(sessionStorage.getItem('icg_adm')||'null');if(v&&v.user){ADM.on=true;ADM.user=v.user;ADM.key=v.key;ADM.name=v.name||v.user}}catch(e){}
-function admUI(){$('admOut').classList.toggle('hide',ADM.on);$('admInBox').classList.toggle('hide',!ADM.on);$('admName').textContent=ADM.name}
-$('admIn').onclick=async()=>{const u=$('admUser').value.trim().toLowerCase(),k=$('admKey').value;if(!u||!k){$('admMsg').textContent='Introdu utilizatorul și parola.';return}$('admMsg').textContent='Se verifică…';
- let ok='';try{ok=await STORE.adminCheck(u,k)}catch(e){$('admMsg').textContent='Nu am putut verifica: '+e.message;return}
- if(!ok){$('admMsg').textContent='Utilizator sau parolă greșită.';return}ADM.on=true;ADM.user=u;ADM.key=k;ADM.name=ok;try{sessionStorage.setItem('icg_adm',JSON.stringify({user:u,key:k,name:ok}))}catch(e){}$('admKey').value='';$('admUser').value='';$('admMsg').textContent='';admUI()};
-$('admOutBtn').onclick=()=>{ADM.on=false;ADM.user='';ADM.key='';ADM.name='';try{sessionStorage.removeItem('icg_adm')}catch(e){}admUI()};
-function allocCell(r){
- if(r.alocare==='Alocată')return '<span class="al al-a">Alocată</span><br>'+esc(r.vin)+(ADM.on?'<br><button class="lk" data-alloc="'+esc(r.nr)+'">Schimbă</button> · <button class="lk" data-unalloc="'+esc(r.nr)+'">Anulează</button>':'');
- if(r.alocare==='Cerută')return '<span class="al al-c">Cerere trimisă</span>'+(ADM.on?'<br><button class="lk" data-alloc="'+esc(r.nr)+'">Alocă serie</button>':'');
- return '<span class="hint">–</span>'}
-$('reqAlloc').onclick=async()=>{const m=$('saveMsg');if(!OFNO){return}
- const r=(ROWS.find(x=>x.nr===OFNO))||CUR;if(r&&r.alocare==='Alocată'){m.style.color='var(--ok)';m.textContent='Seria e deja alocată: '+r.vin;return}
- m.style.color='var(--mut)';m.textContent='Se trimite cererea…';
- try{await STORE.setAlloc(OFNO,'Cerută','','');m.style.color='var(--ok)';m.textContent='✓ Cerere de alocare trimisă administratorului'}catch(e){m.style.color='var(--acc)';m.textContent='Nu s-a putut trimite: '+e.message}};
 function jsonp(url,params,ms){return new Promise((res,rej)=>{const cb='dbk_'+Date.now()+'_'+Math.floor(Math.random()*1e4);const s=document.createElement('script');
  const q=Object.entries(Object.assign({},params,{callback:cb})).map(([k,v])=>encodeURIComponent(k)+'='+encodeURIComponent(v)).join('&');
  const done=()=>{delete window[cb];s.remove();clearTimeout(tm)};window[cb]=d=>{done();res(d)};s.onerror=()=>{done();rej(new Error('rețea'))};const tm=setTimeout(()=>{done();rej(new Error('timeout'))},ms||15000);
  s.src=url+(url.includes('?')?'&':'?')+q;document.head.appendChild(s)})}
 async function loadDbk(){if(DBKSTOC)return DBKSTOC;const r=await jsonp(DBK.url,{action:'stoc',token:DBK.token});if(!r||!r.ok)throw new Error('răspuns invalid');DBKSTOC=r.vehicule||[];return DBKSTOC}
-async function openAlloc(r){if(!ADM.on)return;ALR=r;show('al');$('allocT').textContent='Alocare serie – oferta '+r.nr;
+async function openAlloc(r){if(!isAdm())return;ALR=r;show('al');$('allocT').textContent='Alocare serie – oferta '+r.nr;
  $('allocSub').textContent=r.client+' · '+r.model+' · culoare '+(r.culoare||'–')+' · vânzător '+(r.vanzator||'–');$('allocMsg').textContent='Se încarcă Stoc DBK…';$('allocTab').innerHTML='';
- try{await loadDbk();$('allocMsg').textContent='';renderAlloc()}catch(e){$('allocMsg').textContent='Nu am putut încărca Stoc DBK ('+e.message+'). Funcționează din aplicația publicată pe GitHub Pages.'}}
-function renderAlloc(){const r=ALR;if(!r||!DBKSTOC)return;const mid=r.modelId||'';const key=MODEL_KEY[mid]||'';const q=$('allocQ').value.toLowerCase();const all=$('allocAll').value==='a';
- const used={};ROWS.forEach(x=>{if(x.vin&&x.alocare==='Alocată'&&x.nr!==r.nr)used[x.vin]=x.nr});
+ try{await loadDbk();$('allocMsg').textContent='';renderAlloc()}catch(e){$('allocMsg').textContent='Nu am putut încărca Stoc DBK ('+e.message+').'}}
+function renderAlloc(){const r=ALR;if(!r||!DBKSTOC)return;const key=MODEL_KEY[r.modelId||'']||'';const q=$('allocQ').value.toLowerCase();const all=$('allocAll').value==='a';
+ const used={};ROWS.forEach(x=>{if(x.vin&&x.alocare==='Alocată'&&x.nr!==r.nr&&!['pierduta','anulata'].includes(x.etapa))used[x.vin]=x.nr});
  const list=DBKSTOC.filter(v=>(all||!key||String(v.model||'').toUpperCase().includes(key))&&(!q||[v.vin,v.model,PLC[v.culoare]||v.culoare,v.descriere].join(' ').toLowerCase().includes(q)));
  let h='<tr><th>VIN</th><th>Model</th><th>Culoare</th><th>An</th><th>Descriere</th><th></th></tr>';
  if(!list.length)h+='<tr><td colspan="6" style="color:var(--mut);padding:18px">Nicio mașină în Stoc DBK pentru acest model. Alege „Tot stocul” ca să vezi toate vehiculele.</td></tr>';
- list.forEach(v=>{const col=PLC[v.culoare]||v.culoare||'';const SYN={'Argintiu':['silver','argint'],'Alb':['white','alb'],'Negru':['black','negru'],'Gri':['grey','gray','gri','grafit','titanium'],'Albastru':['blue','albastru','safir'],'Roșu':['red','roșu','rosu'],'Verde':['green','verde'],'Galben':['yellow','galben']};const rc=(r.culoare||'').toLowerCase();const match=!!col&&(rc.includes(col.toLowerCase())||(SYN[col]||[]).some(w=>rc.includes(w)));const u=used[v.vin];
+ const SYN={'Argintiu':['silver','argint'],'Alb':['white','alb'],'Negru':['black','negru'],'Gri':['grey','gray','gri','grafit','titanium'],'Albastru':['blue','albastru','safir'],'Roșu':['red','roșu','rosu'],'Verde':['green','verde'],'Galben':['yellow','galben']};
+ list.forEach(v=>{const col=PLC[v.culoare]||v.culoare||'';const rc=(r.culoare||'').toLowerCase();const match=!!col&&(rc.includes(col.toLowerCase())||(SYN[col]||[]).some(w=>rc.includes(w)));const u=used[v.vin];
   h+='<tr'+(match?' style="background:#f3faf6"':'')+'><td class="vin">'+esc(v.vin)+'</td><td>'+esc(v.model||'')+'</td><td>'+esc(col)+(match?' <span class="al al-a">culoarea ofertată</span>':'')+'</td><td>'+esc(v.an||'')+'</td><td class="hint" style="max-width:380px">'+esc(String(v.descriere||'').slice(0,140))+'</td><td>'+
   (u?'<span class="hint">rezervată pe '+esc(u)+'</span>':(v.vin===r.vin?'<span class="al al-a">alocată</span>':'<button class="btn p" style="padding:6px 12px" data-pick="'+esc(v.vin)+'">Alocă</button>'))+'</td></tr>'});
  $('allocTab').innerHTML=h;
  document.querySelectorAll('[data-pick]').forEach(b=>b.onclick=async()=>{const vin=b.dataset.pick;$('allocMsg').textContent='Se alocă…';
-  try{await STORE.setAlloc(r.nr,'Alocată',vin,ADM.name||'administrator');r.alocare='Alocată';r.vin=vin;$('allocMsg').textContent='✓ Seria '+vin+' a fost alocată pe oferta '+r.nr+'.';renderAlloc()}catch(e){$('allocMsg').textContent='Nu s-a putut aloca: '+e.message}})}
-$('allocQ').oninput=renderAlloc;$('allocAll').onchange=renderAlloc;$('allocBack').onclick=()=>show('a');
+  try{await STORE.aloc(r.nr,vin);$('allocMsg').textContent='✓ Seria '+vin+' a fost alocată pe oferta '+r.nr+'. Vânzătorul a primit e-mail.';ROWS=await STORE.list();ALR=ROWS.find(x=>x.nr===r.nr)||r;renderAlloc()}catch(e){$('allocMsg').textContent='Nu s-a putut aloca: '+e.message}})}
+$('allocQ').oninput=renderAlloc;$('allocAll').onchange=renderAlloc;$('allocBack').onclick=()=>{if(ALR)openDet(ALR.nr);else show('a')};
 
+/* ----- autentificare, cont, utilizatori ----- */
+function applyProf(){const m=AUTH.me;if(!m)return;$('vNume').value=m.nume||'';$('vTel').value=m.telefon||'';$('vMail').value=m.email||'';
+ ['vNume','vMail'].forEach(id=>{$(id).readOnly=true;$(id).style.background='#f4f5f6'});
+ $('who').innerHTML=esc(m.nume)+'<small>'+esc(ROL[m.rol]||m.rol)+'</small>';
+ document.body.classList.toggle('is-adm',m.rol==='admin');document.body.classList.toggle('is-op',m.rol==='operator')}
+function showGate(msg){$('lgGate').classList.remove('hide');$('lgErr').textContent=msg||'';setTimeout(()=>$('lgU').focus(),50)}
+function logout(msg){AUTH.sess='';AUTH.me=null;try{localStorage.removeItem('icg_auth')}catch(e){}showGate(msg)}
+async function doLogin(){const u=$('lgU').value.trim().toLowerCase(),p=$('lgP').value;if(!u||!p){$('lgErr').textContent='Completează utilizatorul și parola.';return}
+ $('lgB').disabled=true;$('lgErr').textContent='Se verifică…';
+ try{const r=await fetch(CFG.url,{method:'POST',body:JSON.stringify({token:CFG.token,action:'login',user:u,pass:p})});const j=await r.json();
+  if(!j.ok){$('lgErr').textContent=j.error||'Autentificare eșuată';$('lgB').disabled=false;return}
+  AUTH.sess=j.sess;AUTH.me=j.me;saveAuth();$('lgP').value='';$('lgErr').textContent='';$('lgGate').classList.add('hide');applyProf()}
+ catch(e){$('lgErr').textContent='Nu mă pot conecta la server: '+e.message}$('lgB').disabled=false}
+$('lgB').onclick=doLogin;$('lgP').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});$('lgU').addEventListener('keydown',e=>{if(e.key==='Enter')$('lgP').focus()});
+function renderSett(){const m=AUTH.me;if(!m)return;
+ $('acInfo').innerHTML='<tr><td class="hint">Nume</td><td><b>'+esc(m.nume)+'</b></td></tr><tr><td class="hint">Utilizator</td><td>'+esc(m.user)+'</td></tr><tr><td class="hint">Rol</td><td>'+esc(ROL[m.rol]||m.rol)+'</td></tr><tr><td class="hint">E-mail pentru alerte</td><td>'+esc(m.email)+'</td></tr>';
+ $('acTel').value=m.telefon||'';$('usrCard').classList.toggle('hide',m.rol!=='admin');if(m.rol==='admin')loadUsers()}
+$('acTelS').onclick=async()=>{try{await STORE.call({action:'telefon',telefon:$('acTel').value});AUTH.me.telefon=$('acTel').value.trim();saveAuth();applyProf();$('acMsg').textContent='✓ Telefon salvat.'}catch(e){$('acMsg').textContent=e.message}};
+$('acPwS').onclick=async()=>{const a=$('acPw0').value,b=$('acPw1').value;if(b.length<8){$('acMsg').textContent='Parola nouă: minim 8 caractere.';return}
+ try{await STORE.call({action:'parola',vechi:a,noua:b});$('acPw0').value='';$('acPw1').value='';$('acMsg').textContent='✓ Parola a fost schimbată.'}catch(e){$('acMsg').textContent=e.message}};
+$('acOut').onclick=()=>logout('Te-ai deconectat.');
+let USERS=[];
+async function loadUsers(){try{USERS=(await STORE.call({action:'users'})).users}catch(e){$('usMsg').textContent=e.message;return}
+ $('usTab').innerHTML='<tr><th>Nume</th><th>Utilizator</th><th>Rol</th><th>E-mail</th><th>Telefon</th><th>Stare</th><th></th></tr>'+USERS.map(u=>'<tr><td><b>'+esc(u.nume)+'</b></td><td>'+esc(u.user)+'</td><td>'+esc(ROL[u.rol]||u.rol)+'</td><td>'+esc(u.email)+'</td><td>'+esc(u.telefon||'')+'</td><td>'+(u.activ?'<span class="al al-a">activ</span>':'<span class="al al-c">inactiv</span>')+'</td><td style="white-space:nowrap">'+
+  (u.fix?'<span class="hint">administrator fix</span>':'<button class="lk" data-ued="'+esc(u.user)+'">Editează</button> · <button class="lk" data-urs="'+esc(u.user)+'">Parolă nouă</button>')+'</td></tr>').join('');
+ document.querySelectorAll('[data-ued]').forEach(b=>b.onclick=()=>{const u=USERS.find(x=>x.user===b.dataset.ued);$('uU').value=u.user;$('uU').readOnly=true;$('uN').value=u.nume;$('uE').value=u.email;$('uT').value=u.telefon||'';$('uR').value=u.rol;$('uA').checked=!!u.activ;$('uSend').closest('label').classList.add('hide');$('uSave').textContent='Salvează modificările';$('usMsg').textContent='';$('uN').focus()});
+ document.querySelectorAll('[data-urs]').forEach(b=>b.onclick=async()=>{const u=USERS.find(x=>x.user===b.dataset.urs);const send=window.confirm?confirm('Generez o parolă nouă pentru '+u.nume+' și o trimit pe e-mail la '+u.email+'?\n\nOK = trimite pe e-mail · Anulează = doar afișează aici'):false;
+  try{const r=await STORE.call({action:'userReset',user:u.user,trimite:send});$('usMsg').innerHTML='Parola nouă pentru <b>'+esc(u.nume)+'</b>: <code>'+esc(r.parola)+'</code>'+(r.trimis?' · trimisă pe e-mail':'')}catch(e){$('usMsg').textContent=e.message}})}
+function usReset(){['uU','uN','uE','uT'].forEach(id=>$(id).value='');$('uU').readOnly=false;$('uR').value='vanzator';$('uA').checked=true;$('uSend').checked=true;$('uSend').closest('label').classList.remove('hide');$('uSave').textContent='Creează contul'}
+$('uNew').onclick=()=>{usReset();$('usMsg').textContent='';$('uU').focus()};
+$('uN').addEventListener('blur',()=>{if(!$('uU').readOnly&&!$('uU').value&&$('uN').value){const w=$('uN').value.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().split(/\s+/).filter(Boolean);$('uU').value=(w.length>1?w[0]+'-'+w[1]:w[0]||'').replace(/[^a-z0-9_-]/g,'')}});
+$('uSave').onclick=async()=>{const u={user:$('uU').value.trim().toLowerCase(),nume:$('uN').value.trim(),email:$('uE').value.trim(),telefon:$('uT').value.trim(),rol:$('uR').value,activ:$('uA').checked};
+ $('usMsg').textContent='Se salvează…';try{const r=await STORE.call({action:'userSave',u,trimite:$('uSend').checked});
+  $('usMsg').innerHTML=r.parola?'✓ Cont creat. Utilizator <b>'+esc(u.user)+'</b> · parolă <code>'+esc(r.parola)+'</code>'+(r.trimis?' · trimise pe e-mail la '+esc(u.email):' · comunic-o vânzătorului'):'✓ Modificările au fost salvate.';usReset();loadUsers()}catch(e){$('usMsg').textContent=e.message}};
 
-/* ===== profil vânzător ===== */
-function getProf(){try{return JSON.parse(localStorage.getItem('icg_vanzator')||'null')||{}}catch(e){return PROF_MEM}}
-let PROF_MEM={};
-function setProf(p){PROF_MEM=p;try{localStorage.setItem('icg_vanzator',JSON.stringify(p))}catch(e){}}
-function applyProf(){const p=getProf();if(p.n&&!$('vNume').value)$('vNume').value=p.n;if(p.t&&!$('vTel').value)$('vTel').value=p.t;if(p.m&&!$('vMail').value)$('vMail').value=p.m;
- $('pfBanner').style.display=(p.n&&p.m)?'none':'block';$('pfGate').classList.toggle('hide',!!(p.n&&MAILRE.test(p.m||'')));if(!(p.n&&MAILRE.test(p.m||''))){$('gN').value=p.n||'';$('gT').value=p.t||'';$('gM').value=p.m||''}$('pfN').value=p.n||'';$('pfT').value=p.t||'';$('pfM').value=p.m||''}
-$('pfSave').onclick=()=>{const n=$('pfN').value.trim(),m=$('pfM').value.trim();if(!n||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m)){$('pfMsg').textContent='Completează numele și un e-mail valid.';return}
- setProf({n,t:$('pfT').value.trim(),m});$('vNume').value=n;$('vTel').value=$('pfT').value.trim();$('vMail').value=m;$('pfMsg').textContent='✓ Profil salvat.';applyProf()};
-$('pfGo').onclick=e=>{e.preventDefault();show('s')};
 
 /* ===== date firmă din ANAF după CUI ===== */
 async function anafLookup(){if(S.ctype!=='pj')return;const cui=$('cCui').value.replace(/\D/g,'');const m=$('anafMsg');if(cui.length<2){m.textContent='Introdu CUI-ul.';return}
@@ -3416,12 +3543,7 @@ async function anafLookup(){if(S.ctype!=='pj')return;const cui=$('cCui').value.r
 $('anafBtn').onclick=anafLookup;$('cCui').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();anafLookup()}});
 $('cCui').addEventListener('blur',()=>{if(S.ctype==='pj'&&$('cCui').value.replace(/\D/g,'').length>=4&&!$('cNume').value.trim())anafLookup()});
 
-const MAILRE=/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/;
-$('gSave').onclick=()=>{const n=$('gN').value.trim(),m=$('gM').value.trim(),tl=$('gT').value.trim();
- if(n.split(/\s+/).length<2){$('gErr').textContent='Scrie numele complet (nume și prenume).';return}
- if(!MAILRE.test(m)){$('gErr').textContent='Introdu o adresă de e-mail validă.';return}
- setProf({n,t:tl,m});$('vNume').value=n;$('vTel').value=tl;$('vMail').value=m;$('gErr').textContent='';applyProf()};
-applyProf();
+if(AUTH.sess&&AUTH.me){applyProf();STORE.call({action:'me'}).then(j=>{AUTH.me=j.me;saveAuth();applyProf()}).catch(()=>{})}else showGate();
 $('dCond').value=condText();renderModels();renderSteps();updFoot();
 </script>
 </body>
