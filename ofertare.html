@@ -3607,10 +3607,11 @@ function jsonp(url,params,ms){return new Promise((res,rej)=>{const cb='dbk_'+Dat
  const q=Object.entries(Object.assign({},params,{callback:cb})).map(([k,v])=>encodeURIComponent(k)+'='+encodeURIComponent(v)).join('&');
  const done=()=>{delete window[cb];s.remove();clearTimeout(tm)};window[cb]=d=>{done();res(d)};s.onerror=()=>{done();rej(new Error('rețea'))};const tm=setTimeout(()=>{done();rej(new Error('timeout'))},ms||15000);
  s.src=url+(url.includes('?')?'&':'?')+q;document.head.appendChild(s)})}
-async function loadDbk(){if(DBKSTOC)return DBKSTOC;const r=await jsonp(DBK.url,{action:'stoc',token:DBK.token});if(!r||!r.ok)throw new Error('răspuns invalid');DBKSTOC=r.vehicule||[];return DBKSTOC}
+async function loadDbk(){if(DBKSTOC)return DBKSTOC;let r,err;for(let i=0;i<3&&!r;i++){try{r=await jsonp(DBK.url,{action:'stoc',token:DBK.token,_:Date.now()},30000);if(!r||!r.ok){err=new Error('răspuns invalid');r=null}}catch(e){err=e}if(!r&&i<2){$('allocMsg').textContent='Stoc DBK nu a răspuns, reîncerc ('+(i+2)+'/3)…';await new Promise(z=>setTimeout(z,1500*(i+1)))}}
+ if(!r)throw err||new Error('rețea');DBKSTOC=r.vehicule||[];return DBKSTOC}
 async function openAlloc(r){if(!isAdm())return;ALR=r;show('al');$('allocT').textContent='Alocare serie – oferta '+r.nr;
  let ic='';try{ic=JSON.parse(r.payload||'{}').intC||''}catch(e){}$('allocSub').textContent=r.client+' · '+r.model+' · culoare '+(r.culoare||'–')+(ic?' · interior '+ic:'')+' · vânzător '+(r.vanzator||'–');$('allocMsg').textContent='Se încarcă Stoc DBK…';$('allocTab').innerHTML='';
- try{await loadDbk();$('allocMsg').textContent='';renderAlloc()}catch(e){$('allocMsg').textContent='Nu am putut încărca Stoc DBK ('+e.message+').'}}
+ try{await loadDbk();$('allocMsg').textContent='';renderAlloc()}catch(e){$('allocMsg').innerHTML='Nu am putut încărca Stoc DBK ('+esc(e.message)+'). <button type="button" class="btn s" id="allocRetry" style="margin-left:8px;padding:5px 10px">Reîncearcă</button>';$('allocRetry').onclick=()=>openAlloc(r)}}
 function renderAlloc(){const r=ALR;if(!r||!DBKSTOC)return;const key=MODEL_KEY[r.modelId||'']||'';const q=$('allocQ').value.toLowerCase();const all=$('allocAll').value==='a';
  const used={};ROWS.forEach(x=>{if(x.vin&&x.alocare==='Alocată'&&x.nr!==r.nr&&!['pierduta','anulata'].includes(x.etapa))used[x.vin]=x.nr});
  const list=DBKSTOC.filter(v=>(all||!key||String(v.model||'').toUpperCase().includes(key))&&(!q||[v.vin,v.model,PLC[v.culoare]||v.culoare,v.descriere].join(' ').toLowerCase().includes(q)));
