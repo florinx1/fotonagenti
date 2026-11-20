@@ -27,7 +27,7 @@ const COLS = ['nr','data','valabilaPana','vanzator','client','cui','telefon','em
   'status','motiv','actualizat','modelId','alocare','vin','alocatDe','alocatLa','notificat','feedback',
   'vanzatorUser','etapa','etapaLa','proformaNr','proformaData','facturaAvansNr','dataIncasare',
   'comision','comisionNota','comisionPlatit','livratLa','pdfLink','emailOferta','payload',
-  'pretMinim','pretAprobat','aprobare'];
+  'pretMinim','pretAprobat','aprobare','sumaAvans','monedaAvans'];
 const UCOLS = ['user','nume','email','telefon','rol','activ','hash','creat'];
 const HCOLS = ['data','nr','etapa','eticheta','de','detalii'];
 // Prețuri (fila „Prețuri” din Sheet – le pot modifica administratorii; aplicația le citește la fiecare deschidere)
@@ -49,7 +49,7 @@ const ET = {
   cerere:     { l: 'Cerere alocare serie',             who: 'v', next: ['pierduta'] },
   alocata:    { l: 'Serie alocată',                    who: 'a', next: ['proforma','pierduta'] },
   proforma:   { l: 'Proformă avans emisă',             who: 'v', next: ['avans','pierduta'], req: ['proformaNr','proformaData'] },
-  avans:      { l: 'Avans încasat – comandă plasată',  who: 'v', next: ['incarcat'], req: ['facturaAvansNr','dataIncasare'] },
+  avans:      { l: 'Avans încasat – comandă plasată',  who: 'v', next: ['incarcat'], req: ['facturaAvansNr','dataIncasare','sumaAvans'] },
   incarcat:   { l: 'Vehicul încărcat spre livrare ICG', who: 'o', next: ['acte'] },
   acte:       { l: 'Întocmire acte',                   who: 'o', next: ['pdi'] },
   pdi:        { l: 'În pregătire PDI / fișă livrare',  who: 'o', next: ['finalizata'] },
@@ -284,11 +284,17 @@ function etapa_(me, nr, t, d) {
   if (T.who === 'v' && !(isOwn || isAdm)) throw new Error('Această etapă o validează vânzătorul ofertei');
   if (T.who === 'o' && !(isOp || isAdm)) throw new Error('Această etapă o validează administratorul');
   if (T.who === 'a' && !isAdm) throw new Error('Doar administratorii pot face asta');
-  (T.req || []).forEach(f => { if (!String(d[f] || '').trim()) throw new Error('Completează câmpul obligatoriu: ' + ({ proformaNr: 'numărul proformei', proformaData: 'data proformei', facturaAvansNr: 'numărul facturii de avans', dataIncasare: 'data încasării avansului', motiv: 'motivul' }[f] || f)); });
+  (T.req || []).forEach(f => { if (!String(d[f] || '').trim()) throw new Error('Completează câmpul obligatoriu: ' + ({ proformaNr: 'numărul proformei', proformaData: 'data proformei', facturaAvansNr: 'numărul facturii de avans', dataIncasare: 'data încasării avansului', sumaAvans: 'suma încasată', motiv: 'motivul' }[f] || f)); });
   ['proformaData','dataIncasare'].forEach(f => { if (d[f] && !validDate_(d[f])) throw new Error('Dată invalidă'); if (d[f] && d[f] > azi()) throw new Error('Data nu poate fi în viitor'); });
   let det = String(d.nota || '').trim();
   if (t === 'proforma') { r.proformaNr = String(d.proformaNr).trim(); r.proformaData = d.proformaData; det = 'Proformă ' + r.proformaNr + ' din ' + fdt_(r.proformaData) + (det ? ' · ' + det : ''); }
-  if (t === 'avans') { r.facturaAvansNr = String(d.facturaAvansNr).trim(); r.dataIncasare = d.dataIncasare; det = 'Factură avans ' + r.facturaAvansNr + ', încasat ' + fdt_(r.dataIncasare) + (det ? ' · ' + det : ''); }
+  if (t === 'avans') {
+    const s = Number(String(d.sumaAvans).replace(/\s/g, '').replace(',', '.')), mon = d.monedaAvans === 'EUR' ? 'EUR' : 'RON';
+    if (!(s > 0)) throw new Error('Suma încasată trebuie să fie un număr mai mare ca zero');
+    if (r.proformaData && d.dataIncasare < String(r.proformaData).slice(0, 10)) throw new Error('Data încasării nu poate fi înaintea datei proformei (' + fdt_(r.proformaData) + ')');
+    r.facturaAvansNr = String(d.facturaAvansNr).trim(); r.dataIncasare = d.dataIncasare; r.sumaAvans = Math.round(s * 100) / 100; r.monedaAvans = mon;
+    det = 'Factură avans ' + r.facturaAvansNr + ', încasat ' + fdt_(r.dataIncasare) + ', suma ' + r.sumaAvans.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) + ' ' + mon + (det ? ' · ' + det : '');
+  }
   if (t === 'cerere') r.alocare = 'Cerută';
   if (t === 'negociere' && String(r.valabilaPana) < azi()) { const x = new Date(); x.setDate(x.getDate() + 7); r.valabilaPana = Utilities.formatDate(x, 'Europe/Bucharest', 'yyyy-MM-dd'); r.notificat = ''; }
   if (t === 'pierduta' || t === 'anulata') {
