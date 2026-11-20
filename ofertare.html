@@ -275,7 +275,7 @@ input:focus,select:focus,textarea:focus{border-color:#05C3DE;box-shadow:0 0 0 3p
 </table>
 <div class="err" id="ePret"></div>
 <div class="pmin" id="pMin"></div>
-<div class="hint">Prețul final al vehiculului este ultimul completat: suport importator, apoi discount, apoi listă. Bifează ce trepte de preț vrei să vadă clientul în ofertă.</div>
+<div class="hint">Prețul final al vehiculului este ultimul completat: suport importator, apoi discount, apoi listă. Prețurile completate apar automat în ofertă (bifa „În ofertă”). Debifează treptele pe care nu vrei să le vadă clientul; prețul final apare mereu.</div>
 <div style="margin-top:12px;max-width:320px"><label>Monedă de plată</label><select id="pCur"><option>EUR</option></select></div>
 <div class="tot" style="margin-top:14px" id="totBox"></div>
 </div>
@@ -3241,9 +3241,15 @@ function renderTot(){const t=totals();renderMin();$('totBox').innerHTML=
  (t.disc?'<div class="tr"><span>Discount</span><span>−'+eur(t.disc)+'</span></div>':'')+
  '<div class="tr"><span>Total fără TVA</span><span>'+eur(t.net)+'</span></div><div class="tr"><span>TVA 21%</span><span>'+eur(t.vat)+'</span></div><div class="tr big"><span>Total cu TVA</span><span>'+eur(t.gross)+'</span></div>'+
  ((Object.values(S.acc).some(v=>!num(v))||S.opts.some(o=>!num(o.p)))?'<div class="err" style="margin-top:6px">Unele accesorii sau opționale nu au preț. Completează-le în pasul 2.</div>':'')}
+/* trepte de preț: bifa se pune singură când completezi prețul; prețul final (cel plătit) apare mereu */
+const TIER_HAD={};
+function syncTiers(){let fin='';['L','D','S'].forEach(k=>{if(num($('p'+k+'_n').value))fin=k});
+ ['L','D','S'].forEach(k=>{const c=$('p'+k+'_s'),v=num($('p'+k+'_n').value);
+  if(v&&!TIER_HAD[k])c.checked=true;if(!v)c.checked=false;TIER_HAD[k]=!!v;
+  c.disabled=!v||k===fin;if(k===fin)c.checked=true;c.title=k===fin?'Prețul final apare mereu în ofertă':(v?'Bifează ca să apară în ofertă':'Completează prețul')})}
 ['L','D','S'].forEach(k=>{const n=$('p'+k+'_n'),b=$('p'+k+'_b');
- n.oninput=()=>{const v=num(n.value);b.value=v?(v*(1+VAT)).toFixed(2).replace('.',','):'';renderTot();updFoot()};
- b.oninput=()=>{const v=num(b.value);n.value=v?(v/(1+VAT)).toFixed(2).replace('.',','):'';renderTot();updFoot()}});
+ n.oninput=()=>{const v=num(n.value);b.value=v?(v*(1+VAT)).toFixed(2).replace('.',','):'';syncTiers();renderTot();updFoot()};
+ b.oninput=()=>{const v=num(b.value);n.value=v?(v/(1+VAT)).toFixed(2).replace('.',','):'';syncTiers();renderTot();updFoot()}});
 document.querySelectorAll('#ctype button').forEach(b=>b.onclick=()=>{S.ctype=b.dataset.t;document.querySelectorAll('#ctype button').forEach(x=>x.classList.toggle('on',x===b));
  const pj=S.ctype==='pj';$('lNume').textContent=pj?'Denumire firmă':'Nume și prenume';$('lCui').textContent=pj?'CUI':'CNP';$('wReg').classList.toggle('hide',!pj);$('anafBtn').classList.toggle('hide',!pj);$('anafMsg').textContent=''});
 
@@ -3447,7 +3453,7 @@ function openOffer(r){let p;try{p=JSON.parse(r.payload)}catch(e){return alertBox
  Object.entries(p.f||{}).forEach(([id,v])=>{const el=$(id);if(!el||['vNume','vTel','vMail'].includes(id))return;if(el.type==='checkbox')el.checked=!!v;else el.value=v});
  $('vNume').value=r.vanzator||'';$('vMail').value=r.emailVanzator||'';
  document.querySelectorAll('#ctype button').forEach(x=>{if(x.dataset.t===S.ctype)x.click()});$('wTermX').classList.toggle('hide',$('dTerm').value!=='x');
- $('vin').value=r.vin||'';OFNO=r.nr;CUR=r;renderModels();show('w');S.step=1;go(5)}
+ ['L','D','S'].forEach(k=>{TIER_HAD[k]=!!num($('p'+k+'_n').value)});syncTiers();$('vin').value=r.vin||'';OFNO=r.nr;CUR=r;renderModels();show('w');S.step=1;go(5)}
 
 /* ----- detaliu ofertă: etape ----- */
 let DET=null;
@@ -3591,7 +3597,7 @@ async function show(v){document.querySelectorAll('#nav button').forEach(b=>b.cla
  if(v==='m'){await loadRows();renderMele()}if(v==='a'){await loadRows();renderArch()}if(v==='r'){await loadRows();renderRep()}if(v==='s')renderSett();window.scrollTo(0,0)}
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{if(b.dataset.v==='w'&&S.step===5){if(confirmNew())return}show(b.dataset.v)});
 function confirmNew(){S.model=null;S.color=null;S.acc={};S.opts=[];OFNO='';CUR=null;$('vin').value='';S.condEdited=false;
- document.querySelectorAll('#s1 input,#s3 input,#s4 input').forEach(el=>{if(el.type==='checkbox')el.checked=false;else if(!['dVal','dAv','vNume','vTel','vMail'].includes(el.id))el.value=''});
+ document.querySelectorAll('#s1 input,#s3 input,#s4 input').forEach(el=>{if(el.type==='checkbox')el.checked=false;else if(!['dVal','dAv','vNume','vTel','vMail'].includes(el.id))el.value=''});['L','D','S'].forEach(k=>TIER_HAD[k]=false);syncTiers();
  $('dCond').value=condText();$('saveMsg').textContent='';applyProf();renderModels();S.step=1;show('w');return true}
 ['aq','ast','avz','aper'].forEach(id=>$(id).addEventListener(id==='aq'?'input':'change',renderArch));
 ['rper','rvz','rmd'].forEach(id=>$(id).onchange=renderRep);
