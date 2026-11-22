@@ -13,7 +13,7 @@ Aplicația PWA „Foton by Inter Cargo” (repo `florinx1/fotonagenti`) este fol
 - `catalog.html`: catalogul Tunland (aprox. 3,5 MB, tot cu imagini base64).
 - `Code-oferte.gs`: backend-ul Apps Script al ofertelor (arhivă, numerotare, e-mailuri, aprobare preț). Repo-ul are doar o copie; codul activ e în proiectul Apps Script al lui Florin.
 - `config.js`: URL-urile `/exec` ale Apps Script și setările.
-- `service-worker.js`: cache-ul PWA. **Crește `CACHE_NAME` (ex. `foton-agenti-v40` → `v41`) la fiecare modificare publicată**, altfel telefoanele păstrează versiunea veche.
+- `service-worker.js`: cache-ul PWA. **Crește `CACHE_NAME` (ex. `foton-agenti-v41` → `v42`) la fiecare modificare publicată**, altfel telefoanele păstrează versiunea veche.
 - `fise-tehnice/`: PDF-urile fișelor tehnice și `fise.json` (lista lor).
 - `lib/leaflet`: biblioteca pentru hartă.
 - Comutatorul Tekmodi este `const TEKMODI_ON=false;` în `ofertare.html`.
@@ -42,7 +42,8 @@ Aplicația PWA „Foton by Inter Cargo” (repo `florinx1/fotonagenti`) este fol
 - Pentru „Preț respins” se cere un motiv. Vânzătorul modifică prețul din Arhivă și salvează din nou.
 
 ## PDF-ul ofertei
-- Are **două pagini**. Orice modificare trebuie să-l păstreze pe două pagini.
+- Ofertele au **2 pagini**; eToano are 3, pentru că are în plus pagina cu spațiul de încărcare. Nu adăuga pagini noi fără acordul lui Florin.
+- PDF-ul trimis pe e-mail și cel descărcat se fac cu **html2canvas + jsPDF** (`offerPdf()` în `ofertare.html`), nu cu printul din browser. html2canvas nu știe `object-fit`; de asta se ocupă `fitImgs()`, care redesenează pozele la mărimea căsuței. Testează mereu PDF-ul din `offerPdf()`, nu doar printul.
 - Ofertele CAVAN au sigla și filigranul CAVAN. Celelalte au sigla FOTON și pe cea Inter Cargo.
 - Se generează pe telefon, inclusiv pe iPhone. Ai grijă la dimensiunea imaginilor, pentru că pe iPhone generarea a mai picat din cauza lor.
 - Antet ICG: INTER CARGO GRUP S.R.L., CIF RO18039372, Șos. de Centură nr. 5-7, Bragadiru, Ilfov.
@@ -52,7 +53,7 @@ Aplicația PWA „Foton by Inter Cargo” (repo `florinx1/fotonagenti`) este fol
 
 ## Cum lucrezi
 - Fă modificări mici și țintite. Nu rescrie fișiere întregi fără motiv.
-- Înainte de commit, testează în Chrome headless (Playwright), la dimensiune de telefon. Parcurge o ofertă completă pentru cel puțin un model FOTON și unul CAVAN, generează PDF-ul și verifică dacă a rămas pe două pagini.
+- Înainte de commit, testează în Chrome headless (Playwright), la dimensiune de telefon. Parcurge o ofertă completă pentru cel puțin un model FOTON și unul CAVAN, generează PDF-ul cu `offerPdf()` și verifică numărul de pagini și pozele.
 - Nu pune în repo parole, chei sau date de clienți.
 - Mesajele de commit se scriu în română, scurt.
 - La final explică-i lui Florin, pe scurt și în română, ce s-a schimbat și ce trebuie să facă el: redeploy la Apps Script, coloane noi în Sheet sau altceva.

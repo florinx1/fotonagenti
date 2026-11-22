@@ -3344,8 +3344,29 @@ $('next').onclick=()=>go(S.step+1);$('back').onclick=()=>go(S.step-1);
 document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(+b.dataset.go));
 
 /* ===== PDF (pentru e-mail și descărcare) ===== */
+/* html2canvas nu cunoaște object-fit și întinde pozele pe toată căsuța. Înainte de captură
+   desenăm fiecare poză exact la mărimea căsuței (contain/cover + object-position), apoi refacem originalul. */
+function fitPos(v,free){v=(v||'').trim();if(/%$/.test(v))return free*parseFloat(v)/100;if(/px$/.test(v))return parseFloat(v);
+ return v==='left'||v==='top'?0:v==='right'||v==='bottom'?free:free/2}
+async function fitImgs(root){const undo=[];
+ for(const im of root.querySelectorAll('img')){const cs=getComputedStyle(im),fit=cs.objectFit;
+  if(fit!=='contain'&&fit!=='cover')continue;
+  if(!im.complete)await new Promise(r=>{im.onload=im.onerror=r});
+  const bw=im.clientWidth,bh=im.clientHeight,nw=im.naturalWidth,nh=im.naturalHeight;if(!bw||!bh||!nw||!nh)continue;
+  const k=fit==='contain'?Math.min(bw/nw,bh/nh):Math.max(bw/nw,bh/nh),dw=nw*k,dh=nh*k;
+  const pos=cs.objectPosition.split(/\s+/),x=fitPos(pos[0],bw-dw),y=fitPos(pos[1]||pos[0],bh-dh);
+  const sc=2,c=document.createElement('canvas');c.width=Math.round(bw*sc);c.height=Math.round(bh*sc);const g=c.getContext('2d');
+  const bg=cs.backgroundColor;g.fillStyle=bg&&bg!=='rgba(0, 0, 0, 0)'&&bg!=='transparent'?bg:'#ffffff';g.fillRect(0,0,c.width,c.height);
+  g.imageSmoothingQuality='high';g.drawImage(im,x*sc,y*sc,dw*sc,dh*sc);
+  const old={src:im.getAttribute('src'),w:im.style.width,h:im.style.height,f:im.style.objectFit,mw:im.style.maxWidth,mh:im.style.maxHeight,fl:im.style.flex};
+  const w=bw+'px',h=bh+'px';
+  im.src=c.toDataURL('image/jpeg',0.92);await new Promise(r=>{if(im.complete)r();else im.onload=im.onerror=r});
+  Object.assign(im.style,{width:w,height:h,maxWidth:w,maxHeight:h,objectFit:'fill',flex:'0 0 '+w});
+  undo.push(()=>{im.src=old.src;Object.assign(im.style,{width:old.w,height:old.h,objectFit:old.f,maxWidth:old.mw,maxHeight:old.mh,flex:old.fl})})}
+ return ()=>undo.forEach(f=>f())}
 async function offerPdf(){const {jsPDF}=window.jspdf;const pdf=new jsPDF({unit:'mm',format:'a4',compress:true});const pages=[...document.querySelectorAll('#doc .pg')];
- for(let i=0;i<pages.length;i++){const c=await html2canvas(pages[i],{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false,windowWidth:pages[i].scrollWidth});
+ for(let i=0;i<pages.length;i++){const restore=await fitImgs(pages[i]);let c;
+  try{c=await html2canvas(pages[i],{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false,windowWidth:pages[i].scrollWidth})}finally{restore()}
   if(i)pdf.addPage();pdf.addImage(c.toDataURL('image/jpeg',0.86),'JPEG',0,0,210,297,undefined,'FAST')}
  return pdf}
 function pdfName(){return ('Oferta '+OFNO+' - '+($('vNume').value||'')+' - '+($('cNume').value||'')).replace(/[\\/:*?"<>|]+/g,' ').trim()+'.pdf'}
