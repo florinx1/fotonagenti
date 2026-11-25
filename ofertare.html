@@ -395,6 +395,10 @@ input:focus,select:focus,textarea:focus{border-color:#05C3DE;box-shadow:0 0 0 3p
 <div id="rPlK" class="kpis"></div>
 <div id="rPlChart"></div>
 <div class="sect" style="margin-top:16px">Oferte la minim sau sub minim</div><table class="lines" id="rPlList" style="width:100%"></table></div>
+<div class="card hide" id="cDs" style="margin-bottom:16px;overflow:auto"><div class="sect">Discount mediu față de prețul de listă · vizibil doar administratorilor</div>
+<p class="hint" style="margin-top:0">Pentru fiecare ofertă: discount = prețul de listă al modelului minus prețul final al vehiculului (fără TVA, fără opționale). „Poziția în plajă” arată unde se află prețul între minim și listă: 0% înseamnă la prețul minim, 100% la prețul de listă. Se aplică filtrele de mai sus.</p>
+<div class="sect" style="font-size:14px">Pe vânzător</div><table class="lines" id="rDsV" style="width:100%"></table>
+<div class="sect" style="font-size:14px;margin-top:16px">Pe model</div><table class="lines" id="rDsM" style="width:100%"></table></div>
 <div class="kpis" id="kpis"></div>
 <div class="card" id="cPf" style="margin-bottom:16px"><div class="sect">Proforme neîncasate</div><p class="hint" id="rPfSub" style="margin:0 0 10px"></p><div id="rPf"></div></div>
 <div class="card" id="cVz" style="margin-bottom:16px;overflow:auto"><div class="sect">Performanță pe vânzător</div><table class="lines" id="rVz" style="width:100%"></table></div>
@@ -3816,7 +3820,18 @@ function plKey(r){const id=String(r.modelId||'').toLowerCase();if(PRICES[id])ret
 function plRef(r){const p=PRICES[plKey(r)]||{};const min=+r.pretMinim||+p.min||0,lista=+p.lista||+r.pretLista||0;return min?{min,lista:Math.max(lista,min)}:null}
 const plOff=r=>+r.pretFinal||+r.pretSuport||+r.pretDiscount||+r.pretLista||0;
 function plLvl(r){const g=plRef(r),f=plOff(r);if(!g||!f)return'n';if(f<g.min-0.5)return'r';if(f<=g.min*1.02)return'o';return g.lista>g.min&&(f-g.min)/(g.lista-g.min)>=0.5?'v':'g'}
-function renderPriceLevels(rows){const on=isAdm();$('cPlv').classList.toggle('hide',!on);
+/* discount mediu față de listă, pe vânzător și pe model (doar administrator) */
+function renderDiscounts(rows){const on=isAdm();$('cDs').classList.toggle('hide',!on);if(!on){$('rDsV').innerHTML=$('rDsM').innerHTML='';return}
+ const one=r=>{const p=PRICES[plKey(r)]||{},L=+r.pretLista||+p.lista||0,f=plOff(r),g=plRef(r);if(!L||!f)return null;const d=L-f;
+  return{d,pct:d/L,poz:g&&g.lista>g.min?Math.max(-0.5,Math.min(1.5,(f-g.min)/(g.lista-g.min))):null}};
+ const tab=(key,el,lbl)=>{const g={};rows.forEach(r=>{const x=one(r);if(!x)return;const k=r[key]||'—';(g[k]=g[k]||[]).push(x)});
+  const R=x=>'<td style="text-align:right;white-space:nowrap">'+x+'</td>',H=x=>'<td class="hint" style="text-align:right">'+x+'</td>',av=(a,f)=>{a=a.map(f).filter(x=>x!=null);return a.length?a.reduce((s,x)=>s+x,0)/a.length:null};
+  const E=Object.entries(g).map(([k,a])=>[k,a.length,av(a,x=>x.pct),av(a,x=>x.d),Math.max(...a.map(x=>x.pct)),av(a,x=>x.poz)]).sort((a,b)=>(b[2]||0)-(a[2]||0));
+  const col=p=>p==null?'inherit':p<0.15?'#c62828':p<0.5?'#b07800':'#2e8b57';
+  $(el).innerHTML='<tr><td class="hint">'+lbl+'</td>'+H('Oferte')+H('Discount mediu')+H('Discount mediu €')+H('Discount maxim')+H('Poziție în plajă')+'</tr>'+
+   (E.length?E.map(([k,n,p,d,mx,poz])=>'<tr><td>'+esc(k)+'</td>'+R(n)+R('<b>'+pctf(p)+'</b>')+R(eur(d||0))+R(pctf(mx))+R('<span style="color:'+col(poz)+';font-weight:600">'+pctf(poz)+'</span>')+'</tr>').join(''):'<tr><td colspan="6" class="hint">Nicio ofertă cu preț de listă pentru filtrele alese.</td></tr>')};
+ tab('vanzator','rDsV','Vânzător');tab('model','rDsM','Model')}
+function renderPriceLevels(rows){const on=isAdm();$('cPlv').classList.toggle('hide',!on);renderDiscounts(rows);
  if(!on){['rPlK','rPlChart','rPlList'].forEach(id=>$(id).innerHTML='');return}
  const R=x=>'<td style="text-align:right">'+x+'</td>',H=x=>'<td class="hint" style="text-align:right">'+x+'</td>',ORD=['v','g','o','r','n'];
  const cn=a=>{const c={v:0,g:0,o:0,r:0,n:0};a.forEach(r=>c[plLvl(r)]++);return c};const all=cn(rows),n=rows.length;
