@@ -35,6 +35,13 @@ Aplicația PWA „Foton by Inter Cargo” (repo `florinx1/fotonagenti`) este fol
 4. Datele clientului și ale vânzătorului.
 5. Oferta se salvează automat în arhivă, cu număr de ofertă, iar conducerea primește un e-mail cu PDF-ul.
 
+## Factura proformă și etapele comenzii
+- Flux: ofertată → **proformă emisă** (buton „Emite factură proformă”, din ofertă) → **avans încasat** → alocare serie (administrator) → încărcat → acte (factura finală) → PDI → livrată.
+- Proforma: seria `ICG-PF`, numerotare continuă de la 000001, dată de Apps Script (`proforma_()` în `Code-oferte.gs`). Se salvează în fila **Proforme**; la reemitere cea veche rămâne „Înlocuită”.
+- Plată directă (avans % din ofertă) sau **leasing** (cumpărător = finanțatorul, clientul = utilizator). Firmele de leasing sunt în fila **Leasing**.
+- PDF-ul proformei: o pagină, `pfPdf()` în `ofertare.html` (html2canvas + jsPDF). FOTON: sigla FOTON stânga + Inter Cargo dreapta. CAVAN: doar CAVAN + Inter Cargo, fără FOTON. Datele ICG (sediu, conturi) sunt în `ICGF`.
+- Avans neîncasat după 3 zile lucrătoare: e-mail la vânzător și apare în Raport → „Proforme neîncasate”. Vânzătorul alege: avans încasat, mai are nevoie de timp (alerta revine peste 3 zile), a renunțat, nu mai răspunde.
+
 ## Preț minim și aprobare
 - Prețul de listă, discountul maxim și prețul minim pentru fiecare model se citesc din fila **Preturi** a Google Sheet-ului (coloanele `pretLista`, `discountMaximPct`, `pretMinim`). **Nu scrie prețuri în cod.**
 - Dacă vânzătorul pune un preț sub minim, oferta primește starea „Așteaptă aprobare preț” și Florin și Alex primesc e-mail. Până la aprobare, vânzătorul nu poate descărca PDF-ul și nu poate printa.

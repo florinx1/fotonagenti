@@ -191,6 +191,32 @@ input:focus,select:focus,textarea:focus{border-color:#05C3DE;box-shadow:0 0 0 3p
 .lockmsg{margin:10px 0;padding:12px 14px;border-radius:10px;background:#fff7e6;border-left:4px solid #e0a100;font-size:14px}
 .delbar{display:flex;gap:12px;align-items:center;margin:0 0 10px;padding:10px 12px;border-radius:10px;background:#fdf1f1;border-left:4px solid #c0392b;font-size:14px}.delbar.hide{display:none}.btn.del{border-color:#c0392b;color:#9b1c1c}.delbar .lk{background:none;border:0;color:#3A4759;text-decoration:underline;cursor:pointer;font-size:14px}
 .intsw{display:block;width:100%;aspect-ratio:16/9;border-radius:6px}.int1.noimg{display:block}
+/* raport proforme neîncasate */
+.pfr{border:1px solid var(--line);border-left:4px solid #c9d0d8;border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;flex-direction:column;gap:8px}.pfr.late{border-left-color:#c0392b;background:#fffafa}
+.pfr .pfh{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.pfr .mbtns{display:flex;flex-wrap:wrap;gap:6px}.pfr .mbtns .btn{padding:7px 11px;font-size:13px}
+/* factura proformă (PDF) */
+.pxp{width:210mm;height:297mm;padding:11mm 14mm 28mm;position:relative;overflow:hidden;background:#fff;box-sizing:border-box;font-family:Barlow,sans-serif;color:#16181b;font-size:9pt;line-height:1.35}
+.pxp *{box-sizing:border-box}.pxp>*{position:relative;z-index:1}.pxp>.wm{position:absolute;z-index:0;left:50%;top:55%;width:120mm;transform:translate(-50%,-50%);opacity:.05}
+.pxp .lg{display:flex;justify-content:space-between;align-items:center;padding-bottom:6px}.pxp .lg .fl{height:11mm;width:auto}.pxp .lg .ic{height:9.5mm;width:auto}
+.pxp .hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #3A4759;box-shadow:0 2px 0 #05C3DE;padding:6px 0 7px}
+.pxp .hd .t{font-family:'Barlow Condensed';font-weight:600;font-size:24pt;letter-spacing:2px;line-height:1}.pxp .hd .nn{font-size:11pt;margin-top:3px;color:#3A4759}.pxp .hd .dt{text-align:right;font-size:8.6pt;line-height:1.45;color:#444}
+.pxp .pp{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:9px 0}
+.pxp .box{border:1px solid #dfe3e8;border-radius:5px;padding:6px 8px;line-height:1.45;font-size:8.5pt;color:#333}
+.pxp .bt{font-family:'Barlow Condensed';font-weight:600;font-size:10.5pt;letter-spacing:.6px;text-transform:uppercase;color:#3A4759;margin-bottom:2px}
+.pxp .bn{font-family:'Barlow Condensed';font-weight:600;font-size:12.5pt;color:#111;line-height:1.2}.pxp .bn.s{font-size:11pt}
+.pxp .ut{margin-top:5px;padding-top:4px;border-top:1px dashed #cfd5dc}
+.pxp table{border-collapse:collapse}.pxp .bks{margin-top:3px;font-size:8.1pt}.pxp .bks td{padding:0 8px 0 0}.pxp .bks td:first-child{color:#6b7178}
+.pxp .it{width:100%;font-size:8.8pt}.pxp .it th{background:#3A4759;color:#fff;padding:5px;font-weight:600;text-align:left;font-size:8.3pt;line-height:1.15}
+.pxp .it td{padding:5px;border-bottom:1px solid #e3e5e8;vertical-align:top}.pxp .c{text-align:center!important}.pxp .r{text-align:right!important;white-space:nowrap}
+.pxp .spec{width:100%;margin-top:3px;font-size:8pt}.pxp .spec td{padding:1px 0;border-bottom:1px dotted #ddd;color:#333}.pxp .spec td:first-child{color:#6b7178;width:38%;padding-right:6px}
+.pxp .sum{display:grid;grid-template-columns:1fr 78mm;gap:12px;margin-top:9px}.pxp .note{font-size:8.4pt;line-height:1.5;color:#333}.pxp .note>div{margin-bottom:2px}.pxp .sm{color:#6b7178;font-size:7.8pt;margin-top:4px}
+.pxp .tt{width:100%;font-size:9.3pt;align-self:start}.pxp .tt td{padding:4px 6px;border-bottom:1px solid #e3e5e8}
+.pxp .tt tr.g td{background:#3A4759;color:#fff;font-family:'Barlow Condensed';font-weight:600;font-size:13pt;letter-spacing:.5px}.pxp .tt tr.a td{color:#3A4759;font-weight:600;background:#e6f8fb}
+.pxp .sg{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:14px;margin-top:14px;font-size:8.5pt;line-height:1.45}.pxp .st2 .ln{border-bottom:1px solid #999;height:16mm}
+.pxp .pf2{position:absolute;left:14mm;right:14mm;bottom:8mm;border-top:1.5px solid #3A4759;padding-top:3mm;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;font-size:7.6pt;color:#555;text-align:center}
+.pxp .pf2 img{height:7mm;width:auto}.pxp .pf2 b{color:#3A4759;font-size:10pt}.pxp .pf2 .pn{text-align:right}
+.pxp.t1{font-size:8.4pt}.pxp.t1 .it,.pxp.t1 .box{font-size:8pt}.pxp.t1 .spec{font-size:7.4pt}.pxp.t1 .it td{padding:3px 5px}.pxp.t1 .pp{margin:6px 0}.pxp.t1 .sg{margin-top:8px}.pxp.t1 .st2 .ln{height:11mm}
+.pxp.t2 .spec td{padding:0}.pxp.t2 .it,.pxp.t2 .box,.pxp.t2 .note{font-size:7.4pt}.pxp.t2 .spec{font-size:7pt}
 </style>
 </head>
 <body>
@@ -317,7 +343,7 @@ input:focus,select:focus,textarea:focus{border-color:#05C3DE;box-shadow:0 0 0 3p
 <section id="s5" class="hide">
 <div class="noprint" style="display:flex;gap:10px;align-items:center;margin:0 auto 14px;max-width:210mm;flex-wrap:wrap">
 <h2 style="margin:0;margin-right:auto">5. Oferta</h2>
-<span class="savemsg" id="saveMsg"></span><button class="btn p hide" id="reqAlloc">Clientul acceptă – cere alocare serie</button><button class="btn s" data-go="4">Înapoi la editare</button>
+<span class="savemsg" id="saveMsg"></span><button class="btn p hide" id="reqAlloc">Clientul acceptă – emite proforma</button><button class="btn s" data-go="4">Înapoi la editare</button>
 <button class="btn s" id="pdfBtn">Descarcă PDF</button><button class="btn r" id="printBtn">Printează</button>
 </div>
 <div class="noprint hint" id="printMsg" style="max-width:210mm;margin:0 auto 10px"></div>
@@ -334,7 +360,7 @@ input:focus,select:focus,textarea:focus{border-color:#05C3DE;box-shadow:0 0 0 3p
 <div class="flt">
 <div style="flex:1;min-width:220px"><label>Caută</label><input id="aq" placeholder="client, CUI, nr. ofertă, VIN, proformă, factură"></div>
 <div><label>Etapa</label><select id="ast"><option value="">Toate</option><option value="open">În lucru (până la avans)</option><option value="won">Comenzi (avans încasat +)</option>
-<option value="ofertata">Ofertată</option><option value="negociere">În negociere</option><option value="aprobare">Așteaptă aprobare preț</option><option value="respinsa">Preț respins – de modificat</option><option value="expirata">Expirată – cere feedback</option><option value="cerere">Cerere alocare serie</option><option value="alocata">Serie alocată</option><option value="proforma">Proformă avans emisă</option><option value="avans">Avans încasat – comandă plasată</option><option value="incarcat">Vehicul încărcat spre livrare ICG</option><option value="acte">Întocmire acte</option><option value="pdi">În pregătire PDI / fișă livrare</option><option value="finalizata">Livrată – finalizată</option><option value="pierduta">Pierdută</option><option value="anulata">Anulată</option></select></div>
+<option value="ofertata">Ofertată</option><option value="negociere">În negociere</option><option value="aprobare">Așteaptă aprobare preț</option><option value="respinsa">Preț respins – de modificat</option><option value="expirata">Expirată – cere feedback</option><option value="proforma">Proformă emisă – așteaptă avansul</option><option value="avans">Avans încasat – de alocat serie</option><option value="alocata">Serie alocată</option><option value="cerere">Cerere alocare serie (oferte vechi)</option><option value="incarcat">Vehicul încărcat spre livrare ICG</option><option value="acte">Întocmire acte</option><option value="pdi">În pregătire PDI / fișă livrare</option><option value="finalizata">Livrată – finalizată</option><option value="pierduta">Pierdută</option><option value="anulata">Anulată</option></select></div>
 <div id="avzW"><label>Vânzător</label><select id="avz"><option value="">Toți</option></select></div>
 <div><label>Perioadă</label><select id="aper"><option value="">Tot</option><option value="m">Luna curentă</option><option value="q">Ultimele 3 luni</option><option value="y">Anul curent</option></select></div>
 </div>
@@ -370,6 +396,7 @@ input:focus,select:focus,textarea:focus{border-color:#05C3DE;box-shadow:0 0 0 3p
 <div id="rPlChart"></div>
 <div class="sect" style="margin-top:16px">Oferte la minim sau sub minim</div><table class="lines" id="rPlList" style="width:100%"></table></div>
 <div class="kpis" id="kpis"></div>
+<div class="card" id="cPf" style="margin-bottom:16px"><div class="sect">Proforme neîncasate</div><p class="hint" id="rPfSub" style="margin:0 0 10px"></p><div id="rPf"></div></div>
 <div class="card" id="cVz" style="margin-bottom:16px;overflow:auto"><div class="sect">Performanță pe vânzător</div><table class="lines" id="rVz" style="width:100%"></table></div>
 <div class="grid2">
 <div class="card"><div class="sect">Oferte pe etape</div><div class="bars" id="rFun"></div></div>
@@ -3393,12 +3420,12 @@ $('pdfBtn').onclick=async()=>{if($('pdfBtn').disabled)return;const b=$('pdfBtn')
 /* ===== cont, arhivă, etape, comisioane, rapoarte ===== */
 const CFG={url:'https://script.google.com/macros/s/AKfycbxqXnTyYUkbXpr9yCNddc2v4nw3qRIb2F9GiU_bB7BmmyHWgap4zYQCYRDNe1dHX_l9/exec',token:'icgoferte2026'};
 const ET={
- ofertata:{l:'Ofertată',who:'v',next:['negociere','cerere','pierduta']},
- negociere:{l:'În negociere',who:'v',next:['cerere','pierduta']},
- cerere:{l:'Cerere alocare serie',who:'v',next:['pierduta']},
- alocata:{l:'Serie alocată',who:'a',next:['proforma','pierduta']},
- proforma:{l:'Proformă avans emisă',who:'v',next:['avans','pierduta']},
- avans:{l:'Avans încasat – comandă plasată',who:'v',next:['incarcat']},
+ ofertata:{l:'Ofertată',who:'v',next:['negociere','proforma','pierduta']},
+ negociere:{l:'În negociere',who:'v',next:['proforma','pierduta']},
+ cerere:{l:'Cerere alocare serie',who:'v',next:['proforma','pierduta']},
+ alocata:{l:'Serie alocată',who:'a',next:['proforma','incarcat','pierduta']},
+ proforma:{l:'Proformă emisă – așteaptă avansul',who:'v',next:['avans','pierduta']},
+ avans:{l:'Avans încasat – de alocat serie',who:'v',next:[]},
  incarcat:{l:'Vehicul încărcat spre livrare ICG',who:'o',next:['acte']},
  acte:{l:'Întocmire acte',who:'o',next:['pdi']},
  pdi:{l:'În pregătire PDI / fișă livrare',who:'o',next:['finalizata']},
@@ -3407,9 +3434,13 @@ const ET={
  aprobare:{l:'Așteaptă aprobare preț',who:'a',next:['pierduta']},
  respinsa:{l:'Preț respins – de modificat',who:'a',next:['pierduta']},
  anulata:{l:'Anulată',who:'a',next:[]}};
-const FLOW=['ofertata','cerere','alocata','proforma','avans','incarcat','acte','pdi','finalizata'];
+const FLOW=['ofertata','proforma','avans','alocata','incarcat','acte','pdi','finalizata'];
 const WON=['avans','incarcat','acte','pdi','finalizata'],OPEN=['ofertata','negociere','aprobare','respinsa','cerere','alocata','proforma'];
-const ACT={negociere:'Clientul negociază',cerere:'Clientul acceptă – cere alocare serie',pierduta:'Clientul refuză',proforma:'Am emis proforma de avans',avans:'Avans încasat – comandă plasată',
+/* „Serie alocată” e comandă doar dacă avansul e încasat (la ofertele vechi alocarea venea înaintea proformei) */
+const won=r=>WON.includes(r.etapa)||(r.etapa==='alocata'&&!!r.facturaAvansNr),isOpen=r=>OPEN.includes(r.etapa)&&!won(r);
+function nextOf(r){let n=(ET[r.etapa]||{}).next||[];if(r.etapa==='alocata'){const a=!!r.facturaAvansNr;n=n.filter(t=>t==='incarcat'?a:!a)}return n}
+const ACT={negociere:'Clientul negociază',cerere:'Clientul acceptă – cere alocare serie',pierduta:'Clientul refuză',proforma:'Emite factură proformă',avans:'Avans încasat',
+ pfre:'Reemite proforma','stg-timp':'Clientul mai are nevoie de timp','stg-renuntat':'Clientul a renunțat','stg-nuraspunde':'Clientul nu mai răspunde',
  incarcat:'Vehicul încărcat spre livrare ICG',acte:'Întocmire acte',pdi:'În pregătire PDI / fișă livrare',finalizata:'Vehicul livrat – finalizează',anulata:'Anulează comanda'};
 const ECOL={ofertata:'#e9edf2;color:#3A4759',negociere:'#fff3d6;color:#7a5200',cerere:'#fff3d6;color:#7a5200',alocata:'#dff6fa;color:#0b5f6b',proforma:'#dff6fa;color:#0b5f6b',
  avans:'#e3f2ea;color:#1d6b43',incarcat:'#e3f2ea;color:#1d6b43',acte:'#e3f2ea;color:#1d6b43',pdi:'#e3f2ea;color:#1d6b43',finalizata:'#1d6b43;color:#fff',pierduta:'#fbe5e5;color:#9b1c1c',anulata:'#fbe5e5;color:#9b1c1c',aprobare:'#fff0d6;color:#8a5300',respinsa:'#fbe5e5;color:#9b1c1c',expirata:'#efefef;color:#666'};
@@ -3421,7 +3452,7 @@ function saveAuth(){try{localStorage.setItem('icg_auth',JSON.stringify({sess:AUT
 const STORE={remote:()=>true,
  async call(body){const r=await fetch(CFG.url,{method:'POST',body:JSON.stringify(Object.assign({token:CFG.token,sess:AUTH.sess},body))});const j=await r.json();
   if(j.auth){logout('Sesiunea a expirat. Autentifică-te din nou.');throw new Error(j.error)}if(!j.ok)throw new Error(j.error||'Eroare server');return j},
- async list(){const j=await this.call({action:'list'});if(j.me){AUTH.me=j.me;saveAuth()}if(j.preturi)PRICES=j.preturi;return j.rows},
+ async list(){const j=await this.call({action:'list'});if(j.me){AUTH.me=j.me;saveAuth()}if(j.preturi)PRICES=j.preturi;PFS=j.proforme||[];LEASE=j.leasing||[];return j.rows},
  save(rec,extra){return this.call(Object.assign({action:'save',rec},extra||{}))},
  etapa(nr,etapa,date){return this.call({action:'etapa',nr,etapa,date})},
  aloc(nr,vin){return this.call({action:'aloc',nr,vin})}};
@@ -3448,32 +3479,39 @@ function inPer(r,p){if(!p)return true;const d=new Date(r.data),n=new Date();if(p
  if(p==='q'){const s=new Date(n.getFullYear(),n.getMonth()-2,1);return d>=s}if(p==='y')return d.getFullYear()===n.getFullYear();return true}
 const fdt=s=>s?String(s).slice(0,10).split('-').reverse().join('.'):'';
 const fdtt=s=>{const d=new Date(s);return isNaN(d)?fdt(s):d.toLocaleDateString('ro-RO')+' '+d.toLocaleTimeString('ro-RO',{hour:'2-digit',minute:'2-digit'})};
-let ROWS=[];
+let ROWS=[],PFS=[],LEASE=[];
 async function loadRows(){try{ROWS=await STORE.list()}catch(e){ROWS=[];alertBox('Nu am putut citi arhiva: '+e.message)}
  const vz=[...new Set(ROWS.map(r=>r.vanzator).filter(Boolean))].sort(),md=[...new Set(ROWS.map(r=>r.model).filter(Boolean))].sort();
  [['avz',vz,'Toți'],['rvz',vz,'Toți'],['rmd',md,'Toate']].forEach(([id,a,all])=>{const s=$(id),cur=s.value;s.innerHTML='<option value="">'+all+'</option>'+a.map(x=>'<option>'+esc(x)+'</option>').join('');s.value=a.includes(cur)?cur:''})}
 function alertBox(m){$('acount').textContent=m}
+/* zile lucrătoare de la emiterea proformei (sau de la ultima amânare „mai are nevoie de timp”) */
+const PF_ZILE=3;
+function zileLucr(s){const a=new Date(s);if(!s||isNaN(a))return 0;const b=new Date(),d=new Date(a);let n=0;d.setHours(0,0,0,0);b.setHours(0,0,0,0);while(d<b){d.setDate(d.getDate()+1);const w=d.getDay();if(w!==0&&w!==6)n++}return n}
+const pfZile=r=>zileLucr(r.proformaAmanata||r.proformaData||r.etapaLa);
 function nextHint(r){const k=stg(r),mine=r.vanzatorUser===AUTH.me.user;
  if(k==='expirata')return mine?'Spune ce a răspuns clientul':'Așteaptă feedback de la vânzător';
- if(k==='ofertata'||k==='negociere')return mine?'Când clientul acceptă: cere alocare serie':'';
+ if(k==='ofertata'||k==='negociere')return mine?'Când clientul acceptă: emite factura proformă':'';
  if(k==='aprobare')return isAdm()?'Aprobă sau respinge prețul':'Așteaptă aprobarea prețului';
  if(k==='respinsa')return mine?'Deschide oferta (butonul Ofertă) și modifică prețul':'Vânzătorul trebuie să modifice prețul';
- if(k==='cerere')return isAdm()?'Alocă o serie din Stoc DBK':'Așteaptă alocarea seriei';
- if(k==='alocata')return mine||isAdm()?'Emite proforma de avans și trece numărul':'';
- if(k==='proforma')return mine||isAdm()?'După încasare: trece factura de avans':'';
- if(['avans','incarcat','acte','pdi'].includes(k))return isAdm()||isOp()?'Următoarea etapă: '+ET[ET[k].next[0]].l:'Livrarea e gestionată de ICG';return''}
+ if(k==='cerere')return mine||isAdm()?'Emite factura proformă':'';
+ if(k==='alocata'&&!r.facturaAvansNr)return mine||isAdm()?'Emite factura proformă':'';
+ if(k==='proforma'){const z=pfZile(r);if(z>=PF_ZILE)return 'Avans neîncasat de '+z+' zile lucrătoare: alege ce s-a întâmplat';return mine||isAdm()?'După încasare: apasă „Avans încasat”':'Așteaptă avansul clientului'}
+ if(k==='avans')return isAdm()?'Alocă o serie din Stoc DBK':'Așteaptă alocarea seriei';
+ if(k==='alocata')return isAdm()||isOp()?'Următoarea etapă: '+ET.incarcat.l:'Livrarea e gestionată de ICG';
+ if(['incarcat','acte','pdi'].includes(k))return isAdm()||isOp()?'Următoarea etapă: '+ET[ET[k].next[0]].l:'Livrarea e gestionată de ICG';return''}
 function renderArch(){const q=$('aq').value.toLowerCase(),st=$('ast').value,vz=$('avz').value,per=$('aper').value;const adm=isAdm()||isOp();
- $('avzW').classList.toggle('hide',!adm);$('archSub').textContent=adm?'Toate ofertele și comenzile. Apasă „Etape” ca să vezi istoricul și să treci oferta în etapa următoare.':'Ofertele tale. Apasă „Etape” ca să treci oferta în etapa următoare: alocare serie, proformă, avans încasat.';
- const rows=ROWS.filter(r=>(!q||[r.nr,r.client,r.cui,r.model,r.telefon,r.vanzator,r.vin,r.proformaNr,r.facturaAvansNr].join(' ').toLowerCase().includes(q))&&(!st||stg(r)===st||(st==='won'&&WON.includes(r.etapa))||(st==='open'&&OPEN.includes(r.etapa)))&&(!vz||r.vanzator===vz)&&inPer(r,per)).sort((a,b)=>(b.nr||'').localeCompare(a.nr||''));
+ $('avzW').classList.toggle('hide',!adm);$('archSub').textContent=adm?'Toate ofertele și comenzile. Apasă „Etape” ca să vezi istoricul și să treci oferta în etapa următoare.':'Ofertele tale. Apasă „Etape” ca să treci oferta în etapa următoare: proformă, avans încasat.';
+ const rows=ROWS.filter(r=>(!q||[r.nr,r.client,r.cui,r.model,r.telefon,r.vanzator,r.vin,r.proformaNr,r.facturaAvansNr].join(' ').toLowerCase().includes(q))&&(!st||stg(r)===st||(st==='won'&&won(r))||(st==='open'&&isOpen(r)))&&(!vz||r.vanzator===vz)&&inPer(r,per)).sort((a,b)=>(b.nr||'').localeCompare(a.nr||''));
  let h='<tr>'+(isAdm()?'<th style="width:28px"><input type="checkbox" id="selAll" title="Selectează tot"></th>':'')+'<th>Nr. ofertă</th><th>Data</th><th>Client</th><th>Model</th>'+(adm?'<th>Vânzător</th>':'')+'<th class="r">Total cu TVA</th><th>Serie (VIN)</th><th>Etapa</th><th class="r">Comision</th><th></th></tr>';
  if(!rows.length)h+='<tr><td colspan="10" style="color:var(--mut);padding:18px">'+(ROWS.length?'Nicio ofertă pentru filtrele alese.':'Încă nu există oferte. Ofertele se salvează automat când ajungi la pasul 5.')+'</td></tr>';
  rows.forEach(r=>{const k=stg(r),nh=nextHint(r);h+='<tr>'+(isAdm()?'<td><input type="checkbox" class="selr" data-nr="'+esc(r.nr)+'"'+(SEL.has(r.nr)?' checked':'')+'></td>':'')+'<td><b>'+esc(r.nr)+'</b></td><td>'+fdt(r.data)+'</td><td>'+esc(r.client)+'<br><span class="hint">'+esc(r.cui||'')+' '+esc(r.telefon||'')+'</span></td><td>'+esc(r.model)+'<br><span class="hint">'+esc(r.culoare||'')+'</span></td>'+
   (adm?'<td>'+esc(r.vanzator||'')+'</td>':'')+'<td class="r">'+eur(+r.totalCuTVA||0)+'</td><td class="vin">'+(r.vin?esc(r.vin):'<span class="hint">–</span>')+'</td><td>'+badge(k)+(nh?'<br><span class="hint">'+esc(nh)+'</span>':'')+'</td>'+
   '<td class="r">'+(r.comision!==''&&r.comision!=null?eur(+r.comision)+'<br><span class="hint">'+(r.comisionPlatit?'plătit '+fdt(r.comisionPlatit):'de plătit')+'</span>':'<span class="hint">–</span>')+'</td>'+
-  '<td style="white-space:nowrap"><button class="btn p" style="padding:6px 12px" data-det="'+esc(r.nr)+'">Etape</button> <button class="lk" data-open="'+esc(r.nr)+'">Ofertă</button></td></tr>'});
+  '<td style="white-space:nowrap"><button class="btn p" style="padding:6px 12px" data-det="'+esc(r.nr)+'">Etape</button> <button class="lk" data-open="'+esc(r.nr)+'">Ofertă</button>'+(pfCur(r)?' · <button class="lk" data-pfdl="'+esc(pfCur(r).numar)+'" title="Descarcă proforma '+esc(pfCur(r).numar)+'">Proformă</button>':'')+'</td></tr>'});
  $('atab').innerHTML=h;$('acount').textContent=rows.length+' afișate din '+ROWS.length+'.';
  document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openOffer(ROWS.find(x=>x.nr===b.dataset.open)));
  document.querySelectorAll('[data-det]').forEach(b=>b.onclick=()=>openDet(b.dataset.det));
+ document.querySelectorAll('[data-pfdl]').forEach(b=>b.onclick=()=>pfDownload(b.dataset.pfdl,b));
  document.querySelectorAll('.selr').forEach(c=>c.onchange=()=>{c.checked?SEL.add(c.dataset.nr):SEL.delete(c.dataset.nr);updDel()});
  if($('selAll'))$('selAll').onchange=e=>{document.querySelectorAll('.selr').forEach(c=>{c.checked=e.target.checked;c.checked?SEL.add(c.dataset.nr):SEL.delete(c.dataset.nr)});updDel()};updDel()}
 const SEL=new Set();
@@ -3492,26 +3530,30 @@ function openOffer(r){let p;try{p=JSON.parse(r.payload)}catch(e){return alertBox
 
 /* ----- detaliu ofertă: etape ----- */
 let DET=null;
-function canDo(r,t){const T=ET[t];if(!T)return false;const own=r.vanzatorUser===AUTH.me.user;
+function canDo(r,t){const own=r.vanzatorUser===AUTH.me.user;
+ if(t==='pfre'||String(t).startsWith('stg-'))return r.etapa==='proforma'&&(own||isAdm());
+ const T=ET[t];if(!T)return false;
  if(t==='anulata')return isAdm()&&!['finalizata','anulata','pierduta'].includes(r.etapa);
- if(!(ET[r.etapa].next||[]).includes(t))return false;
+ if(!nextOf(r).includes(t))return false;
  if(T.who==='v')return own||isAdm();if(T.who==='o')return isAdm()||isOp();return isAdm()}
 let DETFROM='a';
 const INTSW={'Orange Brown':'linear-gradient(135deg,#c8773a 0 50%,#5a3a2a 50% 100%)','Black Brown':'linear-gradient(135deg,#1d1d1f 0 50%,#5b3a2e 50% 100%)','Pure Black':'#1d1d1f'};
-function openDet(nr,act){DET=ROWS.find(x=>x.nr===nr);if(!DET)return;const nb=document.querySelector('#nav button.on');DETFROM=nb&&nb.dataset.v==='m'?'m':'a';show('det');renderDet();if(act&&canDo(DET,act)){actForm(act);setTimeout(()=>{const f=$('actForm');if(f&&f.scrollIntoView)f.scrollIntoView({behavior:'smooth',block:'center'})},50)}}
+function openDet(nr,act){DET=ROWS.find(x=>x.nr===nr);if(!DET)return;const nb=document.querySelector('#nav button.on');DETFROM=nb&&['m','r'].includes(nb.dataset.v)?nb.dataset.v:'a';$('detBack').textContent='← Înapoi la '+({m:'ofertele mele',r:'raport'}[DETFROM]||'arhivă');show('det');renderDet();if(act&&canDo(DET,act)){actForm(act);setTimeout(()=>{const f=$('actForm');if(f&&f.scrollIntoView)f.scrollIntoView({behavior:'smooth',block:'center'})},50)}}
 /* ----- ofertele mele: administrare pe etape ----- */
 function mineGroup(r){const k=stg(r),own=r.vanzatorUser===AUTH.me.user;
  if(['finalizata','pierduta','anulata'].includes(r.etapa))return 'closed';
- if(['avans','incarcat','acte','pdi'].includes(r.etapa))return (isAdm()||isOp())?'todo':'deliv';
- const acts=(ET[r.etapa].next||[]).filter(t=>canDo(r,t));
+ if(r.etapa==='avans')return isAdm()?'todo':'deliv';
+ if(['incarcat','acte','pdi'].includes(r.etapa)||(r.etapa==='alocata'&&r.facturaAvansNr))return (isAdm()||isOp())?'todo':'deliv';
+ if(r.etapa==='proforma')return (own||isAdm())&&pfZile(r)>=PF_ZILE?'todo':'wait';
+ const acts=nextOf(r).filter(t=>canDo(r,t));
  if(k==='expirata'||k==='respinsa')return own||isAdm()?'todo':'wait';
- if(r.etapa==='cerere'||r.etapa==='aprobare')return isAdm()?'todo':'wait';
+ if(r.etapa==='aprobare')return isAdm()?'todo':'wait';
  return acts.length?'todo':'wait'}
 function renderMele(){const adm=isAdm()||isOp();$('mTitle').textContent=adm?'Administrare oferte':'Ofertele mele';
  $('mSub').textContent=adm?'Toate ofertele, grupate după ce e de făcut. Apasă pe acțiune ca să treci oferta în etapa următoare.':'Aici muți ofertele tale din etapă în etapă. Sus sunt cele la care ai ceva de făcut.';
  const q=$('mq').value.toLowerCase(),cl=$('mClosed').checked;
  const rows=ROWS.filter(r=>!q||[r.nr,r.client,r.cui,r.model,r.vin,r.proformaNr,r.vanzator].join(' ').toLowerCase().includes(q)).sort((a,b)=>String(b.etapaLa||b.actualizat||b.nr).localeCompare(String(a.etapaLa||a.actualizat||a.nr)));
- const G=[['todo','De făcut acum'],['wait',adm?'Așteaptă vânzătorul':'Așteaptă răspuns (administrator / client)'],['deliv','Comenzi în livrare (le mută ICG)'],['closed','Închise']];
+ const G=[['todo','De făcut acum'],['wait',adm?'Așteaptă vânzătorul / clientul':'Așteaptă răspuns (administrator / client)'],['deliv','Comenzi în livrare (le mută ICG)'],['closed','Închise']];
  let h='';G.forEach(([g,l])=>{if(g==='closed'&&!cl)return;const L=rows.filter(r=>mineGroup(r)===g);if(!L.length&&g!=='todo')return;
   h+='<div class="mgrp">'+l+' <span class="n">'+L.length+'</span></div>';
   h+=L.length?'<div class="mgrid">'+L.map(mCard).join('')+'</div>':'<p class="hint">Nimic de făcut acum.'+(ROWS.length?'':' Ofertele apar aici după ce le salvezi la pasul 5.')+'</p>'});
@@ -3520,32 +3562,33 @@ function renderMele(){const adm=isAdm()||isOp();$('mTitle').textContent=adm?'Adm
  document.querySelectorAll('[data-mdet]').forEach(b=>b.onclick=()=>openDet(b.dataset.mdet));
  document.querySelectorAll('[data-mopen]').forEach(b=>b.onclick=()=>openOffer(ROWS.find(x=>x.nr===b.dataset.mopen)))}
 function mCard(r){const k=stg(r),g=mineGroup(r),adm=isAdm()||isOp();const nh=nextHint(r);
- const acts=(ET[r.etapa].next||[]).filter(t=>canDo(r,t)&&t!=='anulata');
- let b=acts.map(t=>'<button class="btn '+(t==='pierduta'?'s':'p')+'" data-mact="'+esc(r.nr+'|'+t)+'">'+esc(ACT[t]||ET[t].l)+'</button>').join('');
+ const acts=pfActs(r,nextOf(r)).filter(t=>canDo(r,t)&&t!=='anulata'&&t!=='pfre');
+ let b=acts.map(t=>'<button class="btn '+(t==='pierduta'||String(t).startsWith('stg-')?'s':'p')+'" data-mact="'+esc(r.nr+'|'+t)+'">'+esc(ACT[t]||ET[t].l)+'</button>').join('');
  if(isAdm()&&r.etapa==='aprobare')b='<button class="btn p" data-mdet="'+esc(r.nr)+'">Aprobă / respinge prețul</button>'+b;
- if(isAdm()&&r.etapa==='cerere')b='<button class="btn p" data-mdet="'+esc(r.nr)+'">Alocă serie</button>'+b;
+ if(isAdm()&&(r.etapa==='cerere'||r.etapa==='avans'))b='<button class="btn p" data-mdet="'+esc(r.nr)+'">Alocă serie</button>'+b;
  if(k==='respinsa'&&(r.vanzatorUser===AUTH.me.user||isAdm()))b='<button class="btn p" data-mopen="'+esc(r.nr)+'">Modifică prețul</button>'+b;
  b+='<button class="btn s" data-mdet="'+esc(r.nr)+'">Detalii</button>';
- const facts=[r.vin?'Serie '+r.vin:'',r.proformaNr?'Proformă '+r.proformaNr+' / '+fdt(r.proformaData):'',r.facturaAvansNr?'Avans '+r.facturaAvansNr+' · '+(r.sumaAvans?money(r.sumaAvans,r.monedaAvans)+' · ':'')+fdt(r.dataIncasare):''].filter(Boolean).join(' · ');
- return '<div class="mcard '+(g==='todo'?'todo':WON.includes(r.etapa)?'won':g==='closed'?'dead':'')+'"><div class="mh"><div><b>'+esc(r.client||'–')+'</b><div class="mm">'+esc(r.model||'')+(r.culoare?' · '+esc(r.culoare):'')+'<br>'+esc(r.nr)+' · '+eur(+r.totalCuTVA||0)+' cu TVA'+(adm?' · '+esc(r.vanzator||''):'')+'</div></div>'+badge(k)+'</div>'+
+ const facts=[r.vin?'Serie '+r.vin:'',r.proformaNr?'Proformă '+r.proformaNr+' / '+fdt(r.proformaData)+(r.proformaTip==='leasing'?' (leasing)':''):'',r.facturaAvansNr?(r.tipPlata==='integral'?'Plată integrală ':'Avans ')+r.facturaAvansNr+' · '+(r.sumaAvans?money(r.sumaAvans,r.monedaAvans)+' · ':'')+fdt(r.dataIncasare):'',r.facturaFinalaNr?'Factură finală '+r.facturaFinalaNr+' / '+fdt(r.facturaFinalaData):''].filter(Boolean).join(' · ');
+ return '<div class="mcard '+(g==='todo'?'todo':won(r)?'won':g==='closed'?'dead':'')+'"><div class="mh"><div><b>'+esc(r.client||'–')+'</b><div class="mm">'+esc(r.model||'')+(r.culoare?' · '+esc(r.culoare):'')+'<br>'+esc(r.nr)+' · '+eur(+r.totalCuTVA||0)+' cu TVA'+(adm?' · '+esc(r.vanzator||''):'')+'</div></div>'+badge(k)+'</div>'+
   (facts?'<div class="mk">'+esc(facts)+'</div>':'')+(nh?'<div class="mnext'+(g==='todo'?'':' wait')+'">'+esc(nh)+'</div>':'')+'<div class="mbtns">'+b+'</div></div>'}
 function money(v,m){return (+v).toLocaleString('ro-RO',{minimumFractionDigits:2,maximumFractionDigits:2})+' '+(m||'RON')}
 function renderDet(){const r=DET,k=stg(r);const ist=(r.ist||[]);
  const when=e=>{const h=ist.filter(x=>x.etapa===e).slice(-1)[0];return h?h:null};
- const reached=e=>{if(e==='ofertata')return true;const i=FLOW.indexOf(e),c=FLOW.indexOf(r.etapa==='negociere'?'ofertata':r.etapa);return c>=0&&i<=c};
+ const reached=e=>{if(e==='ofertata')return true;if(e==='proforma')return !!r.proformaNr;if(e==='avans')return !!r.facturaAvansNr;if(e==='alocata')return r.alocare==='Alocată'&&!!r.vin;
+  const i=FLOW.indexOf(e),c=FLOW.indexOf(r.etapa==='negociere'?'ofertata':r.etapa);return c>=0&&i<=c};
  const dead=['pierduta','anulata'].includes(r.etapa);
  let tl='<div class="tl">'+FLOW.map((e,i)=>{const ok=reached(e)&&!(dead&&!when(e));const cur=(r.etapa===e)||(r.etapa==='negociere'&&e==='ofertata');const h=when(e);
   return '<div class="tli'+(ok?' ok':'')+(cur&&!dead?' cur':'')+'"><i>'+(ok?'✓':i+1)+'</i><div><b>'+esc(ET[e].l)+'</b>'+(h?'<span>'+fdtt(h.data)+' · '+esc(h.de)+(h.detalii?' · '+esc(h.detalii):'')+'</span>':'<span class="hint">'+({v:'validează vânzătorul',a:'alocă administratorul',o:'validează administratorul'}[ET[e].who])+'</span>')+'</div></div>'}).join('')+
   (dead?'<div class="tli bad cur"><i>✕</i><div><b>'+esc(ET[r.etapa].l)+'</b><span>'+esc(r.motiv||'')+'</span></div></div>':'')+'</div>';
- const acts=[...(ET[r.etapa].next||[]),'anulata'].filter((t,i,a)=>a.indexOf(t)===i&&canDo(r,t));
+ const acts=[...pfActs(r,nextOf(r)),'anulata'].filter((t,i,a)=>a.indexOf(t)===i&&canDo(r,t));
  let ah='';
  if(isAdm()&&r.etapa==='aprobare')ah+='<button class="btn p" id="dApr">Aprobă prețul</button> <button class="btn s" id="dRej">Respinge prețul</button> ';
- if(isAdm()&&['ofertata','negociere','cerere','alocata'].includes(r.etapa))ah+='<button class="btn p" id="dAlloc">'+(r.vin?'Schimbă seria alocată':'Alocă serie din Stoc DBK')+'</button>'+(r.etapa==='alocata'?' <button class="btn s" id="dUnalloc">Anulează alocarea</button>':'');
- ah+=acts.map(t=>'<button class="btn '+(['pierduta','anulata'].includes(t)?'s':'p')+'" data-act="'+t+'">'+esc(ACT[t]||ET[t].l)+'</button>').join(' ');
+ if(isAdm()&&['ofertata','negociere','cerere','alocata','proforma','avans'].includes(r.etapa))ah+='<button class="btn '+(r.etapa==='proforma'?'s':'p')+'" id="dAlloc">'+(r.vin?'Schimbă seria alocată':r.etapa==='proforma'?'Rezervă serie (ex. leasing)':'Alocă serie din Stoc DBK')+'</button>'+(r.etapa==='alocata'||(r.etapa==='proforma'&&r.vin)?' <button class="btn s" id="dUnalloc">Anulează alocarea</button>':'')+' ';
+ ah+=acts.map(t=>'<button class="btn '+(['pierduta','anulata','pfre'].includes(t)||String(t).startsWith('stg-')?'s':'p')+'" data-act="'+t+'">'+esc(ACT[t]||ET[t].l)+'</button>').join(' ');
  if(isAdm())ah+=' <button class="btn s del" id="dDel">Șterge oferta</button>';
  if(!ah)ah='<span class="hint">'+(dead||r.etapa==='finalizata'?'Oferta este închisă.':(nextHint(r)||'Nu ai acțiuni de făcut în această etapă.'))+'</span>';
  const info=[['Client',r.client+(r.cui?' · '+r.cui:'')],['Telefon',r.telefon],['Model',r.model+(r.culoare?' · '+r.culoare:'')],['Preț vehicul fără TVA',r.pretFinal?eur(+r.pretFinal)+(+r.pretMinim&&+r.pretFinal<+r.pretMinim?' (sub minimul de agent '+eur(+r.pretMinim)+' cu '+eur(r.pretMinim-r.pretFinal)+')':''):''],['Aprobare preț',r.aprobare||''],['Total cu TVA',eur(+r.totalCuTVA||0)],['Vânzător',r.vanzator],['Valabilă până la',fdt(r.valabilaPana)],
-  ['Serie (VIN)',r.vin],['Proformă avans',r.proformaNr?r.proformaNr+' din '+fdt(r.proformaData):''],['Factură avans',r.facturaAvansNr?r.facturaAvansNr+' · încasat '+fdt(r.dataIncasare)+(r.sumaAvans?' · '+money(r.sumaAvans,r.monedaAvans):''):''],['Livrat la',fdt(r.livratLa)],['PDF ofertă',r.pdfLink?'<a href="'+esc(r.pdfLink)+'" target="_blank">deschide din Drive</a>':'']]
+  ['Serie (VIN)',r.vin],['Proformă',r.proformaNr?r.proformaNr+' din '+fdt(r.proformaData)+(r.proformaTip==='leasing'?' · leasing':''):''],['Factură avans',r.facturaAvansNr?(r.tipPlata==='integral'?'Plată integrală · ':'')+r.facturaAvansNr+(r.facturaAvansData?' din '+fdt(r.facturaAvansData):'')+' · încasat '+fdt(r.dataIncasare)+(r.sumaAvans?' · '+money(r.sumaAvans,r.monedaAvans):''):''],['Factură finală',r.facturaFinalaNr?r.facturaFinalaNr+' din '+fdt(r.facturaFinalaData):''],['Livrat la',fdt(r.livratLa)],['PDF ofertă',r.pdfLink?'<a href="'+esc(r.pdfLink)+'" target="_blank">deschide din Drive</a>':'']]
   .filter(x=>x[1]).map(([a,b])=>'<tr><td class="hint">'+a+'</td><td>'+(a==='PDF ofertă'?b:esc(b))+'</td></tr>').join('');
  const com=isAdm()?'<div class="grid2"><div><label>Comision vânzător (EUR)</label><input id="cmV" inputmode="decimal" value="'+esc(r.comision??'')+'"></div><div><label>Plătit la data</label><input id="cmP" type="date" value="'+esc(String(r.comisionPlatit||'').slice(0,10))+'"></div><div style="grid-column:1/-1"><label>Notă</label><input id="cmN" value="'+esc(r.comisionNota||'')+'" placeholder="ex. 1% din valoarea fără TVA"></div></div><div style="display:flex;gap:10px;align-items:center;margin-top:10px"><button class="btn p" id="cmS">Salvează comisionul</button><span class="hint" id="cmM"></span></div><p class="hint">Comisionul îl vede doar vânzătorul ofertei și administratorii.</p>'
   :(r.comision!==''&&r.comision!=null?'<div class="kv"><b>'+eur(+r.comision)+'</b> · '+(r.comisionPlatit?'plătit la '+fdt(r.comisionPlatit):'de plătit')+(r.comisionNota?'<br><span class="hint">'+esc(r.comisionNota)+'</span>':'')+'</div>':'<span class="hint">Comisionul nu a fost stabilit încă.</span>');
@@ -3553,8 +3596,9 @@ function renderDet(){const r=DET,k=stg(r);const ist=(r.ist||[]);
   '<div class="dgrid"><div class="card"><div class="sect">Etape</div>'+tl+'</div><div>'+
   '<div class="card"><div class="sect">Pasul următor</div><div class="acts">'+ah+'</div><div id="actForm"></div><div class="msg" id="detMsg"></div></div>'+
   '<div class="card" style="margin-top:14px"><div class="sect">Comision</div>'+com+'</div>'+
-  '<div class="card" style="margin-top:14px"><div class="sect">Detalii</div><table class="lines">'+info+'</table></div></div></div>';
+  '<div class="card" style="margin-top:14px"><div class="sect">Detalii</div><table class="lines">'+info+'</table></div>'+pfCard(r)+'</div></div>';
  document.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>actForm(b.dataset.act));
+ document.querySelectorAll('#detBody [data-pfdl]').forEach(b=>b.onclick=()=>pfDownload(b.dataset.pfdl,b));
  if($('dAlloc'))$('dAlloc').onclick=()=>openAlloc(r);
  if($('dDel'))$('dDel').onclick=()=>delConfirm([r.nr],$('actForm'),async()=>{await loadRows();show('a').then(()=>{$('acount').textContent='✓ Oferta '+r.nr+' a fost ștearsă. '+$('acount').textContent})});
  if($('dApr'))$('dApr').onclick=()=>doAct(()=>STORE.call({action:'aprobare',nr:r.nr,decizie:'aproba'}),'✓ Preț aprobat. Vânzătorul a primit e-mail și poate trimite oferta.');
@@ -3563,9 +3607,13 @@ function renderDet(){const r=DET,k=stg(r);const ist=(r.ist||[]);
  if($('dUnalloc'))$('dUnalloc').onclick=()=>doAct(()=>STORE.aloc(r.nr,''),'Alocarea a fost anulată, seria a fost eliberată.');
  if($('cmS'))$('cmS').onclick=async()=>{$('cmM').textContent='Se salvează…';try{await STORE.call({action:'comision',nr:r.nr,date:{comision:$('cmV').value,comisionNota:$('cmN').value,comisionPlatit:$('cmP').value}});await reloadDet();$('cmM').textContent='✓ Salvat'}catch(e){$('cmM').textContent=e.message}}}
 function actForm(t){const today=iso(new Date());let f='';
+ if(t==='proforma'||t==='pfre')return pfForm(t);
+ if(String(t).startsWith('stg-'))return stgForm(t);
  if(t==='cerere')f='<label class="chk"><input type="checkbox" id="fConf"> Clientul a confirmat acceptarea ofertei (semnată / e-mail / comandă).</label><label>Notă (opțional)</label><input id="fNota">';
- else if(t==='proforma')f='<p class="hint" style="margin:4px 0 0">Emite proforma de avans în GITS, apoi treci aici numărul și data ei.</p><div class="grid2"><div><label class="req">Număr proformă</label><input id="fNr"></div><div><label class="req">Data proformei</label><input id="fDt" type="date" max="'+today+'" value="'+today+'"></div></div>';
- else if(t==='avans'){const pd=String(DET.proformaData||'').slice(0,10);f='<p class="hint" style="margin:4px 0 0">Proforma '+esc(DET.proformaNr||'')+' din '+fdt(DET.proformaData)+'. Treci datele din factura de avans și din extrasul de cont.</p><div class="grid2"><div><label class="req">Număr factură avans</label><input id="fNr"></div><div><label class="req">Data încasării avansului</label><input id="fDt" type="date" min="'+pd+'" max="'+today+'" value="'+today+'"></div><div><label class="req">Suma încasată</label><input id="fSum" inputmode="decimal" placeholder="ex. 25.000,00"></div><div><label class="req">Moneda</label><select id="fMon"><option value="RON">RON (lei)</option><option value="EUR">EUR</option></select></div></div><label>Notă (opțional)</label><input id="fNota">'}
+ else if(t==='avans'){const pd=String(DET.proformaData||'').slice(0,10),P=pfData(pfCur(DET));
+  f='<p class="hint" style="margin:4px 0 0">Proforma '+esc(DET.proformaNr||'')+' din '+fdt(DET.proformaData)+(P&&P.avans?' · avans cerut <b>'+eur(P.avans)+'</b> ('+P.avansPct+'%) din '+eur(P.gross):'')+(P&&P.tip==='leasing'?' · leasing: plătește finanțatorul '+esc(P.fin.nume)+', total '+eur(P.gross):'')+'. Treci datele din factura fiscală emisă de contabilitate și din extrasul de cont.</p>'+
+  '<div class="grid2"><div><label class="req">Ce s-a încasat</label><select id="fTip"><option value="avans">Avans</option><option value="integral">Valoarea integrală</option></select></div><div><label class="req">Număr factură fiscală</label><input id="fNr" placeholder="ex. ICGP 17263"></div><div><label class="req">Data facturii</label><input id="fFd" type="date" max="'+today+'" value="'+today+'"></div><div><label class="req">Data încasării</label><input id="fDt" type="date" min="'+pd+'" max="'+today+'" value="'+today+'"></div><div><label class="req">Suma încasată</label><input id="fSum" inputmode="decimal" placeholder="ex. 25.000,00"></div><div><label class="req">Moneda</label><select id="fMon"><option value="RON">RON (lei)</option><option value="EUR">EUR</option></select></div></div><label>Notă (opțional)</label><input id="fNota">'}
+ else if(t==='acte')f='<p class="hint" style="margin:4px 0 0">Treci factura fiscală finală pe produs, emisă de contabilitate.</p><div class="grid2"><div><label class="req">Număr factură finală</label><input id="fNr"></div><div><label class="req">Data facturii finale</label><input id="fDt" type="date" max="'+today+'" value="'+today+'"></div></div><label>Notă (opțional)</label><input id="fNota">';
  else if(t==='pierduta')f='<label class="req">Motivul refuzului</label><select id="fMot"><option value="">Alege…</option>'+MOTIVE.map(m=>'<option>'+m+'</option>').join('')+'</select><label>Detalii (opțional)</label><input id="fNota" placeholder="ex. preț concurență, model ales">';
  else if(t==='anulata')f='<label class="req">Motivul anulării</label><input id="fMot"><label>Notă (opțional)</label><input id="fNota">';
  else if(t==='finalizata')f='<label class="req">Data livrării</label><input id="fDt" type="date" max="'+today+'" value="'+today+'"><label>Notă (opțional)</label><input id="fNota" placeholder="ex. proces-verbal predare nr.">';
@@ -3574,41 +3622,142 @@ function actForm(t){const today=iso(new Date());let f='';
  $('fNo').onclick=()=>{$('actForm').innerHTML=''};
  $('fOk').onclick=()=>{const v=id=>($(id)?$(id).value.trim():'');const d={nota:v('fNota')};const m=$('detMsg');m.style.color='var(--acc)';
   if(t==='cerere'&&!$('fConf').checked){m.textContent='Bifează confirmarea clientului.';return}
-  if(t==='proforma'){d.proformaNr=v('fNr');d.proformaData=v('fDt');if(!d.proformaNr||!d.proformaData){m.textContent='Completează numărul și data proformei.';return}}
-  if(t==='avans'){d.facturaAvansNr=v('fNr');d.dataIncasare=v('fDt');d.monedaAvans=v('fMon');const raw=v('fSum').replace(/\s/g,'');d.sumaAvans=raw.includes(',')?raw.replace(/\./g,'').replace(',','.'):raw;
-   if(!d.facturaAvansNr||!d.dataIncasare||!d.sumaAvans){m.textContent='Completează numărul facturii de avans, data încasării și suma încasată.';return}
+  if(t==='acte'){d.facturaFinalaNr=v('fNr');d.facturaFinalaData=v('fDt');if(!d.facturaFinalaNr||!d.facturaFinalaData){m.textContent='Completează numărul și data facturii finale.';return}}
+  if(t==='avans'){d.tipPlata=v('fTip');d.facturaAvansNr=v('fNr');d.facturaAvansData=v('fFd');d.dataIncasare=v('fDt');d.monedaAvans=v('fMon');const raw=v('fSum').replace(/\s/g,'');d.sumaAvans=raw.includes(',')?raw.replace(/\./g,'').replace(',','.'):raw;
+   if(!d.facturaAvansNr||!d.facturaAvansData||!d.dataIncasare||!d.sumaAvans){m.textContent='Completează numărul și data facturii fiscale, data încasării și suma încasată.';return}
    if(!(+d.sumaAvans>0)){m.textContent='Suma încasată trebuie să fie un număr mai mare ca zero.';return}
    const pd=String(DET.proformaData||'').slice(0,10);if(pd&&d.dataIncasare<pd){m.textContent='Data încasării nu poate fi înaintea datei proformei.';return}}
   if(t==='pierduta'||t==='anulata'){d.motiv=v('fMot');if(!d.motiv){m.textContent='Completează motivul.';return}}
   if(t==='finalizata')d.data=v('fDt');
-  doAct(()=>STORE.etapa(DET.nr,t,d),'✓ Oferta a trecut în etapa „'+ET[t].l+'”.')}}
+  doAct(()=>STORE.etapa(DET.nr,t,d),t==='avans'?'✓ Încasarea a fost salvată. Administratorii au primit e-mail ca să aloce seria.':'✓ Oferta a trecut în etapa „'+ET[t].l+'”.')}}
 async function doAct(fn,okMsg){const m=$('detMsg');m.style.color='var(--mut)';m.textContent='Se salvează…';
  try{await fn();await reloadDet();$('detMsg').style.color='var(--ok)';$('detMsg').textContent=okMsg}catch(e){m.style.color='var(--acc)';m.textContent=e.message}}
 async function reloadDet(){const nr=DET.nr;ROWS=await STORE.list();DET=ROWS.find(x=>x.nr===nr);if(DET)renderDet()}
-$('reqAlloc').onclick=async()=>{if(!OFNO)return;await loadRows();const r=ROWS.find(x=>x.nr===OFNO);if(r)openDet(r.nr)};
+$('reqAlloc').onclick=async()=>{if(!OFNO)return;await loadRows();const r=ROWS.find(x=>x.nr===OFNO);if(r)openDet(r.nr,'proforma')};
+
+/* ===== factura proformă ===== */
+/* Datele ICG de pe proformă (din factura fiscală ICG). */
+const ICGF={name:'INTER CARGO GRUP S.R.L.',sediu:'Calea Moșilor nr. 284, Bl. 22A, Sc. 1, Ap. 22, Sector 2, București',pl:'Șos. de Centură nr. 5-7, 077025 Bragadiru, Ilfov',
+ cui:'RO18039372',rc:'J2005017287400',cap:'1.200.000 RON',tel:'031 434 0302 · 0736 809 783',mail:'office@fotonromania.ro',web:'www.fotonromania.com',
+ banks:[['BCR','RO27 RNCB 0297 1432 4058 0001'],['Raiffeisen Bank','RO93 RZBR 0000 0600 1457 5200'],['UniCredit Bank','RO86 BACX 0000 0018 0177 6000'],['Banca Transilvania','RO44 BTRL RONC RT0D D154 8801']]};
+/* în etapa proformă vânzătorul are de ales: încasat, mai are nevoie de timp, a renunțat, nu mai răspunde (în loc de „Clientul refuză”) */
+function pfActs(r,list){return r.etapa==='proforma'?['avans','stg-timp','stg-renuntat','stg-nuraspunde','pfre']:list}
+const pfOf=r=>PFS.filter(p=>p.ofertaNr===r.nr).sort((a,b)=>String(b.nr).localeCompare(String(a.nr)));
+const pfCur=r=>pfOf(r)[0]||null;
+function pfData(p){if(!p)return null;try{return JSON.parse(p.payload)}catch(e){return null}}
+const pfName=P=>('Proforma '+P.numar+' - '+(P.fin?P.fin.nume:P.cump.nume)).replace(/[\\/:*?"<>|]+/g,' ').trim()+'.pdf';
+function pfCard(r){const L=pfOf(r);if(!L.length)return '';
+ return '<div class="card" style="margin-top:14px"><div class="sect">Facturi proforme</div><table class="lines" style="width:100%">'+L.map(p=>'<tr><td><b>'+esc(p.numar)+'</b><br><span class="hint">'+fdt(p.data)+' · '+esc(p.tip==='leasing'?'leasing – '+p.cumparator:p.cumparator)+' · emisă de '+esc(p.emitent)+'</span></td><td><span class="al '+(p.stare==='Emisă'||p.stare==='Încasată'?'al-a':'al-c')+'">'+esc(p.stare)+'</span></td><td style="text-align:right;white-space:nowrap"><button class="btn s" style="padding:6px 10px" data-pfdl="'+esc(p.numar)+'">PDF</button>'+(p.pdfLink?' <a class="hint" href="'+esc(p.pdfLink)+'" target="_blank">Drive</a>':'')+'</td></tr>').join('')+'</table></div>'}
+async function pfDownload(numar,btn){const p=PFS.find(x=>x.numar===numar),P=pfData(p);if(!P)return;const t=btn&&btn.textContent;if(btn){btn.disabled=true;btn.textContent='Se generează…'}
+ try{(await pfPdf(P)).save(pfName(P))}catch(e){alert('PDF-ul proformei nu a putut fi generat: '+e.message)}if(btn){btn.disabled=false;btn.textContent=t}}
+/* liniile proformei: vehiculul descris cât mai exact (din ofertă și din datele tehnice ale variantei), apoi opționalele */
+function pfBuild(r,o){let p={};try{p=JSON.parse(r.payload||'{}')}catch(e){}const B=MODELS.find(m=>m.id===p.model)||{},M=B.id?eff(B,p.vid):null,f=p.f||{};
+ const d=[['Stare','Autovehicul nou, neînmatriculat']];if(M&&M.ds)d.push(['Versiune',M.ds]);
+ const re=/^(Motor|Tip motor|Capacitate cilindrică|Putere|Cuplu|Transmisie|Tracțiune|Baterie|Autonomie|Masă totală|Sarcină utilă|Configurație locuri|Locuri|Omologare|Volum|Spațiu de (marfă|încărcare))/;
+ if(M)(M.spec||[]).forEach(g=>(g[1]||[]).forEach(([k,v])=>{if(re.test(k)&&d.length<11)d.push([k,v])}));
+ d.push(['Culoare exterior',p.color||r.culoare||'']);
+ if(p.intC){const it=((M&&M.ints)||[]).find(x=>x[0]===p.intC);d.push(['Interior',p.intC+(it&&it[3]?' – '+it[3]:'')])}
+ d.push(['Serie șasiu (VIN)',r.vin||'Se comunică după alocare']);d.push(['Garanție',f.dGar||(M&&M.gar)||'']);if(r.termen)d.push(['Termen de livrare',r.termen]);
+ const linii=[{n:M?M.name:r.model,q:1,p:+r.pretFinal||0,d:d.filter(x=>x[1])}];
+ Object.keys(p.acc||{}).forEach(c=>{const a=tek(c);linii.push({n:'Accesoriu '+(a?a.n:c),q:1,p:num(p.acc[c])})});
+ (p.opts||[]).filter(x=>x.n||num(x.p)).forEach(x=>linii.push({n:x.n||'Opțional',q:1,p:num(x.p)}));
+ return{brand:B.brand==='cavan'?'cavan':'foton',cump:o.cump,fin:o.fin,linii}}
+function pfForm(t){const r=DET,last=pfData(pfCur(r));let p={};try{p=JSON.parse(r.payload||'{}')}catch(e){}const f=p.f||{};
+ const c=last?last.cump:{nume:f.cNume||r.client,cui:f.cCui||r.cui,rc:f.cReg||'',adr:f.cAdr||'',pers:f.cPers||'',tel:r.telefon||'',mail:r.email||'',pf:p.ctype==='pf'};
+ const lz=last&&last.tip==='leasing';const lsel=lz?LEASE.findIndex(x=>x.cui.replace(/\D/g,'')===String(last.fin.cui).replace(/\D/g,'')):-1;
+ $('actForm').innerHTML='<div class="aform"><b>'+(t==='pfre'?'Reemite proforma':'Emite factură proformă')+'</b>'+
+  '<p class="hint" style="margin:4px 0 0">Proforma se face din oferta '+esc(r.nr)+': vehiculul, opționalele și prețul final de <b>'+eur(+r.pretFinal||0)+'</b> fără TVA. Primește automat număr în seria ICG-PF.'+(t==='pfre'&&r.proformaNr?' Proforma '+esc(r.proformaNr)+' rămâne în arhivă cu starea „Înlocuită”.':'')+'</p>'+
+  '<label style="margin-top:12px">Cine plătește</label><div class="vchips" id="pfTip" style="margin-bottom:0"><button type="button" data-t="direct"'+(lz?'':' class="on"')+'><b>Clientul</b><span>plată directă, avans '+esc(r.avansPct||20)+'%</span></button><button type="button" data-t="leasing"'+(lz?' class="on"':'')+'><b>Leasing</b><span>plătește firma de leasing</span></button></div>'+
+  '<div id="pfLz" class="'+(lz?'':'hide')+'"><label class="req" style="margin-top:10px">Firma de leasing</label><select id="pfL"><option value="">Alege…</option>'+LEASE.map((x,i)=>'<option value="'+i+'"'+(i===lsel?' selected':'')+'>'+esc(x.nume)+'</option>').join('')+'<option value="new"'+(lz&&lsel<0?' selected':'')+'>Altă firmă (caut-o după CUI)</option></select>'+
+  '<div id="pfLn" class="grid2 '+(lz&&lsel<0?'':'hide')+'" style="margin-top:8px"><div><label class="req">CUI</label><div style="display:flex;gap:6px"><input id="pfLc" inputmode="numeric" value="'+esc(lz?last.fin.cui:'')+'"><button type="button" class="btn s" id="pfLa" style="padding:6px 10px">ANAF</button></div></div><div><label class="req">Denumire</label><input id="pfLn1" value="'+esc(lz?last.fin.nume:'')+'"></div><div><label>Nr. Reg. Com.</label><input id="pfLr" value="'+esc(lz?last.fin.rc:'')+'"></div><div><label class="req">Adresă</label><input id="pfLad" value="'+esc(lz?last.fin.adr:'')+'"></div></div><div class="hint" id="pfLm"></div></div>'+
+  '<div class="sect" style="margin:14px 0 4px;font-size:14px" id="pfCt">'+(lz?'Utilizator (locatar)':'Cumpărător')+'</div>'+
+  '<div class="grid2"><div><label class="req">'+(c.pf?'Nume':'Firmă / nume')+'</label><input id="pfCn" value="'+esc(c.nume)+'"></div><div><label class="req">'+(c.pf?'CNP':'CUI')+'</label><input id="pfCc" value="'+esc(c.cui)+'"></div>'+(c.pf?'':'<div><label>Nr. Reg. Com.</label><input id="pfCr" value="'+esc(c.rc)+'"></div>')+'<div><label class="req">Adresă</label><input id="pfCa" value="'+esc(c.adr)+'"></div></div>'+
+  '<p class="hint">Datele clientului vin din ofertă. Dacă lipsește ceva, completează aici; se trec pe proformă.</p>'+
+  '<div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap"><button class="btn p" id="pfOk">'+(t==='pfre'?'Reemite proforma':'Emite proforma')+'</button><button class="btn s" id="fNo">Renunță</button></div></div>';
+ let tip=lz?'leasing':'direct';
+ document.querySelectorAll('#pfTip button').forEach(b=>b.onclick=()=>{tip=b.dataset.t;document.querySelectorAll('#pfTip button').forEach(x=>x.classList.toggle('on',x===b));$('pfLz').classList.toggle('hide',tip!=='leasing');$('pfCt').textContent=tip==='leasing'?'Utilizator (locatar)':'Cumpărător'});
+ $('pfL').onchange=()=>$('pfLn').classList.toggle('hide',$('pfL').value!=='new');
+ $('pfLa').onclick=async()=>{const m=$('pfLm');m.textContent='Se caută la ANAF…';try{const x=await STORE.call({action:'anaf',cui:$('pfLc').value});if(!x.ok)throw new Error(x.error||'CUI negăsit');
+  $('pfLn1').value=x.denumire||'';$('pfLc').value=x.cui||$('pfLc').value;$('pfLr').value=x.nrRegCom||'';$('pfLad').value=x.adresa||'';m.textContent='✓ Date preluate din ANAF.'}catch(e){m.textContent='Nu am putut prelua datele: '+e.message}};
+ $('fNo').onclick=()=>{$('actForm').innerHTML=''};
+ $('pfOk').onclick=async()=>{const v=id=>($(id)?$(id).value.trim():''),m=$('detMsg');m.style.color='var(--acc)';
+  const cump={nume:v('pfCn'),cui:v('pfCc'),rc:v('pfCr'),adr:v('pfCa'),pers:c.pers||'',tel:c.tel||'',mail:c.mail||'',pf:!!c.pf};
+  if(!cump.nume||!cump.cui||!cump.adr){m.textContent='Completează numele, '+(c.pf?'CNP-ul':'CUI-ul')+' și adresa clientului.';return}
+  let fin=null;if(tip==='leasing'){const k=$('pfL').value;if(k==='new')fin={nume:v('pfLn1'),cui:v('pfLc'),rc:v('pfLr'),adr:v('pfLad')};else if(k!=='')fin={nume:LEASE[+k].nume,cui:LEASE[+k].cui,rc:LEASE[+k].regCom,adr:LEASE[+k].adresa};
+   if(!fin||!fin.nume||!fin.cui||!fin.adr){m.textContent='Alege firma de leasing sau completează denumirea, CUI-ul și adresa ei.';return}}
+  $('pfOk').disabled=true;m.style.color='var(--mut)';m.textContent='Se emite proforma…';let P;
+  try{P=(await STORE.call({action:'proforma',nr:r.nr,d:{tip,pf:pfBuild(r,{cump,fin})}})).proforma}catch(e){$('pfOk').disabled=false;m.style.color='var(--acc)';m.textContent='Proforma nu a putut fi emisă: '+e.message;return}
+  m.textContent='Proforma '+P.numar+' a primit număr. Se generează PDF-ul…';let ok='';
+  try{const pdf=await pfPdf(P);try{pdf.save(pfName(P))}catch(e){}
+   const u=await STORE.call({action:'proformaPdf',numar:P.numar,pdf:pdf.output('datauristring').split(',')[1],pdfName:pfName(P)});ok=u.emailTrimis?' PDF-ul s-a descărcat și a fost trimis conducerii pe e-mail.':' PDF-ul s-a descărcat.'}
+  catch(e){ok=' Atenție: PDF-ul nu a ajuns pe server ('+e.message+'). Îl poți descărca oricând din Arhivă.'}
+  try{await reloadDet()}catch(e){}$('detMsg').style.color='var(--ok)';$('detMsg').textContent='✓ Proforma '+P.numar+' a fost emisă.'+ok}}
+function stgForm(t){const k=t.slice(4),T={timp:['Clientul mai are nevoie de timp','Proforma rămâne valabilă. Dacă avansul nu este încasat, primești din nou alertă peste '+PF_ZILE+' zile lucrătoare.','Ce a spus clientul (opțional)','ex. plătește vineri, așteaptă aprobarea leasingului'],
+  renuntat:['Clientul a renunțat','Proforma '+esc(DET.proformaNr||'')+' se anulează, iar oferta trece la pierdute, cu motivul „Clientul a renunțat”.','De ce a renunțat (opțional)','ex. a ales alt model, nu mai are buget'],
+  nuraspunde:['Clientul nu mai răspunde','Proforma '+esc(DET.proformaNr||'')+' se anulează, iar oferta trece la pierdute, cu motivul „Fără răspuns”.','Detalii (opțional)','ex. sunat de 3 ori, e-mail fără răspuns']}[k];
+ $('actForm').innerHTML='<div class="aform"><b>'+T[0]+'</b><p class="hint" style="margin:4px 0 0">'+T[1]+'</p><label>'+T[2]+'</label><input id="fNota" placeholder="'+T[3]+'"><div style="display:flex;gap:10px;margin-top:10px"><button class="btn p" id="fOk">Confirmă</button><button class="btn s" id="fNo">Renunță</button></div></div>';
+ $('fNo').onclick=()=>{$('actForm').innerHTML=''};
+ $('fOk').onclick=()=>doAct(()=>STORE.call({action:'proformaStinge',nr:DET.nr,motiv:k,nota:$('fNota').value.trim()}),k==='timp'?'✓ Notat. Alerta revine peste '+PF_ZILE+' zile lucrătoare dacă avansul nu e încasat.':'✓ Proforma a fost anulată, iar oferta a trecut la pierdute.')}
+/* raport: proforme fără avans încasat */
+function renderPfRep(vz,md){const L=ROWS.filter(r=>r.etapa==='proforma'&&(!vz||r.vanzator===vz)&&(!md||r.model===md)).map(r=>[r,pfZile(r)]).sort((a,b)=>b[1]-a[1]);const over=L.filter(x=>x[1]>=PF_ZILE).length;
+ $('rPfSub').textContent=L.length?L.length+' proforme așteaptă avansul, din care '+over+' de peste '+PF_ZILE+' zile lucrătoare. La acestea alege ce s-a întâmplat: avans încasat, clientul mai are nevoie de timp, a renunțat sau nu mai răspunde.':'Nicio proformă nu așteaptă avansul.';
+ $('rPf').innerHTML=L.map(([r,z])=>{const P=pfData(pfCur(r));const acts=['avans','stg-timp','stg-renuntat','stg-nuraspunde'].filter(t=>canDo(r,t));
+  return '<div class="pfr'+(z>=PF_ZILE?' late':'')+'"><div class="pfh"><div><b>'+esc(r.proformaNr)+'</b> · '+esc(r.client)+'<div class="hint">'+fdt(r.proformaData)+' · '+esc(r.model)+((isAdm()||isOp())?' · '+esc(r.vanzator):'')+(P?' · '+(P.tip==='leasing'?'leasing, total '+eur(P.gross):'avans '+eur(P.avans)):'')+(r.proformaAmanata?' · amânată '+fdt(r.proformaAmanata):'')+'</div></div><span class="st" style="background:'+(z>=PF_ZILE?'#fbe5e5;color:#9b1c1c':'#e9edf2;color:#3A4759')+'">'+z+' '+(z===1?'zi lucrătoare':'zile lucrătoare')+'</span></div>'+
+   (acts.length?'<div class="mbtns">'+acts.map(t=>'<button class="btn '+(t==='avans'?'p':'s')+'" data-pfact="'+esc(r.nr+'|'+t)+'">'+esc(ACT[t])+'</button>').join('')+'</div>':'')+'</div>'}).join('');
+ document.querySelectorAll('[data-pfact]').forEach(b=>b.onclick=()=>{const[nr,t]=b.dataset.pfact.split('|');openDet(nr,t)})}
+/* PDF proformă: o pagină A4, desenată cu html2canvas + jsPDF, ca oferta */
+const fm=n=>(Math.round((+n||0)*100)/100).toLocaleString('ro-RO',{minimumFractionDigits:2,maximumFractionDigits:2});
+function pfHtml(P){const LS=k=>String(LOGO[k]).startsWith('data:')?LOGO[k]:'data:image/png;base64,'+LOGO[k];const cav=P.brand==='cavan',lead=LS(cav?'cavan':'foton'),lz=P.tip==='leasing',c=P.cump,e=P.emitent||{};
+ const rows=P.linii.map((l,i)=>'<tr><td class="c">'+(i+1)+'</td><td><b>'+esc(l.n)+'</b>'+(l.d&&l.d.length?'<table class="spec">'+l.d.map(x=>'<tr><td>'+esc(x[0])+'</td><td>'+esc(x[1])+'</td></tr>').join('')+'</table>':'')+'</td><td class="c">buc</td><td class="c">'+l.q+'</td><td class="r">'+fm(l.p)+'</td><td class="r">'+fm(l.p*l.q)+'</td><td class="r">'+fm(l.p*l.q*VAT)+'</td></tr>').join('');
+ const cli='<div>'+(c.pf?'CNP':'CIF')+': '+esc(c.cui)+(c.rc?' · Reg. Com.: '+esc(c.rc):'')+'</div><div>'+esc(c.adr)+'</div>'+(c.pers?'<div>Persoană de contact: '+esc(c.pers)+'</div>':'')+((c.tel||c.mail)?'<div>'+esc([c.tel?'Tel. '+c.tel:'',c.mail].filter(Boolean).join(' · '))+'</div>':'');
+ const buyer=lz?'<div class="box"><div class="bt">Cumpărător – finanțator (leasing)</div><div class="bn">'+esc(P.fin.nume)+'</div><div>CIF: '+esc(P.fin.cui)+(P.fin.rc?' · Reg. Com.: '+esc(P.fin.rc):'')+'</div><div>'+esc(P.fin.adr)+'</div><div class="ut"><div class="bt">Utilizator (locatar)</div><div class="bn s">'+esc(c.nume)+'</div>'+cli+'</div></div>'
+  :'<div class="box"><div class="bt">Cumpărător</div><div class="bn">'+esc(c.nume)+'</div>'+cli+'</div>';
+ const plata=(lz?'<div>Valoarea integrală de <b>'+fm(P.gross)+' EUR</b> se achită de finanțator, conform contractului de leasing încheiat cu utilizatorul. Avansul de leasing se achită de utilizator către finanțator. Factura fiscală se emite pe numele finanțatorului.</div>'
+  :'<div>Avans de plată: <b>'+P.avansPct+'% = '+fm(P.avans)+' EUR</b>. Restul de plată, înainte de livrarea autovehiculului.</div>')+
+  '<div>Prețurile sunt în EUR. Plata se face în lei, la cursul BNR + 1% din ziua emiterii facturii, prin transfer bancar în unul din conturile de mai sus. La detalii plată treceți: <b>Proforma '+esc(P.numar)+'</b>.</div>';
+ return '<div class="pxp'+(cav?' cav':'')+'"><img class="wm" src="'+LS(cav?'cavanE':'fotonE')+'" alt="">'+
+  '<div class="lg"><img class="fl" src="'+lead+'" alt="'+(cav?'CAVAN':'FOTON')+'"><img class="ic" src="'+LS('icg')+'" alt="Inter Cargo"></div>'+
+  '<div class="hd"><div><div class="t">FACTURĂ PROFORMĂ</div><div class="nn">Seria <b>'+esc(P.serie)+'</b> nr. <b>'+esc(P.nr)+'</b></div></div><div class="dt"><div>Data emiterii: <b>'+fdt(P.data)+'</b></div><div>Referință ofertă: <b>'+esc(P.ofertaNr)+'</b></div><div>Moneda: <b>EUR</b> · Cota TVA: <b>21%</b></div></div></div>'+
+  '<div class="pp"><div class="box"><div class="bt">Furnizor</div><div class="bn">'+ICGF.name+'</div><div>CIF: '+ICGF.cui+' · Reg. Com.: '+ICGF.rc+' · Capital social: '+ICGF.cap+'</div><div>Sediu: '+ICGF.sediu+'</div><div>Punct de lucru: '+ICGF.pl+'</div><div>Tel. '+ICGF.tel+' · '+ICGF.mail+'</div>'+
+  '<table class="bks">'+ICGF.banks.map(b=>'<tr><td>'+b[0]+'</td><td><b>'+b[1]+'</b></td></tr>').join('')+'</table></div>'+buyer+'</div>'+
+  '<table class="it"><thead><tr><th class="c">Nr.</th><th>Denumire produs / serviciu</th><th class="c">U.M.</th><th class="c">Cant.</th><th class="r">Preț unitar<br>fără TVA</th><th class="r">Valoare<br>fără TVA</th><th class="r">TVA<br>21%</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+  '<div class="sum"><div class="note"><div class="bt">Plata</div>'+plata+'<div class="sm">Documentul nu ține loc de factură fiscală. Factura fiscală se emite la încasare sau la livrare, conform legii.</div></div>'+
+  '<table class="tt"><tr><td>Total fără TVA</td><td class="r">'+fm(P.net)+' EUR</td></tr><tr><td>TVA 21%</td><td class="r">'+fm(P.vat)+' EUR</td></tr><tr class="g"><td>TOTAL DE PLATĂ</td><td class="r">'+fm(P.gross)+' EUR</td></tr>'+
+  (lz?'<tr class="a"><td>Plătitor</td><td class="r">Finanțator – 100%</td></tr>':'<tr class="a"><td>din care avans '+P.avansPct+'%</td><td class="r">'+fm(P.avans)+' EUR</td></tr>')+'</table></div>'+
+  '<div class="sg"><div><div class="bt">Emis de</div><b>'+esc(e.nume)+'</b><br>'+ICGF.name+'<br>'+esc([e.telefon?'Tel. '+e.telefon:'',e.email].filter(Boolean).join(' · '))+'<br>Data: '+fdt(P.data)+'</div><div class="st2"><div class="bt">Semnătură și ștampilă furnizor</div><div class="ln"></div></div><div class="st2"><div class="bt">'+(lz?'Semnătură utilizator':'Semnătură cumpărător')+'</div><div class="ln"></div></div></div>'+
+  '<div class="pf2"><img src="'+lead+'" alt=""><div><b>'+ICGF.web+'</b><br>'+ICGF.name+' · CIF '+ICGF.cui+' · '+ICGF.pl+'</div><div class="pn">Pagina 1 / 1</div></div></div>'}
+async function pfPdf(P){const box=document.createElement('div');box.style.cssText='position:fixed;left:-10000px;top:0;width:210mm';box.innerHTML=pfHtml(P);document.body.appendChild(box);
+ try{const pg=box.firstChild;await Promise.all([...pg.querySelectorAll('img')].map(i=>i.decode?i.decode().catch(()=>{}):0));try{await document.fonts.ready}catch(e){}
+  // dacă nu încape pe o pagină (multe opționale), micșorăm textul
+  const over=()=>pg.querySelector('.sg').getBoundingClientRect().bottom>pg.querySelector('.pf2').getBoundingClientRect().top-6;
+  if(over())pg.classList.add('t1');if(over())pg.classList.add('t2');
+  const c=await html2canvas(pg,{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false,windowWidth:pg.scrollWidth});
+  const {jsPDF}=window.jspdf;const pdf=new jsPDF({unit:'mm',format:'a4',compress:true});pdf.addImage(c.toDataURL('image/jpeg',0.88),'JPEG',0,0,210,297,undefined,'FAST');return pdf}
+ finally{box.remove()}}
 
 /* ----- rapoarte ----- */
 const pctf=x=>x==null?'–':(Math.round(x*1000)/10).toLocaleString('ro-RO')+'%';
 const sumv=(a,f)=>a.reduce((s,r)=>s+(+(f?f(r):r.totalCuTVA)||0),0);
-function cnt(rows){const won=rows.filter(r=>WON.includes(r.etapa)),lost=rows.filter(r=>['pierduta','anulata'].includes(r.etapa)),exp=rows.filter(r=>stg(r)==='expirata'),open=rows.filter(r=>OPEN.includes(r.etapa)&&stg(r)!=='expirata');
- const closed=won.length+lost.length+exp.length;const com=rows.filter(r=>r.comision!==''&&r.comision!=null);
- return{n:rows.length,won,lost,exp,open,closed,rate:closed?won.length/closed:null,val:sumv(rows),wonVal:sumv(won),openVal:sumv(open),com:sumv(com,r=>r.comision),comPaid:sumv(com.filter(r=>r.comisionPlatit),r=>r.comision)}}
+function cnt(rows){const won_=rows.filter(won),lost=rows.filter(r=>['pierduta','anulata'].includes(r.etapa)),exp=rows.filter(r=>stg(r)==='expirata'),open=rows.filter(r=>isOpen(r)&&stg(r)!=='expirata');
+ const closed=won_.length+lost.length+exp.length;const com=rows.filter(r=>r.comision!==''&&r.comision!=null);
+ return{n:rows.length,won:won_,lost,exp,open,closed,rate:closed?won_.length/closed:null,val:sumv(rows),wonVal:sumv(won_),openVal:sumv(open),com:sumv(com,r=>r.comision),comPaid:sumv(com.filter(r=>r.comisionPlatit),r=>r.comision)}}
 function days(r,a,b){const t=e=>{const h=(r.ist||[]).find(x=>x.etapa===e);return h?new Date(h.data):null};const x=a==='data'?new Date(r.data):t(a),y=t(b);return x&&y?(y-x)/864e5:null}
 function avg(a){a=a.filter(x=>x!=null&&x>=0);return a.length?a.reduce((s,x)=>s+x,0)/a.length:null}
 function renderRep(){const adm=isAdm()||isOp();const per=$('rper').value,vz=adm?$('rvz').value:'',md=$('rmd').value;
  $('rvzW').classList.toggle('hide',!adm);$('repSub').textContent=adm?'Performanța echipei. Rata de succes = comenzi (avans încasat) din ofertele închise (comenzi + pierdute + expirate).':'Rezultatele tale. Rata de succes = comenzi (avans încasat) din ofertele tale închise.';
  const rows=ROWS.filter(r=>inPer(r,per)&&(!vz||r.vanzator===vz)&&(!md||r.model===md));const c=cnt(rows);
- const pend=rows.filter(r=>r.etapa==='cerere').length;
+ const pend=rows.filter(r=>r.etapa==='cerere'||r.etapa==='avans').length;
  const k=[['Oferte emise',c.n,eur(c.val)+' cu TVA'],['Rata de succes',pctf(c.rate),c.won.length+' comenzi din '+c.closed+' închise'],['Comenzi (avans încasat)',c.won.length,eur(c.wonVal)],
   ['În lucru',c.open.length,eur(c.openVal)],['Pierdute / anulate',c.lost.length,''],['Expirate fără răspuns',c.exp.length,'cer feedback'],
-  [adm?'Cereri alocare serie':'Așteaptă alocare',pend,pend?(adm?'de alocat din Stoc DBK':'la administrator'):'nicio cerere'],
+  [adm?'De alocat serie':'Așteaptă alocare',pend,pend?(adm?'avans încasat, de alocat din Stoc DBK':'la administrator'):'nicio cerere'],
   [adm?'Comisioane':'Comisionul meu',eur(c.com),'plătit '+eur(c.comPaid)+' · de plătit '+eur(c.com-c.comPaid)],
   ['Ofertă → avans',avg(rows.map(r=>days(r,'data','avans')))==null?'–':Math.round(avg(rows.map(r=>days(r,'data','avans'))))+' zile','medie'],
   ['Avans → livrare',avg(rows.map(r=>days(r,'avans','finalizata')))==null?'–':Math.round(avg(rows.map(r=>days(r,'avans','finalizata'))))+' zile','medie']];
+ renderPfRep(vz,md);
  $('kpis').innerHTML=k.map(([l,v,s])=>'<div class="kpi"><div class="l">'+l+'</div><div class="v">'+v+'</div><div class="s">'+s+'</div></div>').join('');
- const fk=['ofertata','negociere','aprobare','respinsa','cerere','alocata','proforma','avans','incarcat','acte','pdi','finalizata','pierduta','anulata'];const fc={};rows.forEach(r=>{fc[r.etapa]=(fc[r.etapa]||0)+1});const fmx=Math.max(1,...fk.map(x=>fc[x]||0));
+ const fk=['ofertata','negociere','aprobare','respinsa','proforma','avans','cerere','alocata','incarcat','acte','pdi','finalizata','pierduta','anulata'];const fc={};rows.forEach(r=>{fc[r.etapa]=(fc[r.etapa]||0)+1});const fmx=Math.max(1,...fk.map(x=>fc[x]||0));
  $('rFun').innerHTML=fk.map(x=>'<div class="row"><span>'+esc(ET[x].l)+'</span><div class="trk"><div class="b2" style="width:'+((fc[x]||0)/fmx*100)+'%;background:'+(['pierduta','anulata'].includes(x)?'#9b1c1c':WON.includes(x)?'var(--ok)':'var(--brand)')+'"></div></div><span>'+(fc[x]||0)+'</span></div>').join('');
- const months={};rows.forEach(r=>{const kk=(r.data||'').slice(0,7);if(!kk)return;months[kk]=months[kk]||{n:0,w:0};months[kk].n++;if(WON.includes(r.etapa))months[kk].w++});
+ const months={};rows.forEach(r=>{const kk=(r.data||'').slice(0,7);if(!kk)return;months[kk]=months[kk]||{n:0,w:0};months[kk].n++;if(won(r))months[kk].w++});
  const mk=Object.keys(months).sort().slice(-12),mx=Math.max(1,...mk.map(x=>months[x].n));const ln=['ian','feb','mar','apr','mai','iun','iul','aug','sep','oct','nov','dec'];
  $('rMonth').innerHTML=mk.length?mk.map(x=>'<div class="row"><span>'+ln[+x.slice(5)-1]+' '+x.slice(0,4)+'</span><div class="trk"><div class="b1" style="width:'+(months[x].n/mx*100)+'%"></div><div class="b2" style="width:'+(months[x].w/mx*100)+'%"></div></div><span>'+months[x].w+' / '+months[x].n+'</span></div>').join(''):'<div class="hint">Nicio ofertă în perioada aleasă.</div>';
  const grp=key=>{const g={};rows.forEach(r=>{const kk=r[key]||'—';(g[kk]=g[kk]||[]).push(r)});return Object.entries(g).map(([kk,a])=>[kk,cnt(a)]).sort((a,b)=>b[1].wonVal-a[1].wonVal||b[1].n-a[1].n)};

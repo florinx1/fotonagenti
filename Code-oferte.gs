@@ -5,8 +5,9 @@
  * Implementare → Aplicație web · Executare ca: Eu · Acces: Oricine.
  *
  * Roluri:  admin    – vede tot, alocă serii, etapele de livrare, comisioane, utilizatori, rapoarte complete
- *          operator – etapele de după încasarea avansului (încărcat, acte, PDI, livrat)
- *          vanzator – doar ofertele proprii; validează etapele până la „Avans încasat – comandă plasată”
+ *          operator – etapele de după încasarea avansului (încărcat, acte cu factura finală, PDI, livrat)
+ *          vanzator – doar ofertele proprii; emite proforma și trece avansul încasat
+ * Flux: ofertă → proformă (din aplicație, seria ICG-PF) → avans încasat → alocare serie → încărcat → acte → PDI → livrat
  */
 const TOKEN = 'icgoferte2026';
 const APP_URL = 'https://florinx1.github.io/fotonagenti/ofertare.html';
@@ -27,7 +28,15 @@ const COLS = ['nr','data','valabilaPana','vanzator','client','cui','telefon','em
   'status','motiv','actualizat','modelId','alocare','vin','alocatDe','alocatLa','notificat','feedback',
   'vanzatorUser','etapa','etapaLa','proformaNr','proformaData','facturaAvansNr','dataIncasare',
   'comision','comisionNota','comisionPlatit','livratLa','pdfLink','emailOferta','payload',
-  'pretMinim','pretAprobat','aprobare','sumaAvans','monedaAvans'];
+  'pretMinim','pretAprobat','aprobare','sumaAvans','monedaAvans',
+  'facturaAvansData','tipPlata','facturaFinalaNr','facturaFinalaData','proformaTip','proformaAmanata','proformaAlerta'];
+// Facturi proforme (fila „Proforme”): numerotare continuă în seria ICG-PF, datele complete ale fiecărei proforme în payload
+const PROF = 'Proforme', PF_SERIE = 'ICG-PF';
+const PFCOLS = ['numar','serie','nr','data','ofertaNr','stare','tip','cumparator','cui','utilizator','vanzator','emitent',
+  'moneda','totalFaraTVA','totalCuTVA','avansPct','avans','pdfLink','creat','payload'];
+// Firme de leasing (fila „Leasing”): lista din care alege vânzătorul la proforma pentru leasing
+const LEASING = 'Leasing', LCOLS = ['nume','cui','regCom','adresa'];
+const PF_ZILE = 3; // zile lucrătoare după care vânzătorul primește alertă de avans neîncasat
 const UCOLS = ['user','nume','email','telefon','rol','activ','hash','creat'];
 const HCOLS = ['data','nr','etapa','eticheta','de','detalii'];
 // Prețuri (fila „Prețuri” din Sheet – le pot modifica administratorii; aplicația le citește la fiecare deschidere)
@@ -43,15 +52,17 @@ const PRICES_DEF = [
   ['aumark','Aumark 7,5t',38900,10,35010]];
 
 // Etapele ofertei. who: v = vânzătorul ofertei, o = operator/administrator, a = doar administrator
+// Flux: ofertată → proformă emisă → avans încasat → serie alocată → încărcat → acte (factura finală) → PDI → livrată.
+// „cerere” și „alocata” fără avans rămân pentru ofertele vechi, făcute înainte de proforma din aplicație.
 const ET = {
-  ofertata:   { l: 'Ofertată',                         who: 'v', next: ['negociere','cerere','pierduta'] },
-  negociere:  { l: 'În negociere',                     who: 'v', next: ['cerere','pierduta'] },
-  cerere:     { l: 'Cerere alocare serie',             who: 'v', next: ['pierduta'] },
-  alocata:    { l: 'Serie alocată',                    who: 'a', next: ['proforma','pierduta'] },
-  proforma:   { l: 'Proformă avans emisă',             who: 'v', next: ['avans','pierduta'], req: ['proformaNr','proformaData'] },
-  avans:      { l: 'Avans încasat – comandă plasată',  who: 'v', next: ['incarcat'], req: ['facturaAvansNr','dataIncasare','sumaAvans'] },
+  ofertata:   { l: 'Ofertată',                         who: 'v', next: ['negociere','proforma','pierduta'] },
+  negociere:  { l: 'În negociere',                     who: 'v', next: ['proforma','pierduta'] },
+  cerere:     { l: 'Cerere alocare serie',             who: 'v', next: ['proforma','pierduta'] },
+  alocata:    { l: 'Serie alocată',                    who: 'a', next: ['proforma','incarcat','pierduta'] },
+  proforma:   { l: 'Proformă emisă – așteaptă avansul', who: 'v', next: ['avans','pierduta'] },
+  avans:      { l: 'Avans încasat – de alocat serie',  who: 'v', next: [], req: ['facturaAvansNr','facturaAvansData','dataIncasare','sumaAvans'] },
   incarcat:   { l: 'Vehicul încărcat spre livrare ICG', who: 'o', next: ['acte'] },
-  acte:       { l: 'Întocmire acte',                   who: 'o', next: ['pdi'] },
+  acte:       { l: 'Întocmire acte',                   who: 'o', next: ['pdi'], req: ['facturaFinalaNr','facturaFinalaData'] },
   pdi:        { l: 'În pregătire PDI / fișă livrare',  who: 'o', next: ['finalizata'] },
   finalizata: { l: 'Livrată – finalizată',             who: 'o', next: [] },
   pierduta:   { l: 'Pierdută',                         who: 'v', next: [], req: ['motiv'] },
@@ -60,6 +71,12 @@ const ET = {
   anulata:    { l: 'Anulată',                          who: 'a', next: [], req: ['motiv'] }
 };
 const LEGACY = { 'Trimisă': 'ofertata', 'În negociere': 'negociere', 'Câștigată': 'avans', 'Pierdută': 'pierduta' };
+// etapele în care poate trece oferta; „Serie alocată” merge spre proformă (oferte vechi, fără avans) sau spre încărcare (cu avans)
+function nextOf_(r) {
+  const n = (ET[r.etapa] || {}).next || [];
+  if (r.etapa !== 'alocata') return n;
+  const av = !!r.facturaAvansNr; return n.filter(t => t === 'incarcat' ? av : !av);
+}
 
 const PROPS = PropertiesService.getScriptProperties();
 
@@ -95,6 +112,7 @@ function tab_(name, cols, hideCol) {
 function setup() {
   const ss = ss_();
   tab_(SHEET, COLS, 'payload'); tab_(USERS, UCOLS, false); tab_(HIST, HCOLS, false); prices_();
+  tab_(PROF, PFCOLS, 'payload'); tab_(LEASING, LCOLS, false);
   const us = ss.getSheetByName(USERS); us.hideColumns(UCOLS.indexOf('hash') + 1);
   const def = ss.getSheetByName('Sheet1') || ss.getSheetByName('Foaie1');
   if (def && def.getLastRow() === 0) ss.deleteSheet(def);
@@ -174,6 +192,9 @@ function doPost(e) {
       if (req.action === 'save')      return out(Object.assign({ ok: true }, save_(me, req.rec, req)));
       if (req.action === 'etapa')     return out(Object.assign({ ok: true }, etapa_(me, req.nr, req.etapa, req.date || {})));
       if (req.action === 'aloc')      return out(Object.assign({ ok: true }, aloc_(me, req.nr, req.vin)));
+      if (req.action === 'proforma')  return out(Object.assign({ ok: true }, proforma_(me, req.nr, req.d || {})));
+      if (req.action === 'proformaPdf') return out(Object.assign({ ok: true }, proformaPdf_(me, req.numar, req.pdf, req.pdfName)));
+      if (req.action === 'proformaStinge') return out(Object.assign({ ok: true }, proformaStinge_(me, req.nr, req.motiv, req.nota)));
       if (req.action === 'comision')  return out(Object.assign({ ok: true }, comision_(me, req.nr, req.date || {})));
       if (req.action === 'parola')    return out(Object.assign({ ok: true }, parola_(me, req.vechi, req.noua)));
       if (req.action === 'telefon')   return out(Object.assign({ ok: true }, telefon_(me, req.telefon)));
@@ -209,7 +230,7 @@ function owner_(me, r) { return r.vanzatorUser ? r.vanzatorUser === me.user : (!
 function visible_(me, r) {
   if (me.rol === 'admin') return true;
   if (owner_(me, r)) return true;
-  if (me.rol === 'operator') return ['avans','incarcat','acte','pdi'].indexOf(r.etapa) >= 0;
+  if (me.rol === 'operator') return ['avans','incarcat','acte','pdi'].indexOf(r.etapa) >= 0 || (r.etapa === 'alocata' && !!r.facturaAvansNr);
   return false;
 }
 function hist_(nr, et, de, det) { tab_(HIST, HCOLS, false).appendRow([nowIso(), nr, et, (ET[et] || {}).l || et, de, det || '']); }
@@ -221,12 +242,14 @@ function list_(me) {
     if (!nrs[h[1]]) return; (ist[h[1]] = ist[h[1]] || []).push({ data: h[0] instanceof Date ? h[0].toISOString() : String(h[0]), etapa: h[2], eticheta: h[3], de: h[4], detalii: h[5] });
   });
   rows.forEach(r => { r.ist = ist[r.nr] || []; delete r._row; });
-  return { rows, me: pub_(me), preturi: prices_() };
+  const proforme = proformeAll_().filter(p => nrs[p.ofertaNr]).map(p => { delete p._row; return p; });
+  return { rows, me: pub_(me), preturi: prices_(), proforme, leasing: leasing_() };
 }
 function getRow_(nr) { const a = rowsAll_(); const r = a.rows.find(x => String(x.nr) === String(nr)); if (!r) throw new Error('Oferta ' + nr + ' nu există'); return { sh: a.sh, r, all: a.rows }; }
 
 const KEEP = ['vanzator','emailVanzator','vanzatorUser','status','etapa','etapaLa','motiv','alocare','vin','alocatDe','alocatLa','notificat','feedback','pretAprobat','aprobare',
-  'proformaNr','proformaData','facturaAvansNr','dataIncasare','comision','comisionNota','comisionPlatit','livratLa','pdfLink','emailOferta','data','valabilaPana'];
+  'proformaNr','proformaData','facturaAvansNr','dataIncasare','comision','comisionNota','comisionPlatit','livratLa','pdfLink','emailOferta','data','valabilaPana',
+  'sumaAvans','monedaAvans','facturaAvansData','tipPlata','facturaFinalaNr','facturaFinalaData','proformaTip','proformaAmanata','proformaAlerta'];
 function save_(me, rec, req) {
   const a = rowsAll_(); const cur = a.rows.find(x => String(x.nr) === String(rec.nr));
   const o = {};
@@ -277,54 +300,169 @@ function etapa_(me, nr, t, d) {
   const g = getRow_(nr); const r = g.r; const cur = r.etapa; const T = ET[t];
   if (!T) throw new Error('Etapă necunoscută');
   if (t === 'alocata') throw new Error('Seria se alocă din ecranul de alocare');
+  if (t === 'proforma') throw new Error('Proforma se emite din butonul „Emite factură proformă”');
   const isAdm = me.rol === 'admin', isOwn = owner_(me, r), isOp = me.rol === 'operator';
-  const inFlow = (ET[cur].next || []).indexOf(t) >= 0;
+  const inFlow = nextOf_(r).indexOf(t) >= 0;
   const canCancel = t === 'anulata' && isAdm && ['finalizata','anulata','pierduta'].indexOf(cur) < 0;
   if (!inFlow && !canCancel) throw new Error('Din etapa „' + ET[cur].l + '” nu se poate trece în „' + T.l + '”');
   if (T.who === 'v' && !(isOwn || isAdm)) throw new Error('Această etapă o validează vânzătorul ofertei');
   if (T.who === 'o' && !(isOp || isAdm)) throw new Error('Această etapă o validează administratorul');
   if (T.who === 'a' && !isAdm) throw new Error('Doar administratorii pot face asta');
-  (T.req || []).forEach(f => { if (!String(d[f] || '').trim()) throw new Error('Completează câmpul obligatoriu: ' + ({ proformaNr: 'numărul proformei', proformaData: 'data proformei', facturaAvansNr: 'numărul facturii de avans', dataIncasare: 'data încasării avansului', sumaAvans: 'suma încasată', motiv: 'motivul' }[f] || f)); });
-  ['proformaData','dataIncasare'].forEach(f => { if (d[f] && !validDate_(d[f])) throw new Error('Dată invalidă'); if (d[f] && d[f] > azi()) throw new Error('Data nu poate fi în viitor'); });
+  (T.req || []).forEach(f => { if (!String(d[f] || '').trim()) throw new Error('Completează câmpul obligatoriu: ' + ({ facturaAvansNr: 'numărul facturii de avans', facturaAvansData: 'data facturii de avans', dataIncasare: 'data încasării', sumaAvans: 'suma încasată', facturaFinalaNr: 'numărul facturii finale', facturaFinalaData: 'data facturii finale', motiv: 'motivul' }[f] || f)); });
+  ['dataIncasare','facturaAvansData','facturaFinalaData'].forEach(f => { if (d[f] && !validDate_(d[f])) throw new Error('Dată invalidă'); if (d[f] && d[f] > azi()) throw new Error('Data nu poate fi în viitor'); });
   let det = String(d.nota || '').trim();
-  if (t === 'proforma') { r.proformaNr = String(d.proformaNr).trim(); r.proformaData = d.proformaData; det = 'Proformă ' + r.proformaNr + ' din ' + fdt_(r.proformaData) + (det ? ' · ' + det : ''); }
+  let final = t; // etapa în care rămâne oferta
   if (t === 'avans') {
     const s = Number(String(d.sumaAvans).replace(/\s/g, '').replace(',', '.')), mon = d.monedaAvans === 'EUR' ? 'EUR' : 'RON';
     if (!(s > 0)) throw new Error('Suma încasată trebuie să fie un număr mai mare ca zero');
     if (r.proformaData && d.dataIncasare < String(r.proformaData).slice(0, 10)) throw new Error('Data încasării nu poate fi înaintea datei proformei (' + fdt_(r.proformaData) + ')');
-    r.facturaAvansNr = String(d.facturaAvansNr).trim(); r.dataIncasare = d.dataIncasare; r.sumaAvans = Math.round(s * 100) / 100; r.monedaAvans = mon;
-    det = 'Factură avans ' + r.facturaAvansNr + ', încasat ' + fdt_(r.dataIncasare) + ', suma ' + r.sumaAvans.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) + ' ' + mon + (det ? ' · ' + det : '');
+    r.facturaAvansNr = String(d.facturaAvansNr).trim(); r.facturaAvansData = d.facturaAvansData; r.dataIncasare = d.dataIncasare;
+    r.sumaAvans = Math.round(s * 100) / 100; r.monedaAvans = mon; r.tipPlata = d.tipPlata === 'integral' ? 'integral' : 'avans';
+    det = (r.tipPlata === 'integral' ? 'Plată integrală' : 'Avans') + ' · factură ' + r.facturaAvansNr + ' din ' + fdt_(r.facturaAvansData) + ', încasat ' + fdt_(r.dataIncasare) + ', suma ' + r.sumaAvans.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) + ' ' + mon + (det ? ' · ' + det : '');
+    pfStare_(r.nr, 'Încasată');
+    if (r.vin && r.alocare === 'Alocată') final = 'alocata'; // seria a fost alocată deja (ex. leasing): comanda merge direct spre livrare
   }
+  if (t === 'acte') { r.facturaFinalaNr = String(d.facturaFinalaNr).trim(); r.facturaFinalaData = d.facturaFinalaData; det = 'Factură finală ' + r.facturaFinalaNr + ' din ' + fdt_(r.facturaFinalaData) + (det ? ' · ' + det : ''); }
   if (t === 'cerere') r.alocare = 'Cerută';
   if (t === 'negociere' && String(r.valabilaPana) < azi()) { const x = new Date(); x.setDate(x.getDate() + 7); r.valabilaPana = Utilities.formatDate(x, 'Europe/Bucharest', 'yyyy-MM-dd'); r.notificat = ''; }
   if (t === 'pierduta' || t === 'anulata') {
     r.motiv = String(d.motiv).trim(); det = r.motiv + (det ? ' · ' + det : '');
     if (r.vin) { det += ' · seria ' + r.vin + ' eliberată'; r.alocare = ''; r.vin = ''; }
+    if (pfStare_(r.nr, 'Anulată – ' + r.motiv)) det += ' · proforma ' + r.proformaNr + ' anulată';
   }
   if (t === 'finalizata') r.livratLa = d.data && validDate_(d.data) ? d.data : azi();
-  r.etapa = t; r.status = T.l; r.etapaLa = nowIso(); r.actualizat = nowIso();
+  r.etapa = final; r.status = ET[final].l; r.etapaLa = nowIso(); r.actualizat = nowIso();
   writeRow_(g.sh, r); hist_(r.nr, t, me.nume, det);
+  if (final !== t) hist_(r.nr, final, me.nume, 'Seria ' + r.vin + ' era deja alocată – comanda trece spre livrare');
   notify_(t, r, me, det);
-  return { etapa: t };
+  return { etapa: final };
 }
 function aloc_(me, nr, vin) {
   if (me.rol !== 'admin') throw new Error('Doar administratorii pot aloca serii');
   const g = getRow_(nr); const r = g.r;
   if (vin) {
-    if (['ofertata','negociere','cerere','alocata'].indexOf(r.etapa) < 0) throw new Error('Oferta este în etapa „' + ET[r.etapa].l + '” – seria nu mai poate fi schimbată de aici');
+    if (['ofertata','negociere','cerere','alocata','proforma','avans'].indexOf(r.etapa) < 0) throw new Error('Oferta este în etapa „' + ET[r.etapa].l + '” – seria nu mai poate fi schimbată de aici');
     const other = g.all.find(x => x.vin === vin && x.alocare === 'Alocată' && String(x.nr) !== String(nr) && ['pierduta','anulata'].indexOf(x.etapa) < 0);
     if (other) throw new Error('Seria ' + vin + ' este deja alocată pe oferta ' + other.nr);
     r.alocare = 'Alocată'; r.vin = vin; r.alocatDe = me.nume; r.alocatLa = nowIso();
-    r.etapa = 'alocata'; r.status = ET.alocata.l; r.etapaLa = nowIso(); r.actualizat = nowIso();
+    // în etapa proformă (ex. leasing, unde finanțatorul cere VIN-ul) seria se rezervă, iar oferta rămâne în așteptarea avansului
+    if (r.etapa !== 'proforma') { r.etapa = 'alocata'; r.status = ET.alocata.l; r.etapaLa = nowIso(); }
+    r.actualizat = nowIso();
     writeRow_(g.sh, r); hist_(nr, 'alocata', me.nume, 'Seria ' + vin);
     notify_('alocata', r, me, 'Seria ' + vin);
   } else {
-    if (r.etapa !== 'alocata') throw new Error('Alocarea se poate anula doar înainte de emiterea proformei');
-    const old = r.vin; r.alocare = 'Cerută'; r.vin = ''; r.alocatDe = ''; r.alocatLa = '';
-    r.etapa = 'cerere'; r.status = ET.cerere.l; r.etapaLa = nowIso(); r.actualizat = nowIso();
-    writeRow_(g.sh, r); hist_(nr, 'cerere', me.nume, 'Alocare anulată (seria ' + old + ' eliberată)');
+    if (!(r.etapa === 'alocata' || (r.etapa === 'proforma' && r.vin))) throw new Error('Alocarea se poate anula doar cât oferta este în etapa „Serie alocată” sau „Proformă emisă”');
+    const old = r.vin; r.vin = ''; r.alocatDe = ''; r.alocatLa = '';
+    if (r.etapa === 'alocata') {
+      const back = r.facturaAvansNr ? 'avans' : 'cerere';
+      r.alocare = back === 'cerere' ? 'Cerută' : ''; r.etapa = back; r.status = ET[back].l; r.etapaLa = nowIso();
+    } else r.alocare = '';
+    r.actualizat = nowIso();
+    writeRow_(g.sh, r); hist_(nr, r.etapa, me.nume, 'Alocare anulată (seria ' + old + ' eliberată)');
   }
   return {};
+}
+
+/* ---------------- facturi proforme ---------------- */
+function proformeAll_() {
+  const sh = tab_(PROF, PFCOLS, 'payload'); const n = sh.getLastRow(); if (n < 2) return [];
+  return sh.getRange(2, 1, n - 1, PFCOLS.length).getValues().map((v, i) => {
+    const o = { _row: i + 2 }; PFCOLS.forEach((c, j) => { let x = v[j]; if (x instanceof Date) x = Utilities.formatDate(x, 'Europe/Bucharest', 'yyyy-MM-dd'); o[c] = x; });
+    o.nr = String(o.nr).padStart(6, '0'); o.ofertaNr = String(o.ofertaNr); return o;
+  }).filter(o => o.numar);
+}
+function pfWrite_(o) { tab_(PROF, PFCOLS, 'payload').getRange(o._row, 1, 1, PFCOLS.length).setNumberFormat('@').setValues([PFCOLS.map(c => o[c] == null ? '' : o[c])]); }
+// schimbă starea proformei active („Emisă”) a ofertei; întoarce true dacă exista una
+function pfStare_(nr, stare) {
+  const a = proformeAll_().filter(p => p.ofertaNr === String(nr) && p.stare === 'Emisă');
+  a.forEach(p => { p.stare = stare; pfWrite_(p); }); return a.length > 0;
+}
+function leasing_() {
+  const sh = tab_(LEASING, LCOLS, false); const n = sh.getLastRow(); if (n < 2) return [];
+  return sh.getRange(2, 1, n - 1, LCOLS.length).getValues().map(v => ({ nume: String(v[0]).trim(), cui: String(v[1]).trim(), regCom: String(v[2]).trim(), adresa: String(v[3]).trim() })).filter(x => x.nume);
+}
+const num_ = x => Math.round((Number(x) || 0) * 100) / 100;
+const str_ = (x, n) => String(x == null ? '' : x).trim().slice(0, n || 300);
+/**
+ * Emite (sau reemite) proforma unei oferte. Datele vin din aplicație (client, vehicul, linii, totaluri), numărul îl dă serverul.
+ * La reemitere proforma anterioară rămâne în arhivă cu starea „Înlocuită”.
+ */
+function proforma_(me, nr, d) {
+  const g = getRow_(nr); const r = g.r;
+  if (!(me.rol === 'admin' || owner_(me, r))) throw new Error('Proforma o emite vânzătorul ofertei sau un administrator');
+  const ok = ['ofertata','negociere','cerere','proforma'].indexOf(r.etapa) >= 0 || (r.etapa === 'alocata' && !r.facturaAvansNr);
+  if (!ok) throw new Error('Din etapa „' + ET[r.etapa].l + '” nu se mai emite proformă');
+  const p = d.pf || {}; const tip = d.tip === 'leasing' ? 'leasing' : 'direct';
+  const c = p.cump || {};
+  if (!str_(c.nume)) throw new Error('Completează numele clientului');
+  if (!str_(c.adr)) throw new Error('Completează adresa clientului');
+  if (!str_(c.cui)) throw new Error('Completează CUI-ul / CNP-ul clientului');
+  let fin = null;
+  if (tip === 'leasing') {
+    fin = p.fin || {};
+    if (!str_(fin.nume) || !str_(fin.cui) || !str_(fin.adr)) throw new Error('Completează firma de leasing: denumire, CUI și adresă');
+  }
+  const linii = (p.linii || []).slice(0, 30).map(l => ({ n: str_(l.n, 200), q: num_(l.q) || 1, p: num_(l.p), d: (l.d || []).slice(0, 20).map(x => [str_(x[0], 60), str_(x[1], 160)]) }));
+  if (!linii.length || !(linii[0].p > 0)) throw new Error('Oferta nu are preț pentru vehicul');
+  const net = num_(linii.reduce((s, l) => s + l.p * l.q, 0)), vat = num_(net * 0.21), gross = num_(net + vat);
+  const avPct = Number(r.avansPct) || 20, avans = tip === 'leasing' ? 0 : num_(gross * avPct / 100);
+  const all = proformeAll_();
+  const next = all.reduce((m, x) => Math.max(m, Number(x.nr) || 0), 0) + 1;
+  const nrS = String(next).padStart(6, '0'), numar = PF_SERIE + ' ' + nrS;
+  const P = { numar, serie: PF_SERIE, nr: nrS, data: azi(), ofertaNr: String(nr), tip, brand: p.brand === 'cavan' ? 'cavan' : 'foton', moneda: 'EUR',
+    cump: { nume: str_(c.nume, 160), cui: str_(c.cui, 40), rc: str_(c.rc, 40), adr: str_(c.adr), pers: str_(c.pers, 80), tel: str_(c.tel, 40), mail: str_(c.mail, 80), pf: !!c.pf },
+    fin: fin && { nume: str_(fin.nume, 160), cui: str_(fin.cui, 40), rc: str_(fin.rc, 40), adr: str_(fin.adr) },
+    linii, net, vat, gross, avansPct: avPct, avans,
+    emitent: { nume: me.nume, email: me.email, telefon: String(me.telefon || '') } };
+  const vechi = all.filter(x => x.ofertaNr === String(nr) && x.stare === 'Emisă');
+  vechi.forEach(x => { x.stare = 'Înlocuită de ' + numar; pfWrite_(x); });
+  const sh = tab_(PROF, PFCOLS, 'payload');
+  const row = { _row: sh.getLastRow() + 1, numar, serie: PF_SERIE, nr: nrS, data: P.data, ofertaNr: String(nr), stare: 'Emisă', tip,
+    cumparator: fin ? fin.nume : P.cump.nume, cui: fin ? fin.cui : P.cump.cui, utilizator: fin ? P.cump.nume : '', vanzator: r.vanzator, emitent: me.nume,
+    moneda: 'EUR', totalFaraTVA: net, totalCuTVA: gross, avansPct: tip === 'leasing' ? '' : avPct, avans: tip === 'leasing' ? '' : avans, pdfLink: '', creat: nowIso(), payload: JSON.stringify(P) };
+  pfWrite_(row);
+  if (fin && !leasing_().some(x => x.cui.replace(/\D/g, '') === fin.cui.replace(/\D/g, ''))) tab_(LEASING, LCOLS, false).appendRow([P.fin.nume, P.fin.cui, P.fin.rc, P.fin.adr]);
+  const reemis = r.etapa === 'proforma';
+  r.proformaNr = numar; r.proformaData = P.data; r.proformaTip = tip; r.proformaAmanata = ''; r.proformaAlerta = '';
+  if (!reemis) { r.etapa = 'proforma'; r.status = ET.proforma.l; r.etapaLa = nowIso(); }
+  r.actualizat = nowIso(); writeRow_(g.sh, r);
+  hist_(nr, 'proforma', me.nume, (reemis ? 'Proformă reemisă ' : 'Proformă emisă ') + numar + (vechi.length ? ' (înlocuiește ' + vechi.map(x => x.numar).join(', ') + ')' : '') +
+    (fin ? ' · leasing ' + fin.nume : '') + ' · total ' + eur_(gross) + ' cu TVA' + (avans ? ' · avans ' + avPct + '% ' + eur_(avans) : ''));
+  return { proforma: P, etapa: r.etapa };
+}
+// PDF-ul proformei (generat în aplicație) se salvează în Drive și pleacă pe e-mail la conducere
+function proformaPdf_(me, numar, b64, name) {
+  const p = proformeAll_().find(x => x.numar === numar); if (!p) throw new Error('Proforma ' + numar + ' nu există');
+  const r = getRow_(p.ofertaNr).r;
+  if (!(me.rol === 'admin' || owner_(me, r))) throw new Error('Nu ai acces la această proformă');
+  if (!b64) throw new Error('Lipsește PDF-ul');
+  const blob = Utilities.newBlob(Utilities.base64Decode(b64), 'application/pdf', String(name || ('Proforma ' + numar + '.pdf')).replace(/[\\/:*?"<>|]/g, '-'));
+  const prima = !p.pdfLink;
+  p.pdfLink = folder_().createFile(blob).getUrl(); pfWrite_(p);
+  if (prima) {
+    const P = JSON.parse(p.payload || '{}');
+    const html = '<p><b>' + esc_(me.nume) + '</b> a emis proforma <b>' + esc_(numar) + '</b>' + (p.tip === 'leasing' ? ' pentru leasing (finanțator ' + esc_(p.cumparator) + ', utilizator ' + esc_(p.utilizator) + ')' : '') + '.</p>' +
+      '<p>Total ' + eur_(p.totalCuTVA) + ' cu TVA' + (P.avans ? ' · avans ' + P.avansPct + '% = <b>' + eur_(P.avans) + '</b>' : '') + '. PDF-ul este atașat.</p>' + rez_(r);
+    const opt = { htmlBody: '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222">' + html + '</div>', attachments: [blob], name: SENDER };
+    if (r.emailVanzator) opt.replyTo = r.emailVanzator;
+    try { MailApp.sendEmail(OFERTA_NOUA_CATRE, 'Proformă emisă ' + numar + ' – ' + r.vanzator + ' – ' + r.client, 'Proformă ' + numar + ' – PDF atașat.', opt); } catch (e) { Logger.log(e); }
+  }
+  return { pdfLink: p.pdfLink, emailTrimis: prima };
+}
+// Proformă neîncasată: vânzătorul spune ce s-a întâmplat. „timp” = alerta revine peste 3 zile lucrătoare.
+function proformaStinge_(me, nr, motiv, nota) {
+  const g = getRow_(nr); const r = g.r;
+  if (r.etapa !== 'proforma') throw new Error('Oferta nu mai este în etapa „' + ET.proforma.l + '”');
+  if (!(me.rol === 'admin' || owner_(me, r))) throw new Error('Doar vânzătorul ofertei sau un administrator');
+  nota = str_(nota, 300);
+  if (motiv === 'timp') {
+    r.proformaAmanata = nowIso(); r.proformaAlerta = ''; r.actualizat = nowIso(); writeRow_(g.sh, r);
+    hist_(nr, 'proforma', me.nume, 'Clientul mai are nevoie de timp' + (nota ? ' · ' + nota : '') + ' – reamintire peste ' + PF_ZILE + ' zile lucrătoare');
+    return { etapa: 'proforma' };
+  }
+  const M = { renuntat: 'Clientul a renunțat', nuraspunde: 'Fără răspuns' }[motiv];
+  if (!M) throw new Error('Alege ce s-a întâmplat cu proforma');
+  return etapa_(me, nr, 'pierduta', { motiv: M, nota: nota });
 }
 function aprobare_(me, nr, decizie, motiv) {
   if (me.rol !== 'admin') throw new Error('Doar administratorii aprobă prețuri');
@@ -460,9 +598,12 @@ function notify_(t, r, by, det) {
   const adm = OFERTA_NOUA_CATRE, vz = r.emailVanzator; const cl = r.client || '';
   const L = ET[t].l;
   if (t === 'cerere') mail_(adm, 'Cerere alocare serie – ' + r.vanzator + ' – ' + cl, '<p>Clientul a acceptat oferta. Vânzătorul cere alocarea unei serii din Stoc DBK.</p>' + rez_(r));
-  else if (t === 'alocata') mail_(vz, 'Serie alocată ' + r.vin + ' – ' + cl + ': emite proforma de avans', '<p>Seria <b>' + esc_(r.vin) + '</b> a fost alocată pe oferta ta. Pasul următor: emite proforma de avans și trece în aplicație numărul proformei.</p>' + rez_(r));
-  else if (t === 'proforma') mail_(adm, 'Proformă avans emisă – ' + r.vanzator + ' – ' + cl, '<p>' + esc_(det) + '</p>' + rez_(r));
-  else if (t === 'avans') mail_(adm, 'Comandă plasată – avans încasat – ' + r.vanzator + ' – ' + cl, '<p>' + esc_(det) + '</p>' + rez_(r), vz);
+  else if (t === 'alocata') {
+    if (r.etapa === 'proforma') mail_(vz, 'Serie alocată ' + r.vin + ' – ' + cl, '<p>Seria <b>' + esc_(r.vin) + '</b> a fost rezervată pe oferta ta. Dacă finanțatorul sau clientul are nevoie de VIN pe proformă, apasă în aplicație „Reemite proforma”.</p>' + rez_(r));
+    else if (r.facturaAvansNr) mail_(vz, 'Serie alocată ' + r.vin + ' – ' + cl, '<p>Seria <b>' + esc_(r.vin) + '</b> a fost alocată pe comanda clientului tău. Comanda merge mai departe spre livrare.</p>' + rez_(r));
+    else mail_(vz, 'Serie alocată ' + r.vin + ' – ' + cl + ': emite proforma', '<p>Seria <b>' + esc_(r.vin) + '</b> a fost alocată pe oferta ta. Pasul următor: emite factura proformă din aplicație.</p>' + rez_(r));
+  }
+  else if (t === 'avans') mail_(adm, (r.etapa === 'alocata' ? 'Comandă plasată' : 'Avans încasat – alocă serie') + ' – ' + r.vanzator + ' – ' + cl, '<p>' + esc_(det) + '</p>' + (r.etapa === 'alocata' ? '<p>Seria ' + esc_(r.vin) + ' era deja alocată.</p>' : '<p>Alocă o serie din Stoc DBK: Arhivă → oferta → Etape.</p>') + rez_(r), vz);
   else if (['incarcat','acte','pdi','finalizata'].indexOf(t) >= 0) mail_(vz, L + ' – ' + cl + ' (' + r.nr + ')', '<p>Comanda clientului tău a trecut în etapa <b>' + esc_(L) + '</b>.' + (det ? ' ' + esc_(det) : '') + '</p>' + rez_(r));
   else if (t === 'pierduta' || t === 'anulata') {
     if (by.rol === 'admin' && by.user !== r.vanzatorUser) mail_(vz, 'Ofertă ' + L.toLowerCase() + ' – ' + cl + ' (' + r.nr + ')', '<p>' + esc_(det) + '</p>' + rez_(r));
@@ -506,21 +647,29 @@ function verificaExpirate() {
     if (['ofertata','negociere'].indexOf(r.etapa) >= 0 && r.valabilaPana && String(r.valabilaPana) < today && !r.notificat && r.emailVanzator) {
       const link = url + '?action=feedback&nr=' + encodeURIComponent(r.nr) + '&k=' + cheie(r.nr);
       const html = '<p>Bună ziua, ' + esc_(r.vanzator) + ',</p><p>Oferta <b>' + esc_(r.nr) + '</b> pentru <b>' + esc_(r.client) + '</b> (' + esc_(r.model) + ', ' + eur_(r.totalCuTVA) + ' cu TVA) a expirat pe ' + fdt_(r.valabilaPana) + '.</p>' +
-        '<p>Spune-ne ce a răspuns clientul: a acceptat (ceri alocare serie), a refuzat (și de ce) sau negocierea continuă.</p>' +
+        '<p>Spune-ne ce a răspuns clientul: a acceptat (urmează proforma), a refuzat (și de ce) sau negocierea continuă.</p>' +
         '<p><a href="' + link + '" style="background:#05C3DE;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none">Trimite feedback</a></p>';
       mail_(r.emailVanzator, 'Ofertă expirată ' + r.nr + ' – ' + r.client + ': ce a răspuns clientul?', html, ADMIN_EMAILS || null);
       r.notificat = nowIso(); writeRow_(g.sh, r);
     }
     if (!lucru) return;
     const z = zileLucr_(r.etapaLa);
-    // 2. serie alocată, fără proformă după 2 zile lucrătoare
-    if (r.etapa === 'alocata' && z >= 2) mail_(r.emailVanzator, 'Reamintire: emite proforma de avans – ' + r.client + ' (' + r.nr + ')',
-      '<p>Seria <b>' + esc_(r.vin) + '</b> este alocată de ' + z + ' zile lucrătoare pe oferta ta, dar proforma de avans nu este trecută în aplicație.</p><p>Emite proforma și completează numărul ei în aplicație (Arhivă → oferta → Etape).</p>' + rez_(r), z >= 4 ? OFERTA_NOUA_CATRE : null);
-    // 3. proformă emisă, avans neîncasat după 5 zile lucrătoare
-    if (r.etapa === 'proforma' && z >= 5) mail_(r.emailVanzator, 'Reamintire: avans neîncasat – ' + r.client + ' (' + r.nr + ')',
-      '<p>Proforma ' + esc_(r.proformaNr) + ' a fost emisă acum ' + z + ' zile lucrătoare, iar avansul nu este marcat ca încasat.</p><p>Verifică plata cu clientul. După încasare, trece în aplicație numărul facturii de avans și data încasării.</p>' + rez_(r), OFERTA_NOUA_CATRE);
-    // 4. cereri de alocare în așteptare
-    if ((r.etapa === 'cerere' || r.etapa === 'aprobare') && z >= 1) cereri.push(r);
+    // 2. ofertă veche: serie alocată, fără proformă după 2 zile lucrătoare
+    if (r.etapa === 'alocata' && !r.facturaAvansNr && z >= 2) mail_(r.emailVanzator, 'Reamintire: emite proforma – ' + r.client + ' (' + r.nr + ')',
+      '<p>Seria <b>' + esc_(r.vin) + '</b> este alocată de ' + z + ' zile lucrătoare pe oferta ta, dar proforma nu este emisă.</p><p>Emite factura proformă din aplicație (Arhivă → oferta → Etape).</p>' + rez_(r), z >= 4 ? OFERTA_NOUA_CATRE : null);
+    // 3. proformă emisă, avans neîncasat după 3 zile lucrătoare (sau 3 zile după „mai are nevoie de timp”). O alertă pe fiecare termen.
+    if (r.etapa === 'proforma') {
+      const ref = String(r.proformaAmanata || r.proformaData || r.etapaLa || '');
+      const zp = zileLucr_(ref);
+      if (zp >= PF_ZILE && !(r.proformaAlerta && String(r.proformaAlerta) >= ref)) {
+        mail_(r.emailVanzator, 'Avans neîncasat – proforma ' + r.proformaNr + ' – ' + r.client,
+          '<p>Bună ziua, ' + esc_(r.vanzator) + ',</p><p>Proforma <b>' + esc_(r.proformaNr) + '</b> din ' + fdt_(r.proformaData) + ' pentru <b>' + esc_(r.client) + '</b> nu are avansul încasat de ' + zp + ' zile lucrătoare' + (r.proformaAmanata ? ' (de la ultima amânare, ' + fdt_(r.proformaAmanata) + ')' : '') + '.</p>' +
+          '<p>Intră în aplicație (Raport → Proforme neîncasate) și alege ce s-a întâmplat:</p><ul><li><b>Avans încasat</b>: treci factura fiscală de avans, data și suma încasată;</li><li><b>Clientul mai are nevoie de timp</b>: alerta revine peste ' + PF_ZILE + ' zile lucrătoare;</li><li><b>Clientul a renunțat</b> sau <b>Clientul nu mai răspunde</b>: proforma se anulează și oferta trece la pierdute.</li></ul>' + rez_(r));
+        r.proformaAlerta = nowIso(); writeRow_(g.sh, r);
+      }
+    }
+    // 4. de făcut de administrator: avans încasat fără serie, cereri de alocare (oferte vechi), aprobări de preț
+    if ((r.etapa === 'cerere' || r.etapa === 'aprobare' || r.etapa === 'avans') && z >= 1) cereri.push(r);
   });
   if (cereri.length && lucru) mail_(OFERTA_NOUA_CATRE, 'Cereri în așteptare (alocare serie / aprobare preț): ' + cereri.length,
     '<p>Aceste oferte așteaptă o decizie de la administrator:</p><ul>' + cereri.map(r => '<li><b>' + esc_(ET[r.etapa].l) + '</b> · <b>' + esc_(r.nr) + '</b> – ' + esc_(r.vanzator) + ' – ' + esc_(r.client) + ' – ' + esc_(r.model) + ' (' + esc_(r.culoare) + ')</li>').join('') + '</ul>');
@@ -539,7 +688,7 @@ function doGet(e) {
     (!deschisa ? '<p style="background:#e3f2ea;padding:10px">Oferta este deja în etapa: <b>' + esc_(ET[r.etapa].l) + '</b>.</p></div>' :
     '<form id="f" onsubmit="event.preventDefault();var f=this;var d={nr:f.nr.value,k:f.k.value,rez:(f.querySelector(\'input[name=rez]:checked\')||{}).value,motiv:f.motiv.value,com:f.com.value};if(d.rez===\'pierduta\'&&!d.motiv){alert(\'Alege motivul refuzului.\');return}f.querySelector(\'button\').disabled=true;google.script.run.withSuccessHandler(function(m){document.body.innerHTML=\'<h2 style=&quot;font-family:Arial;color:#3A4759;max-width:520px;margin:30px auto&quot;>\'+m+\'</h2>\'}).salveazaFeedback(d)"><input type="hidden" name="nr" value="' + esc_(r.nr) + '"><input type="hidden" name="k" value="' + esc_(p.k) + '">' +
     '<p><b>Răspunsul clientului</b><br>' +
-    '<label><input type="radio" name="rez" value="cerere" required> A acceptat oferta – cer alocare serie</label><br>' +
+    '<label><input type="radio" name="rez" value="accept" required> A acceptat oferta – urmează să emit proforma</label><br>' +
     '<label><input type="radio" name="rez" value="pierduta"> A refuzat oferta</label><br>' +
     '<label><input type="radio" name="rez" value="negociere"> Negocierea continuă (+7 zile valabilitate)</label></p>' +
     '<p><b>Motiv refuz</b> (obligatoriu la refuz)<br><select name="motiv" style="width:100%;padding:8px"><option value="">–</option>' + motive.map(m => '<option>' + m + '</option>').join('') + '</select></p>' +
@@ -552,16 +701,19 @@ function salveazaFeedback(p) {
   const lock = LockService.getScriptLock(); lock.waitLock(20000);
   try {
     const r = getRow_(p.nr).r; const own = user_(r.vanzatorUser) || { user: r.vanzatorUser, nume: r.vanzator, email: r.emailVanzator, rol: 'vanzator' };
-    const t = ['cerere','pierduta','negociere'].indexOf(p.rez) >= 0 ? p.rez : 'negociere';
+    // „accept”: clientul a acceptat – oferta rămâne deschisă (+7 zile) până când vânzătorul emite proforma din aplicație
+    const acc = p.rez === 'accept';
+    const t = p.rez === 'pierduta' ? 'pierduta' : 'negociere';
+    const txt = acc ? 'Clientul a acceptat – urmează proforma' : ET[t].l;
     if (t === 'negociere' && r.etapa === 'negociere') { // prelungire
       const g = getRow_(p.nr); const x = new Date(); x.setDate(x.getDate() + 7);
-      g.r.valabilaPana = Utilities.formatDate(x, 'Europe/Bucharest', 'yyyy-MM-dd'); g.r.notificat = ''; g.r.feedback = azi() + ' · negociere' + (p.com ? ' · ' + p.com : '');
-      writeRow_(g.sh, g.r); hist_(p.nr, 'negociere', own.nume, 'Feedback: negocierea continuă, +7 zile' + (p.com ? ' · ' + p.com : ''));
+      g.r.valabilaPana = Utilities.formatDate(x, 'Europe/Bucharest', 'yyyy-MM-dd'); g.r.notificat = ''; g.r.feedback = azi() + ' · ' + txt + (p.com ? ' · ' + p.com : '');
+      writeRow_(g.sh, g.r); hist_(p.nr, 'negociere', own.nume, 'Feedback: ' + (acc ? txt : 'negocierea continuă') + ', +7 zile' + (p.com ? ' · ' + p.com : ''));
     } else {
-      etapa_(Object.assign({}, own, { rol: 'vanzator', user: r.vanzatorUser || own.user }), p.nr, t, { motiv: p.motiv || '', nota: p.com || '' });
-      const g = getRow_(p.nr); g.r.feedback = azi() + ' · ' + ET[t].l + (p.com ? ' · ' + p.com : ''); writeRow_(g.sh, g.r);
+      etapa_(Object.assign({}, own, { rol: 'vanzator', user: r.vanzatorUser || own.user }), p.nr, t, { motiv: p.motiv || '', nota: (acc ? txt + (p.com ? ' · ' : '') : '') + (p.com || '') });
+      const g = getRow_(p.nr); g.r.feedback = azi() + ' · ' + txt + (p.com ? ' · ' + p.com : ''); writeRow_(g.sh, g.r);
     }
-    return 'Mulțumim! Răspunsul pentru oferta ' + p.nr + ' a fost salvat: ' + ET[t].l + '.';
+    return 'Mulțumim! Răspunsul pentru oferta ' + p.nr + ' a fost salvat: ' + txt + '.' + (acc ? ' Emite factura proformă din aplicație.' : '');
   } catch (err) { return 'Nu s-a putut salva: ' + (err.message || err); }
   finally { lock.releaseLock(); }
 }
