@@ -200,6 +200,7 @@ function doPost(e) {
       if (req.action === 'telefon')   return out(Object.assign({ ok: true }, telefon_(me, req.telefon)));
       if (me.rol !== 'admin') return out({ ok: false, error: 'Doar administratorii au acces' });
       if (req.action === 'sterge')    return out(Object.assign({ ok: true }, sterge_(me, req.nrs || [])));
+      if (req.action === 'proformaSterge') return out(Object.assign({ ok: true }, proformaSterge_(me, req.numar, req.motiv)));
       if (req.action === 'users')     return out({ ok: true, users: usersPub_() });
       if (req.action === 'userSave')  return out(Object.assign({ ok: true }, userSave_(me, req.u || {}, req.trimite)));
       if (req.action === 'userReset') return out(Object.assign({ ok: true }, userReset_(me, req.user, req.trimite)));
@@ -448,6 +449,37 @@ function proformaPdf_(me, numar, b64, name) {
     try { MailApp.sendEmail(OFERTA_NOUA_CATRE, 'Proformă emisă ' + numar + ' – ' + r.vanzator + ' – ' + r.client, 'Proformă ' + numar + ' – PDF atașat.', opt); } catch (e) { Logger.log(e); }
   }
   return { pdfLink: p.pdfLink, emailTrimis: prima };
+}
+/**
+ * Șterge o proformă (doar administrator; ex. proformă de test sau greșită). Rândul dispare din „Proforme”, PDF-ul merge în coș.
+ * Dacă era proforma curentă a ofertei: revine proforma pe care a înlocuit-o, iar dacă nu există, oferta revine la „Ofertată”.
+ * O proformă cu avansul încasat nu se șterge. În Istoric rămâne o notă.
+ */
+function proformaSterge_(me, numar, motiv) {
+  if (me.rol !== 'admin') throw new Error('Doar administratorii pot șterge proforme');
+  const all = proformeAll_(); const p = all.find(x => x.numar === numar);
+  if (!p) throw new Error('Proforma ' + numar + ' nu există');
+  if (p.stare === 'Încasată') throw new Error('Proforma ' + numar + ' are avansul încasat și nu se mai poate șterge');
+  const g = getRow_(p.ofertaNr); const r = g.r;
+  const curenta = r.proformaNr === numar;
+  if (curenta && r.etapa !== 'proforma') throw new Error('Oferta a trecut în etapa „' + ET[r.etapa].l + '” – proforma nu se mai poate șterge');
+  const m = String(p.pdfLink || '').match(/[-\w]{25,}/);
+  if (m) { try { DriveApp.getFileById(m[0]).setTrashed(true); } catch (e) {} }
+  tab_(PROF, PFCOLS, 'payload').deleteRow(p._row);
+  let det = 'Proformă ' + numar + ' ștearsă' + (str_(motiv) ? ' · ' + str_(motiv, 300) : '');
+  if (curenta) {
+    const prev = all.filter(x => x.ofertaNr === p.ofertaNr && x.stare === 'Înlocuită de ' + numar).sort((a, b) => String(b.nr).localeCompare(String(a.nr)))[0];
+    if (prev) {
+      prev.stare = 'Emisă'; prev._row = prev._row > p._row ? prev._row - 1 : prev._row; pfWrite_(prev);
+      r.proformaNr = prev.numar; r.proformaData = prev.data; r.proformaTip = prev.tip; det += ' · proforma curentă redevine ' + prev.numar;
+    } else {
+      r.proformaNr = ''; r.proformaData = ''; r.proformaTip = ''; r.proformaAmanata = ''; r.proformaAlerta = '';
+      r.etapa = 'ofertata'; r.status = ET.ofertata.l; r.etapaLa = nowIso(); det += ' · oferta revine la „' + ET.ofertata.l + '”';
+    }
+    r.actualizat = nowIso(); writeRow_(g.sh, r);
+  }
+  hist_(p.ofertaNr, r.etapa, me.nume, det);
+  return { etapa: r.etapa };
 }
 // Proformă neîncasată: vânzătorul spune ce s-a întâmplat. „timp” = alerta revine peste 3 zile lucrătoare.
 function proformaStinge_(me, nr, motiv, nota) {
