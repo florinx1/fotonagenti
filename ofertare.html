@@ -381,6 +381,20 @@ input:focus,select:focus,textarea:focus{border-color:#05C3DE;box-shadow:0 0 0 3p
 <div id="rvzW"><label>Vânzător</label><select id="rvz"><option value="">Toți</option></select></div>
 <div><label>Model</label><select id="rmd"><option value="">Toate</option></select></div>
 </div>
+<style>
+.pl-leg{display:flex;flex-wrap:wrap;gap:6px 16px;margin:4px 0 12px;font-size:13px}.pl-leg span{display:inline-flex;align-items:center;gap:6px}.pl-leg i{width:12px;height:12px;border-radius:3px;display:inline-block}
+.pl-row{display:grid;grid-template-columns:minmax(110px,180px) 1fr 52px;gap:10px;align-items:center;margin:7px 0;font-size:14px}
+.pl-bar{display:flex;height:24px;border-radius:5px;overflow:hidden;background:#eef0f3}.pl-bar div{display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:600;min-width:0;overflow:hidden}
+.pl-v{background:#2e8b57}.pl-g{background:#e0b000;color:#3a2d00!important}.pl-o{background:#e8711a}.pl-r{background:#c62828}.pl-n{background:#b9c3cf}
+.pl-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+@media (max-width:560px){.pl-row{grid-template-columns:1fr 44px}.pl-row>span:first-child{grid-column:1/-1}}
+</style>
+<div class="card hide" id="cPlv" style="margin-bottom:16px;overflow:auto"><div class="sect">Nivelul prețului ofertat, pe vânzător · vizibil doar administratorilor</div>
+<p class="hint" style="margin-top:0">Fiecare ofertă este comparată cu prețul minim impus pentru model (grila „Prețuri”, fără TVA), după prețul final al vehiculului (fără accesorii). Filtrele de mai sus (perioadă, vânzător, model) se aplică și aici.</p>
+<div class="pl-leg"><span><i class="pl-v"></i>Verde – în jumătatea de sus, spre prețul de listă</span><span><i class="pl-g"></i>Galben – în jumătatea de jos, spre minim</span><span><i class="pl-o"></i>Portocaliu – la prețul minim (max. +2%)</span><span><i class="pl-r"></i>Roșu – sub prețul minim impus</span><span><i class="pl-n"></i>Gri – model fără preț minim în grilă</span></div>
+<div id="rPlK" class="kpis"></div>
+<div id="rPlChart"></div>
+<div class="sect" style="margin-top:16px">Oferte la minim sau sub minim</div><table class="lines" id="rPlList" style="width:100%"></table></div>
 <div class="kpis" id="kpis"></div>
 <div class="card" id="cPf" style="margin-bottom:16px"><div class="sect">Proforme neîncasate</div><p class="hint" id="rPfSub" style="margin:0 0 10px"></p><div id="rPf"></div></div>
 <div class="card" id="cVz" style="margin-bottom:16px;overflow:auto"><div class="sect">Performanță pe vânzător</div><table class="lines" id="rVz" style="width:100%"></table></div>
@@ -3748,6 +3762,7 @@ function renderRep(){const adm=isAdm()||isOp();const per=$('rper').value,vz=adm?
  $('rMonth').innerHTML=mk.length?mk.map(x=>'<div class="row"><span>'+ln[+x.slice(5)-1]+' '+x.slice(0,4)+'</span><div class="trk"><div class="b1" style="width:'+(months[x].n/mx*100)+'%"></div><div class="b2" style="width:'+(months[x].w/mx*100)+'%"></div></div><span>'+months[x].w+' / '+months[x].n+'</span></div>').join(''):'<div class="hint">Nicio ofertă în perioada aleasă.</div>';
  const grp=key=>{const g={};rows.forEach(r=>{const kk=r[key]||'—';(g[kk]=g[kk]||[]).push(r)});return Object.entries(g).map(([kk,a])=>[kk,cnt(a)]).sort((a,b)=>b[1].wonVal-a[1].wonVal||b[1].n-a[1].n)};
  const R=x=>'<td style="text-align:right">'+x+'</td>';
+ renderPriceLevels(rows);
  $('cVz').classList.toggle('hide',!adm);
  if(adm){const g=grp('vanzator');$('rVz').innerHTML='<tr><td class="hint">Vânzător</td>'+['Oferte','Comenzi','Rată','Valoare comenzi','Pierdute','Expirate','Comision','De plătit'].map(x=>'<td class="hint" style="text-align:right">'+x+'</td>').join('')+'</tr>'+
   (g.length?g.map(([kk,c])=>'<tr><td>'+esc(kk)+'</td>'+R(c.n)+R(c.won.length)+R('<b>'+pctf(c.rate)+'</b>')+R(eur(c.wonVal))+R(c.lost.length)+R(c.exp.length)+R(eur(c.com))+R(eur(c.com-c.comPaid))+'</tr>').join(''):'<tr><td colspan="9" class="hint">–</td></tr>')}
@@ -3759,6 +3774,31 @@ function renderRep(){const adm=isAdm()||isOp();const per=$('rper').value,vz=adm?
  const lm={};rows.filter(r=>['pierduta','anulata'].includes(r.etapa)).forEach(r=>{const kk=r.motiv||'Nespecificat';lm[kk]=(lm[kk]||0)+1});c.exp.forEach(()=>{lm['Expirată fără feedback']=(lm['Expirată fără feedback']||0)+1});
  const le=Object.entries(lm).sort((a,b)=>b[1]-a[1]),lmx=Math.max(1,...le.map(x=>x[1]));
  $('rLost').innerHTML=le.length?le.map(([kk,v])=>'<div class="row"><span>'+esc(kk)+'</span><div class="trk"><div class="b2" style="width:'+(v/lmx*100)+'%;background:#9b1c1c"></div></div><span>'+v+'</span></div>').join(''):'<div class="hint">Nicio ofertă pierdută în perioada aleasă.</div>'}
+
+/* ----- nivel preț ofertat vs. preț minim impus, pe vânzător (doar administrator) ----- */
+const PLV={v:{l:'Verde',c:'pl-v',col:'#2e8b57'},g:{l:'Galben',c:'pl-g',col:'#e0b000'},o:{l:'Portocaliu',c:'pl-o',col:'#e8711a'},r:{l:'Roșu',c:'pl-r',col:'#c62828'},n:{l:'Fără grilă',c:'pl-n',col:'#b9c3cf'}};
+function plKey(r){const id=String(r.modelId||'').toLowerCase();if(PRICES[id])return id;const m=String(r.model||'').toLowerCase();
+ if(m.includes('v9'))return'v9';if(m.includes('g7'))return'g7';if(m.includes('cavan'))return'cavan';if(m.includes('toano'))return'etoano';if(m.includes('miler'))return'emiler';
+ if(m.includes('eaumark'))return'eaumark';if(m.includes('aumark'))return'aumark';return''}
+function plRef(r){const p=PRICES[plKey(r)]||{};const min=+r.pretMinim||+p.min||0,lista=+p.lista||+r.pretLista||0;return min?{min,lista:Math.max(lista,min)}:null}
+const plOff=r=>+r.pretFinal||+r.pretSuport||+r.pretDiscount||+r.pretLista||0;
+function plLvl(r){const g=plRef(r),f=plOff(r);if(!g||!f)return'n';if(f<g.min-0.5)return'r';if(f<=g.min*1.02)return'o';return g.lista>g.min&&(f-g.min)/(g.lista-g.min)>=0.5?'v':'g'}
+function renderPriceLevels(rows){const on=isAdm();$('cPlv').classList.toggle('hide',!on);
+ if(!on){['rPlK','rPlChart','rPlList'].forEach(id=>$(id).innerHTML='');return}
+ const R=x=>'<td style="text-align:right">'+x+'</td>',H=x=>'<td class="hint" style="text-align:right">'+x+'</td>',ORD=['v','g','o','r','n'];
+ const cn=a=>{const c={v:0,g:0,o:0,r:0,n:0};a.forEach(r=>c[plLvl(r)]++);return c};const all=cn(rows),n=rows.length;
+ $('rPlK').innerHTML=[['r','Sub prețul minim','sub grila impusă'],['o','La prețul minim','max. +2% peste minim'],['g','Spre minim','jumătatea de jos'],['v','Spre listă','jumătatea de sus']]
+  .map(([k,l,s])=>'<div class="kpi"><div class="l"><span class="pl-dot" style="background:'+PLV[k].col+'"></span>'+l+'</div><div class="v">'+all[k]+'</div><div class="s">'+pctf(n?all[k]/n:null)+' din '+n+' oferte · '+s+'</div></div>').join('');
+ const g={};rows.forEach(r=>{const kk=r.vanzator||'—';(g[kk]=g[kk]||[]).push(r)});
+ const ge=Object.entries(g).map(([kk,a])=>[kk,a.length,cn(a)]).sort((a,b)=>(b[2].r-a[2].r)||(b[2].o-a[2].o)||(b[1]-a[1]));
+ $('rPlChart').innerHTML=ge.length?ge.map(([kk,t,c])=>'<div class="pl-row"><span>'+esc(kk)+'</span><div class="pl-bar">'+
+  ORD.filter(k=>c[k]).map(k=>'<div class="'+PLV[k].c+'" style="width:'+(c[k]/t*100)+'%" title="'+PLV[k].l+': '+c[k]+' din '+t+' ('+pctf(c[k]/t)+')">'+(c[k]/t>=0.08?c[k]:'')+'</div>').join('')+
+  '</div><span class="hint" style="text-align:right">'+t+'</span></div>').join(''):'<div class="hint">Nicio ofertă pentru filtrele alese.</div>';
+ const ls=rows.filter(r=>['r','o'].includes(plLvl(r))).sort((a,b)=>(plLvl(b)==='r')-(plLvl(a)==='r')||(b.nr||'').localeCompare(a.nr||''));
+ $('rPlList').innerHTML='<tr><td class="hint">Nr. ofertă</td><td class="hint">Data</td><td class="hint">Vânzător</td><td class="hint">Client</td><td class="hint">Model</td>'+H('Preț ofertat')+H('Preț minim')+H('Diferență')+'<td class="hint">Etapa</td></tr>'+
+  (ls.length?ls.map(r=>{const p=plRef(r),f=plOff(r),d=f-p.min,lv=plLvl(r),ap=+r.pretAprobat&&f>=+r.pretAprobat;return'<tr><td><span class="pl-dot" style="background:'+PLV[lv].col+'"></span><button class="lk" data-pldet="'+esc(r.nr)+'"><b>'+esc(r.nr)+'</b></button></td><td>'+fdt(r.data)+'</td><td>'+esc(r.vanzator||'')+'</td><td>'+esc(r.client||'')+'</td><td>'+esc(r.model||'')+'</td>'+
+   R('<b>'+eur(f)+'</b>')+R(eur(p.min))+R('<span style="color:'+(d<0?'#c62828':'inherit')+'">'+(d>=0?'+':'')+eur(d)+'</span>'+(lv==='r'&&ap?'<br><span class="hint">aprobat de admin</span>':''))+'<td>'+badge(stg(r))+'</td></tr>'}).join(''):'<tr><td colspan="9" class="hint">Nicio ofertă la minim sau sub minim pentru filtrele alese.</td></tr>');
+ document.querySelectorAll('[data-pldet]').forEach(b=>b.onclick=()=>openDet(b.dataset.pldet))}
 
 /* ----- navigare ----- */
 async function show(v){document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v||(v==='det'&&b.dataset.v===DETFROM)));
