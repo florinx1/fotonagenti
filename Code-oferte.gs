@@ -137,6 +137,9 @@ function esc_(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ 
 function fdt_(s) { s = String(s || ''); return /^\d{4}-\d\d-\d\d/.test(s) ? s.slice(0, 10).split('-').reverse().join('.') : s; }
 function eur_(x) { const n = Number(x); return isNaN(n) || x === '' ? '' : n.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'; }
 const lei_ = eur_;
+function bani_(x, m) { return m === 'RON' ? (Number(x) || 0).toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' lei' : eur_(x); }
+// cum se plătește o proformă în euro (vânzătorul bifează una; textul apare pe proformă)
+const PF_PLATA_EUR = { bnr05: 'BNR + 0,5%', bnr1: 'BNR + 1%', bcr: 'curs BCR vânzare' };
 
 /* ---------------- conturi și sesiuni ---------------- */
 function hashParola(u, p) { return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, ADMIN_SALT + ':' + u + ':' + p, Utilities.Charset.UTF_8).map(b => ('0' + (b & 255).toString(16)).slice(-2)).join(''); }
@@ -184,6 +187,7 @@ function doPost(e) {
     if (!me) return out({ ok: false, auth: true, error: 'Sesiunea a expirat – autentifică-te din nou' });
     if (req.action === 'me') return out({ ok: true, me: pub_(me) });
     if (req.action === 'anaf') return out(anaf(req.cui));
+    if (req.action === 'curs') return out(cursBnr_());
     const lock = LockService.getScriptLock(); lock.waitLock(25000);
     try {
       if (req.action === 'list')      return out(Object.assign({ ok: true }, list_(me)));
@@ -318,8 +322,8 @@ function etapa_(me, nr, t, d) {
     if (!(s > 0)) throw new Error('Suma încasată trebuie să fie un număr mai mare ca zero');
     if (r.proformaData && d.dataIncasare < String(r.proformaData).slice(0, 10)) throw new Error('Data încasării nu poate fi înaintea datei proformei (' + fdt_(r.proformaData) + ')');
     r.facturaAvansNr = String(d.facturaAvansNr).trim(); r.facturaAvansData = d.facturaAvansData; r.dataIncasare = d.dataIncasare;
-    r.sumaAvans = Math.round(s * 100) / 100; r.monedaAvans = mon; r.tipPlata = d.tipPlata === 'integral' ? 'integral' : 'avans';
-    det = (r.tipPlata === 'integral' ? 'Plată integrală' : 'Avans') + ' · factură ' + r.facturaAvansNr + ' din ' + fdt_(r.facturaAvansData) + ', încasat ' + fdt_(r.dataIncasare) + ', suma ' + r.sumaAvans.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) + ' ' + mon + (det ? ' · ' + det : '');
+    r.sumaAvans = Math.round(s * 100) / 100; r.monedaAvans = mon; r.tipPlata = ['integral','rezervare'].indexOf(d.tipPlata) >= 0 ? d.tipPlata : 'avans';
+    det = ({ integral: 'Plată integrală', rezervare: 'Rezervare' }[r.tipPlata] || 'Avans') + ' · factură ' + r.facturaAvansNr + ' din ' + fdt_(r.facturaAvansData) + ', încasat ' + fdt_(r.dataIncasare) + ', suma ' + r.sumaAvans.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) + ' ' + mon + (det ? ' · ' + det : '');
     pfStare_(r.nr, 'Încasată');
     if (r.vin && r.alocare === 'Alocată') final = 'alocata'; // seria a fost alocată deja (ex. leasing): comanda merge direct spre livrare
   }
@@ -393,7 +397,13 @@ function proforma_(me, nr, d) {
   if (!(me.rol === 'admin' || owner_(me, r))) throw new Error('Proforma o emite vânzătorul ofertei sau un administrator');
   const ok = ['ofertata','negociere','cerere','proforma'].indexOf(r.etapa) >= 0 || (r.etapa === 'alocata' && !r.facturaAvansNr);
   if (!ok) throw new Error('Din etapa „' + ET[r.etapa].l + '” nu se mai emite proformă');
-  const p = d.pf || {}; const tip = d.tip === 'leasing' ? 'leasing' : 'direct';
+  const p = d.pf || {}; const tip = ['leasing','rezervare'].indexOf(d.tip) >= 0 ? d.tip : 'direct';
+  // moneda: rezervarea e doar în lei; celelalte în EUR sau lei (convertite la cursul ales de vânzător)
+  const moneda = tip === 'rezervare' || d.moneda === 'RON' ? 'RON' : 'EUR';
+  const plataEur = moneda === 'EUR' ? (PF_PLATA_EUR[d.plataEur] ? d.plataEur : '') : '';
+  if (moneda === 'EUR' && !plataEur) throw new Error('Alege cursul la care se face plata proformei în euro');
+  const curs = Math.round((Number(d.curs) || 0) * 10000) / 10000;
+  if (moneda === 'RON' && tip !== 'rezervare' && !(curs > 3 && curs < 10)) throw new Error('Completează cursul EUR/RON (ex. 5,0912)');
   const c = p.cump || {};
   if (!str_(c.nume)) throw new Error('Completează numele clientului');
   if (!str_(c.adr)) throw new Error('Completează adresa clientului');
@@ -403,14 +413,26 @@ function proforma_(me, nr, d) {
     fin = p.fin || {};
     if (!str_(fin.nume) || !str_(fin.cui) || !str_(fin.adr)) throw new Error('Completează firma de leasing: denumire, CUI și adresă');
   }
-  const linii = (p.linii || []).slice(0, 30).map(l => ({ n: str_(l.n, 200), q: num_(l.q) || 1, p: num_(l.p), d: (l.d || []).slice(0, 20).map(x => [str_(x[0], 60), str_(x[1], 160)]) }));
+  let linii = (p.linii || []).slice(0, 30).map(l => ({ n: str_(l.n, 200), q: num_(l.q) || 1, p: num_(l.p), d: (l.d || []).slice(0, 20).map(x => [str_(x[0], 60), str_(x[1], 160)]) }));
   if (!linii.length || !(linii[0].p > 0)) throw new Error('Oferta nu are preț pentru vehicul');
-  const net = num_(linii.reduce((s, l) => s + l.p * l.q, 0)), vat = num_(net * 0.21), gross = num_(net + vat);
-  const avPct = Number(r.avansPct) || 20, avans = tip === 'leasing' ? 0 : num_(gross * avPct / 100);
+  let net, vat, gross, avPct = Number(r.avansPct) || 20, avans;
+  if (tip === 'rezervare') {
+    // o singură linie: rezervarea vehiculului; suma (cu TVA) o scrie vânzătorul, fără minim
+    const suma = num_(String(d.suma || '').replace(/\s/g, '').replace(',', '.'));
+    if (!(suma > 0)) throw new Error('Completează suma de rezervare (lei, cu TVA)');
+    gross = suma; net = num_(suma / 1.21); vat = num_(gross - net);
+    linii = [{ n: 'Rezervare autovehicul ' + linii[0].n, q: 1, p: net, d: linii[0].d }];
+    avPct = ''; avans = gross;
+  } else {
+    if (moneda === 'RON') linii = linii.map(l => Object.assign(l, { p: num_(l.p * curs) }));
+    net = num_(linii.reduce((s, l) => s + l.p * l.q, 0)); vat = num_(net * 0.21); gross = num_(net + vat);
+    avans = tip === 'leasing' ? 0 : num_(gross * avPct / 100);
+  }
   const all = proformeAll_();
   const next = all.reduce((m, x) => Math.max(m, Number(x.nr) || 0), 0) + 1;
   const nrS = String(next).padStart(6, '0'), numar = PF_SERIE + ' ' + nrS;
-  const P = { numar, serie: PF_SERIE, nr: nrS, data: azi(), ofertaNr: String(nr), tip, brand: p.brand === 'cavan' ? 'cavan' : 'foton', moneda: 'EUR',
+  const P = { numar, serie: PF_SERIE, nr: nrS, data: azi(), ofertaNr: String(nr), tip, brand: p.brand === 'cavan' ? 'cavan' : 'foton', moneda, plataEur,
+    curs: moneda === 'RON' && tip !== 'rezervare' ? curs : '', cursInfo: moneda === 'RON' && tip !== 'rezervare' ? str_(d.cursInfo, 120) : '',
     cump: { nume: str_(c.nume, 160), cui: str_(c.cui, 40), rc: str_(c.rc, 40), adr: str_(c.adr), pers: str_(c.pers, 80), tel: str_(c.tel, 40), mail: str_(c.mail, 80), pf: !!c.pf },
     fin: fin && { nume: str_(fin.nume, 160), cui: str_(fin.cui, 40), rc: str_(fin.rc, 40), adr: str_(fin.adr) },
     linii, net, vat, gross, avansPct: avPct, avans,
@@ -420,7 +442,7 @@ function proforma_(me, nr, d) {
   const sh = tab_(PROF, PFCOLS, 'payload');
   const row = { _row: sh.getLastRow() + 1, numar, serie: PF_SERIE, nr: nrS, data: P.data, ofertaNr: String(nr), stare: 'Emisă', tip,
     cumparator: fin ? fin.nume : P.cump.nume, cui: fin ? fin.cui : P.cump.cui, utilizator: fin ? P.cump.nume : '', vanzator: r.vanzator, emitent: me.nume,
-    moneda: 'EUR', totalFaraTVA: net, totalCuTVA: gross, avansPct: tip === 'leasing' ? '' : avPct, avans: tip === 'leasing' ? '' : avans, pdfLink: '', creat: nowIso(), payload: JSON.stringify(P) };
+    moneda, totalFaraTVA: net, totalCuTVA: gross, avansPct: tip === 'direct' ? avPct : '', avans: tip === 'leasing' ? '' : avans, pdfLink: '', creat: nowIso(), payload: JSON.stringify(P) };
   pfWrite_(row);
   if (fin && !leasing_().some(x => x.cui.replace(/\D/g, '') === fin.cui.replace(/\D/g, ''))) tab_(LEASING, LCOLS, false).appendRow([P.fin.nume, P.fin.cui, P.fin.rc, P.fin.adr]);
   const reemis = r.etapa === 'proforma';
@@ -428,7 +450,7 @@ function proforma_(me, nr, d) {
   if (!reemis) { r.etapa = 'proforma'; r.status = ET.proforma.l; r.etapaLa = nowIso(); }
   r.actualizat = nowIso(); writeRow_(g.sh, r);
   hist_(nr, 'proforma', me.nume, (reemis ? 'Proformă reemisă ' : 'Proformă emisă ') + numar + (vechi.length ? ' (înlocuiește ' + vechi.map(x => x.numar).join(', ') + ')' : '') +
-    (fin ? ' · leasing ' + fin.nume : '') + ' · total ' + eur_(gross) + ' cu TVA' + (avans ? ' · avans ' + avPct + '% ' + eur_(avans) : ''));
+    (fin ? ' · leasing ' + fin.nume : '') + (tip === 'rezervare' ? ' · rezervare ' + bani_(gross, moneda) + ' cu TVA' : ' · total ' + bani_(gross, moneda) + ' cu TVA' + (avans ? ' · avans ' + avPct + '% ' + bani_(avans, moneda) : '')) + (P.curs ? ' · curs ' + P.curs : ''));
   return { proforma: P, etapa: r.etapa };
 }
 // PDF-ul proformei (generat în aplicație) se salvează în Drive și pleacă pe e-mail la conducere
@@ -443,7 +465,7 @@ function proformaPdf_(me, numar, b64, name) {
   if (prima) {
     const P = JSON.parse(p.payload || '{}');
     const html = '<p><b>' + esc_(me.nume) + '</b> a emis proforma <b>' + esc_(numar) + '</b>' + (p.tip === 'leasing' ? ' pentru leasing (finanțator ' + esc_(p.cumparator) + ', utilizator ' + esc_(p.utilizator) + ')' : '') + '.</p>' +
-      '<p>Total ' + eur_(p.totalCuTVA) + ' cu TVA' + (P.avans ? ' · avans ' + P.avansPct + '% = <b>' + eur_(P.avans) + '</b>' : '') + '. PDF-ul este atașat.</p>' + rez_(r);
+      '<p>' + (p.tip === 'rezervare' ? 'Proformă de rezervare: <b>' + bani_(p.totalCuTVA, P.moneda) + '</b> cu TVA' : 'Total ' + bani_(p.totalCuTVA, P.moneda) + ' cu TVA' + (P.avans ? ' · avans ' + P.avansPct + '% = <b>' + bani_(P.avans, P.moneda) + '</b>' : '')) + '. PDF-ul este atașat.</p>' + rez_(r);
     const opt = { htmlBody: '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222">' + html + '</div>', attachments: [blob], name: SENDER };
     if (r.emailVanzator) opt.replyTo = r.emailVanzator;
     try { MailApp.sendEmail(OFERTA_NOUA_CATRE, 'Proformă emisă ' + numar + ' – ' + r.vanzator + ' – ' + r.client, 'Proformă ' + numar + ' – PDF atașat.', opt); } catch (e) { Logger.log(e); }
@@ -748,6 +770,16 @@ function salveazaFeedback(p) {
     return 'Mulțumim! Răspunsul pentru oferta ' + p.nr + ' a fost salvat: ' + txt + '.' + (acc ? ' Emite factura proformă din aplicație.' : '');
   } catch (err) { return 'Nu s-a putut salva: ' + (err.message || err); }
   finally { lock.releaseLock(); }
+}
+
+/* ---------------- curs BNR EUR (pentru proformele în lei) ---------------- */
+function cursBnr_() {
+  const c = CacheService.getScriptCache(); const k = c.get('BNR_EUR'); if (k) return JSON.parse(k);
+  const res = UrlFetchApp.fetch('https://www.bnr.ro/nbrfxrates.xml', { muteHttpExceptions: true });
+  if (res.getResponseCode() !== 200) return { ok: false, error: 'BNR nu răspunde (' + res.getResponseCode() + ')' };
+  const x = res.getContentText(); const m = x.match(/<Rate currency="EUR">([\d.]+)<\/Rate>/), d = x.match(/<Cube date="(\d{4}-\d\d-\d\d)">/);
+  if (!m) return { ok: false, error: 'Cursul EUR lipsește din fișierul BNR' };
+  const o = { ok: true, curs: Number(m[1]), data: d ? d[1] : azi() }; c.put('BNR_EUR', JSON.stringify(o), 3600); return o;
 }
 
 /* ---------------- ANAF ---------------- */
