@@ -38,7 +38,9 @@ Aplicația PWA „Foton by Inter Cargo” (repo `florinx1/fotonagenti`) este fol
 ## Factura proformă și etapele comenzii
 - Flux: ofertată → **proformă emisă** (buton „Emite factură proformă”, din ofertă) → **avans încasat** → alocare serie (administrator) → încărcat → acte (factura finală) → PDI → livrată.
 - Proforma: seria `ICG-PF`, numerotare continuă de la 000001, dată de Apps Script (`proforma_()` în `Code-oferte.gs`). Se salvează în fila **Proforme**; la reemitere cea veche rămâne „Înlocuită”.
-- Plată directă (avans % din ofertă) sau **leasing** (cumpărător = finanțatorul, clientul = utilizator). Firmele de leasing sunt în fila **Leasing**.
+- Tipuri: plată directă (avans % din ofertă), **leasing** (cumpărător = finanțatorul, clientul = utilizator; firmele în fila **Leasing**) și **rezervare** (sumă scrisă de vânzător, fără minim, doar în lei).
+- Moneda: directă și leasing în **EUR** (vânzătorul bifează textul de plată: BNR + 0,5%, BNR + 1% sau curs BCR vânzare din data achitării facturii) sau în **lei** (curs BNR luat de Apps Script + adaos ales, ori curs scris de mână).
+- Administratorii pot șterge o proformă (buton „Șterge” în cardul „Facturi proforme”); una cu avansul încasat nu se șterge.
 - PDF-ul proformei: o pagină, `pfPdf()` în `ofertare.html` (html2canvas + jsPDF). FOTON: sigla FOTON stânga + Inter Cargo dreapta. CAVAN: doar CAVAN + Inter Cargo, fără FOTON. Datele ICG (sediu, conturi) sunt în `ICGF`.
 - Avans neîncasat după 3 zile lucrătoare: e-mail la vânzător și apare în Raport → „Proforme neîncasate”. Vânzătorul alege: avans încasat, mai are nevoie de timp (alerta revine peste 3 zile), a renunțat, nu mai răspunde.
 
