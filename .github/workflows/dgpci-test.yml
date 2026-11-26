@@ -4,7 +4,7 @@ on:
     paths: ['.github/workflows/dgpci-test.yml']
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -30,10 +30,7 @@ jobs:
             unrar l a.rar 2>&1 | head -20 || true
           } > rezultat.txt 2>&1
           cat rezultat.txt
-      - name: Salveaza rezultatul
+          true
+      - name: Publica rezultatul
         run: |
-          git config user.name "github-actions"; git config user.email "actions@github.com"
-          git checkout --orphan dgpci-test-rezultat
-          git rm -rq --cached . ; git add rezultat.txt
-          git commit -qm "Rezultat test DGPCI"
-          git push -f origin dgpci-test-rezultat
+          while IFS= read -r line; do echo "::notice::$line"; done < rezultat.txt
