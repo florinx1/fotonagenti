@@ -73,4 +73,5 @@ Aplicația PWA „Foton by Inter Cargo” (repo `florinx1/fotonagenti`) este fol
 - `data/dgpci.json` este generat lunar din arhivele DGPCI de scriptul extern `build_data.py` (pipeline-ul ICG_DGPCI, nu e în repo). Nu edita JSON-ul de mână.
 - Conține vehicule noi plus vehicule înscrise ca uzate, dar cu prima înmatriculare în același an (filtrul „Tip înmatriculare”), din categoriile N1/N2/N3, M2/M3, speciale și remorci. Fără autoturisme M1.
 - **Briefingul comercial FOTON NU apare în aplicație.** Se trimite doar pe e-mail lui Florin și lui Alex.
+- Dimensiuni: segment, categorie comunitară (inclusiv N1G/N2G/N3G), suprastructură DGPCI, finanțare (Leasing = „proprietar, netitular CI”; Achiziție directă = „proprietar și titular CI”), combustibil, județ.
 - Service worker-ul încarcă `data/*.json` network-first, ca luna nouă să apară imediat.
