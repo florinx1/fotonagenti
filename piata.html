@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Piața vehiculelor comerciale (DGPCI) — Foton by Inter Cargo</title>
+<title>Piața Auto România – analiză — Foton by Inter Cargo</title>
 <meta name="theme-color" content="#1F3864" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -66,7 +66,7 @@
 <header class="app-header">
   <a href="index.html" class="home-btn" aria-label="Meniu principal" style="display:flex;align-items:center;justify-content:center;text-decoration:none">&#8592;</a>
   <div class="app-header-text">
-    <div class="app-header-title">Piața vehiculelor comerciale</div>
+    <div class="app-header-title">Piața Auto România – analiză</div>
     <div class="app-header-sub" id="hdrSub" style="display:block;opacity:.8">Înmatriculări vehicule noi · sursa DGPCI</div>
   </div>
   <div class="app-header-brands" aria-hidden="true">
@@ -82,6 +82,9 @@
       <label>Perioada<select id="fPer"></select></label>
       <label>Segment<select id="fSeg"></select></label>
       <label>Combustibil<select id="fFuel"></select></label>
+      <label>Categorie (N/NG…)<select id="fCat"></select></label>
+      <label>Suprastructură<select id="fSupra"></select></label>
+      <label>Tip înmatriculare<select id="fKind"><option value="all">Noi + uzate din același an</option><option value="0">Doar noi</option><option value="1">Doar uzate cu prima înmatr. în același an</option></select></label>
     </div>
     <p class="pm-note" id="cmpNote"></p>
 
@@ -100,11 +103,13 @@
       <section class="pm-card"><h2>Clasament modele</h2><div class="sub">Denumirea comercială din DGPCI, top 15</div><div id="models"></div></section>
     </div>
 
+    <section class="pm-card"><h2>Suprastructură</h2><div class="sub">Tipul de suprastructură (caroserie) din DGPCI · evoluție față de anul anterior · primele 3 mărci</div><div id="supra"></div></section>
+
     <section class="pm-card"><h2>Toate segmentele</h2><div class="sub" id="segSub"></div><div id="segs"></div></section>
 
     <div class="pm-grid2">
       <section class="pm-card"><h2>Combustibil</h2><div class="sub">Structura pe motorizări în perioada aleasă</div><div id="fuel"></div></section>
-      <section class="pm-card"><h2>Caroserie (N1)</h2><div class="sub">Tipul de caroserie, doar pentru segmentul N1</div><div id="body"></div></section>
+      <section class="pm-card"><h2>Categorie comunitară</h2><div class="sub">Inclusiv variantele de teren (G): N1G, N2G, N3G</div><div id="cat"></div></section>
     </div>
 
     <div class="pm-grid2">
@@ -154,13 +159,22 @@ function init(data){
   D.seg.forEach(function(s,i){ segOpts.push({v:String(i),l:D.segLabel[s]}); if(i===0) segOpts.push({v:'pickup',l:'N1 · doar pick-up'}); });
   $('fSeg').innerHTML=segOpts.map(function(o){return '<option value="'+o.v+'">'+esc(o.l)+'</option>';}).join('');
   $('fFuel').innerHTML='<option value="all">Toate</option>'+D.fuels.map(function(f,i){return '<option value="'+i+'">'+esc(f)+'</option>';}).join('');
-  ['fPer','fSeg','fFuel'].forEach(function(id){ $(id).addEventListener('change',render); });
-  $('hdrSub').textContent='Vehicule noi · DGPCI · date până la '+MONF[lm-1]+' '+ly;
+  refreshOpts();
+  ['fPer','fFuel','fKind','fCat','fSupra'].forEach(function(id){ $(id).addEventListener('change',render); });
+  $('fSeg').addEventListener('change',function(){ refreshOpts(); render(); });
+  $('hdrSub').textContent='Vehicule comerciale · DGPCI · date până la '+MONF[lm-1]+' '+ly;
   $('meta').innerHTML='Sursa: '+esc(D.meta.source)+'. '+esc(D.meta.note)+' Actualizat: '+esc(D.meta.generated)+'.';
   $('loading').hidden=true; $('app').hidden=false;
   render();
 }
 
+function refreshOpts(){
+  var sm=segMatch($('fSeg').value), ce={}, cu={};
+  D.cube.forEach(function(c){ if(sm(c[1],c[5])){ ce[c[7]]=(ce[c[7]]||0)+c[9]; cu[c[8]]=(cu[c[8]]||0)+c[9]; } });
+  var opt=function(o,lbl){ return Object.keys(o).sort(function(a,b){return o[b]-o[a];}).map(function(k){return '<option value="'+k+'">'+esc(lbl[+k])+'</option>';}).join(''); };
+  $('fCat').innerHTML='<option value="all">Toate</option>'+Object.keys(ce).sort(function(a,b){return D.eucats[+a]<D.eucats[+b]?-1:1;}).map(function(k){return '<option value="'+k+'">'+esc(D.eucats[+k])+'</option>';}).join('');
+  $('fSupra').innerHTML='<option value="all">Toate</option>'+opt(cu,D.supras);
+}
 function segMatch(segSel){
   if(segSel==='motor') return function(s){return s<=5;};
   if(segSel==='pickup') return function(s,body){return s===0&&body===D.pickupBody;};
@@ -170,22 +184,28 @@ function prevYm(list){ return list.map(function(m){return (+m.slice(0,4)-1)+m.sl
 function idxSet(list){ var o={}; list.forEach(function(m){ var i=D.months.indexOf(m); if(i>=0) o[i]=1; }); return o; }
 function hasAll(list){ return list.every(function(m){return D.months.indexOf(m)>=0;}); }
 
+function kOk(k){ var v=$('fKind').value; return v==='all'||+v===k; }
+function rowOk(c){ var e=$('fCat').value, u=$('fSupra').value; return kOk(c[6])&&(e==='all'||+e===c[7])&&(u==='all'||+u===c[8]); }
 function aggregate(ymSet, segSel, fuelSel){
   var sm=segMatch(segSel), fu=fuelSel==='all'?-1:+fuelSel;
-  var r={tot:0,brand:{},model:{},fuel:{},body:{},ev:0};
+  var r={tot:0,brand:{},model:{},fuel:{},body:{},cat:{},supra:{},sb:{},mcat:{},msup:{},ev:0};
   for(var i=0;i<D.cube.length;i++){ var c=D.cube[i];
     if(!ymSet[c[0]]||!sm(c[1],c[5])) continue;
     if(fu>=0&&c[4]!==fu) continue;
-    var n=c[6]; r.tot+=n;
+    if(!rowOk(c)) continue;
+    var n=c[9]; r.tot+=n;
     r.brand[c[2]]=(r.brand[c[2]]||0)+n;
     var mk=c[2]+'|'+c[3]; r.model[mk]=(r.model[mk]||0)+n;
     r.fuel[c[4]]=(r.fuel[c[4]]||0)+n; r.body[c[5]]=(r.body[c[5]]||0)+n;
+    r.cat[c[7]]=(r.cat[c[7]]||0)+n; r.supra[c[8]]=(r.supra[c[8]]||0)+n;
+    var sk=c[8]+'|'+c[2]; r.sb[sk]=(r.sb[sk]||0)+n;
+    var mc=mk+'|'+c[7]; r.mcat[mc]=(r.mcat[mc]||0)+n; var ms=mk+'|'+c[8]; r.msup[ms]=(r.msup[ms]||0)+n;
   }
   return r;
 }
 function monthly(segSel,fuelSel){
   var sm=segMatch(segSel), fu=fuelSel==='all'?-1:+fuelSel, out=D.months.map(function(){return 0;});
-  D.cube.forEach(function(c){ if(sm(c[1],c[5])&&(fu<0||c[4]===fu)) out[c[0]]+=c[6]; });
+  D.cube.forEach(function(c){ if(sm(c[1],c[5])&&(fu<0||c[4]===fu)&&rowOk(c)) out[c[0]]+=c[9]; });
   return out;
 }
 
@@ -203,8 +223,8 @@ function render(){
   var cn=0; for(var b in cur.brand) if(D.cnSet[D.brands[b]]) cn+=cur.brand[b];
   var evI=D.fuels.indexOf('Electric'), ev=cur.fuel[evI]||0;
   var k='';
-  k+=kpi('Vehicule noi',fmt(cur.tot),(hasPrev?delta(pct(cur.tot,prev.tot))+' față de anul trecut':'')+(mPrev?'<br>'+delta(pct(cur.tot,mPrev.tot))+' față de luna anterioară':''));
-  k+=kpi('Cota electrice',cur.tot?(ev/cur.tot*100).toLocaleString('ro-RO',{maximumFractionDigits:1})+'%':'—',fmt(ev)+' vehicule electrice');
+  k+=kpi($('fKind').value==='0'?'Vehicule noi':($('fKind').value==='1'?'Uzate din același an':'Vehicule noi + uzate an curent'),fmt(cur.tot),(hasPrev?delta(pct(cur.tot,prev.tot))+' față de anul trecut':'')+(mPrev?'<br>'+delta(pct(cur.tot,mPrev.tot))+' față de luna anterioară':''));
+  k+=kpi('Cota electrice',cur.tot?(ev/cur.tot*100).toLocaleString('ro-RO',{maximumFractionDigits:1})+'%':'—',fmt(ev)+(ev===1?' vehicul electric':' vehicule electrice'));
   k+=kpi('Mărci chinezești',cur.tot?(cn/cur.tot*100).toLocaleString('ro-RO',{maximumFractionDigits:1})+'%':'—',fmt(cn)+' vehicule');
   k+=kpi('FOTON',fmt(fot),cur.tot?'cotă '+(fot/cur.tot*100).toLocaleString('ro-RO',{maximumFractionDigits:2})+'%':'');
   $('kpis').innerHTML=k;
@@ -214,7 +234,8 @@ function render(){
   renderModels(cur);
   renderSegs(p,fuelSel,hasPrev,pyl);
   renderBars('fuel',cur.fuel,D.fuels,cur.tot);
-  if(segSel==='0'||segSel==='pickup') renderBars('body',cur.body,D.bodies,cur.tot); else $('body').innerHTML='<div class="empty">Alege segmentul N1 pentru structura pe caroserii.</div>';
+  renderBars('cat',cur.cat,D.eucats,cur.tot);
+  renderSupra(cur,prev);
   renderCN(cur,prev);
   renderCty(p,segSel,fuelSel);
   renderFoton(p,segSel);
@@ -234,7 +255,7 @@ function renderTrend(segSel,fuelSel,p){
     if(m.slice(4)==='01') h+='<text x="'+(x+1)+'" y="'+(H-8)+'">'+m.slice(0,4)+'</text>';
   });
   svg.setAttribute('viewBox','0 0 '+W+' '+H); svg.innerHTML=h;
-  $('trendSub').textContent='Vehicule noi pe lună, ianuarie 2023 – '+ymLabel(D.months[D.months.length-1])+'. Perioada aleasă e evidențiată.';
+  $('trendSub').textContent='Înmatriculări pe lună, ianuarie 2023 – '+ymLabel(D.months[D.months.length-1])+'. Perioada aleasă e evidențiată.';
   Array.prototype.forEach.call(svg.querySelectorAll('g.col'),function(g){
     var i=+g.getAttribute('data-i'); var show=function(e){ var pt=e.touches?e.touches[0]:e; tip(pt.clientX,pt.clientY,ymLabel(D.months[i])+': <b>'+fmt(vals[i])+'</b>'); };
     g.addEventListener('mousemove',show); g.addEventListener('touchstart',show,{passive:true}); g.addEventListener('mouseleave',hideTip);
@@ -269,13 +290,25 @@ function renderModels(cur){
   if(!arr.length){ $('models').innerHTML='<div class="empty">Nicio înmatriculare.</div>'; return; }
   var rows=arr.map(function(a,i){ var p=a[0].split('|'), br=D.brands[+p[0]], md=D.models[+p[1]], nm=md.indexOf(br.split(' ')[0])===0?md:br+' '+md;
     var hi=D.fotonIdx.indexOf(+p[0])>=0;
-    return '<tr class="'+(hi?'hi':'')+'"><td>'+(i+1)+'</td><td>'+esc(nm)+'</td><td>'+fmt(a[1])+'</td><td>'+(a[1]/cur.tot*100).toLocaleString('ro-RO',{maximumFractionDigits:1})+'%</td></tr>'; }).join('');
-  $('models').innerHTML='<table class="pm"><thead><tr><th>#</th><th>Model</th><th>Unități</th><th>Cotă</th></tr></thead><tbody>'+rows+'</tbody></table>';
+    return '<tr class="'+(hi?'hi':'')+'"><td>'+(i+1)+'</td><td>'+esc(nm)+'<div style="font-size:11px;color:var(--text-muted)">'+esc(mixOf(cur.mcat,a[0],D.eucats))+' · '+esc(mixOf(cur.msup,a[0],D.supras))+'</div></td><td>'+fmt(a[1])+'</td><td>'+(a[1]/cur.tot*100).toLocaleString('ro-RO',{maximumFractionDigits:1})+'%</td></tr>'; }).join('');
+  $('models').innerHTML='<table class="pm"><thead><tr><th>#</th><th>Model · categorie · suprastructură</th><th>Unități</th><th>Cotă</th></tr></thead><tbody>'+rows+'</tbody></table>';
 }
+function mixOf(obj,key,labels){ var arr=[]; for(var k in obj){ var p=k.split('|'); if(p[0]+'|'+p[1]===key) arr.push([labels[+p[2]],obj[k]]); } arr.sort(function(a,b){return b[1]-a[1];}); return arr.slice(0,2).map(function(a){return a[0]+(arr.length>1?' '+a[1]:'');}).join(', '); }
+function renderSupra(cur,prev){
+  var arr=Object.keys(cur.supra).map(function(k){return [+k,cur.supra[k]];}).sort(function(a,b){return b[1]-a[1];});
+  if(!arr.length){ $('supra').innerHTML='<div class="empty">Nicio înmatriculare.</div>'; return; }
+  var top=function(u){ var t=[]; for(var k in cur.sb){ var p=k.split('|'); if(+p[0]===u) t.push([D.brands[+p[1]],cur.sb[k]]); } t.sort(function(a,b){return b[1]-a[1];}); return t.slice(0,3).map(function(x){return esc(x[0])+' '+x[1];}).join(', '); };
+  var rows=arr.slice(0,supAll?999:15).map(function(a,i){ var pv=prev?(prev.supra[a[0]]||0):null;
+    return '<tr><td>'+(i+1)+'</td><td>'+esc(D.supras[a[0]])+'<div style="font-size:11px;color:var(--text-muted);white-space:normal">'+top(a[0])+'</div></td><td>'+fmt(a[1])+'</td><td>'+(a[1]/cur.tot*100).toLocaleString('ro-RO',{maximumFractionDigits:1})+'%</td><td>'+(prev?(pv?delta(pct(a[1],pv)):'<span class="tag">nou</span>'):'—')+'</td></tr>'; }).join('');
+  var h='<div class="tblwrap"><table class="pm"><thead><tr><th>#</th><th>Suprastructură · mărci</th><th>Unități</th><th>Cotă</th><th>Δ</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  if(arr.length>15) h+='<button class="pm-more" id="supMore">'+(supAll?'Arată top 15':'Arată toate cele '+arr.length)+'</button>';
+  $('supra').innerHTML=h; var b=$('supMore'); if(b) b.onclick=function(){ supAll=!supAll; renderSupra(cur,prev); };
+}
+var supAll=false;
 function renderSegs(p,fuelSel,hasPrev,pyl){
   var cs=idxSet(p.ym), ps=hasPrev?idxSet(pyl):null, fu=fuelSel==='all'?-1:+fuelSel;
   var c=D.seg.map(function(){return 0;}), q=D.seg.map(function(){return 0;}), pk=0, ppk=0;
-  D.cube.forEach(function(r){ if(fu>=0&&r[4]!==fu) return; if(cs[r[0]]){c[r[1]]+=r[6]; if(r[1]===0&&r[5]===D.pickupBody) pk+=r[6];} if(ps&&ps[r[0]]){q[r[1]]+=r[6]; if(r[1]===0&&r[5]===D.pickupBody) ppk+=r[6];} });
+  D.cube.forEach(function(r){ if(fu>=0&&r[4]!==fu) return; if(!rowOk(r)) return; var v=r[9]; if(cs[r[0]]){c[r[1]]+=v; if(r[1]===0&&r[5]===D.pickupBody) pk+=v;} if(ps&&ps[r[0]]){q[r[1]]+=v; if(r[1]===0&&r[5]===D.pickupBody) ppk+=v;} });
   var mot=0,pmot=0; MOTOR.forEach(function(i){mot+=c[i];pmot+=q[i];});
   var row=function(l,v,pv,bold){ return '<tr'+(bold?' style="font-weight:700"':'')+'><td></td><td>'+l+'</td><td>'+fmt(v)+'</td><td>'+(hasPrev?fmt(pv):'—')+'</td><td>'+(hasPrev?delta(pct(v,pv)):'—')+'</td></tr>'; };
   var h='<table class="pm seg-tbl"><thead><tr><th></th><th>Segment</th><th>Perioada</th><th>An anterior</th><th>Δ</th></tr></thead><tbody>';
@@ -303,24 +336,25 @@ function renderCty(p,segSel,fuelSel){
   // county cube has no fuel/body split: pick-up and fuel filters fall back to segment level
   var cs=idxSet(p.ym), sm=segSel==='motor'?function(s){return s<=5;}:segSel==='pickup'?function(s){return s===0;}:function(s){return s===+segSel;};
   var o={}, fo={}, tot=0, fi=D.fotonIdx;
-  D.cty.forEach(function(r){ if(!cs[r[0]]||!sm(r[1])) return; o[r[2]]=(o[r[2]]||0)+r[4]; tot+=r[4]; if(fi.indexOf(r[3])>=0) fo[r[2]]=(fo[r[2]]||0)+r[4]; });
+  D.cty.forEach(function(r){ if(!cs[r[0]]||!sm(r[1])||!kOk(r[4])) return; var v=r[5]; o[r[2]]=(o[r[2]]||0)+v; tot+=v; if(fi.indexOf(r[3])>=0) fo[r[2]]=(fo[r[2]]||0)+v; });
   var arr=Object.keys(o).map(function(k){return [D.counties[+k],o[k],fo[k]||0];}).sort(function(a,b){return b[1]-a[1];});
   if(!arr.length){ $('cty').innerHTML='<div class="empty">Nicio înmatriculare.</div>'; return; }
   var max=arr[0][1], list=ctyAll?arr:arr.slice(0,12);
-  var h=(segSel==='pickup'||fuelSel!=='all')?'<div class="pm-note">Defalcarea pe județe e disponibilă la nivel de segment (fără filtrul de combustibil/pick-up).</div>':'';
+  var h=(segSel==='pickup'||fuelSel!=='all'||$('fCat').value!=='all'||$('fSupra').value!=='all')?'<div class="pm-note">Defalcarea pe județe e disponibilă la nivel de segment (fără filtrele de combustibil, pick-up, categorie și suprastructură).</div>':'';
   h+=list.map(function(a){ return '<div class="hbar"><span class="lbl">'+esc(a[0])+(a[2]?' <span class="tag" style="background:#fff4e8;color:#b05a12">FOTON '+a[2]+'</span>':'')+'</span><span class="trk"><span class="fill" style="width:'+(a[1]/max*100)+'%"></span></span><span class="val">'+fmt(a[1])+' <small style="color:var(--text-muted)">'+(a[1]/tot*100).toLocaleString('ro-RO',{maximumFractionDigits:1})+'%</small></span></div>'; }).join('');
   h+='<button class="pm-more" id="ctyMore">'+(ctyAll?'Arată top 12':'Arată toate cele '+arr.length+' județe')+'</button>';
   $('cty').innerHTML=h; $('ctyMore').onclick=function(){ ctyAll=!ctyAll; renderCty(p,segSel,fuelSel); };
 }
 function renderFoton(p){
   var set={}; p.ym.forEach(function(m){set[m]=1;});
-  var rows=D.foton.filter(function(r){return set[r.ym]&&r.nou;});
-  var allNew=D.foton.filter(function(r){return r.nou;});
+  var kv=$('fKind').value, kf=function(r){return kv==='all'||(kv==='0'?r.nou:!r.nou);};
+  var rows=D.foton.filter(function(r){return set[r.ym]&&kf(r);});
+  var allNew=D.foton.filter(kf);
   var tot=rows.reduce(function(s,r){return s+r.n;},0), all=allNew.reduce(function(s,r){return s+r.n;},0);
-  var h='<h2>FOTON în statistica DGPCI</h2><div class="sub">Toate segmentele · '+esc(D.periods[+$('fPer').value].label)+' · total din 2023: '+fmt(all)+' vehicule noi</div>';
+  var h='<h2>FOTON în statistica DGPCI</h2><div class="sub">Toate segmentele · '+esc(D.periods[+$('fPer').value].label)+' · total din 2023: '+fmt(all)+' vehicule</div>';
   if(!rows.length){ h+='<div class="empty">FOTON nu apare în statistica DGPCI pentru această perioadă. Absența din statistică nu înseamnă neapărat că nu au existat livrări (pot exista vehicule în curs de înmatriculare).</div>'; $('fotonCard').innerHTML=h; return; }
-  h+='<div class="tblwrap"><table class="pm"><thead><tr><th></th><th>Model FOTON</th><th>Denumire DGPCI</th><th>Luna</th><th>Categ.</th><th>Combustibil</th><th>Județ</th><th>Buc.</th></tr></thead><tbody>'+
-    rows.sort(function(a,b){return a.ym<b.ym?1:-1;}).map(function(r){ var md=r.model||r.tip; var nm=md.indexOf(r.marca)===0?md:r.marca+' '+md; return '<tr><td></td><td><b>'+esc(r.fam||nm)+'</b></td><td>'+esc(nm+' ('+r.tip+')')+'</td><td>'+ymLabel(r.ym)+'</td><td>'+esc(r.cat)+'</td><td>'+esc(r.comb.charAt(0)+r.comb.slice(1).toLowerCase())+'</td><td>'+esc(r.judet)+'</td><td>'+r.n+'</td></tr>'; }).join('')+'</tbody></table></div>';
+  h+='<div class="tblwrap"><table class="pm"><thead><tr><th></th><th>Model FOTON</th><th>Denumire DGPCI</th><th>Tip</th><th>Luna</th><th>Categ.</th><th>Suprastr.</th><th>Combustibil</th><th>Județ</th><th>Buc.</th></tr></thead><tbody>'+
+    rows.sort(function(a,b){return a.ym<b.ym?1:-1;}).map(function(r){ var md=r.model||r.tip; var nm=md.indexOf(r.marca)===0?md:r.marca+' '+md; return '<tr><td></td><td><b>'+esc(r.fam||nm)+'</b></td><td>'+esc(nm+' ('+r.tip+')')+'</td><td>'+(r.nou?'Nou':'Uzat, prima înmatr. '+esc(String(r.prima).slice(0,2)+'/'+String(r.prima).slice(-4)))+'</td><td>'+ymLabel(r.ym)+'</td><td>'+esc(r.cat)+'</td><td>'+esc(r.supra||'')+'</td><td>'+esc(r.comb.charAt(0)+r.comb.slice(1).toLowerCase())+'</td><td>'+esc(r.judet)+'</td><td>'+r.n+'</td></tr>'; }).join('')+'</tbody></table></div>';
   $('fotonCard').innerHTML=h;
 }
 window.addEventListener('resize',function(){ if(D) render(); });

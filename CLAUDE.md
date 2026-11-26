@@ -69,8 +69,8 @@ Aplicația PWA „Foton by Inter Cargo” (repo `florinx1/fotonagenti`) este fol
 - Dacă o modificare cere schimbări în `Code-oferte.gs`, spune clar că Florin trebuie să facă o **nouă implementare** (Deploy → Manage deployments → versiune nouă) în Apps Script.
 
 ## Piața vehiculelor comerciale (DGPCI)
-- `piata.html`: pagina de piață (tile pe ecranul principal). Citește `data/dgpci.json` (sau `APP_CONFIG.DGPCI_URL`, dacă e setat).
+- `piata.html`: pagina „Piața Auto România – analiză” (tile pe ecranul principal). Citește `data/dgpci.json` (sau `APP_CONFIG.DGPCI_URL`, dacă e setat).
 - `data/dgpci.json` este generat lunar din arhivele DGPCI de scriptul extern `build_data.py` (pipeline-ul ICG_DGPCI, nu e în repo). Nu edita JSON-ul de mână.
-- Conține doar vehicule noi, din categoriile N1/N2/N3, M2/M3, speciale și remorci. Fără autoturisme M1.
+- Conține vehicule noi plus vehicule înscrise ca uzate, dar cu prima înmatriculare în același an (filtrul „Tip înmatriculare”), din categoriile N1/N2/N3, M2/M3, speciale și remorci. Fără autoturisme M1.
 - **Briefingul comercial FOTON NU apare în aplicație.** Se trimite doar pe e-mail lui Florin și lui Alex.
 - Service worker-ul încarcă `data/*.json` network-first, ca luna nouă să apară imediat.
