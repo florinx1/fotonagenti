@@ -1,0 +1,25 @@
+name: Test pipeline DGPCI (fără publicare)
+on:
+  push:
+    paths: ['.github/workflows/dgpci-test.yml']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: |
+          pip install -q -r dgpci/requirements.txt
+          cd dgpci/tools && npm i --silent
+      - name: Rulare
+        run: |
+          set +e
+          python dgpci/monthly.py --force 202610 > out.txt 2>&1; echo "EXIT $?" >> out.txt
+          python -c "import json;d=json.load(open('data/dgpci.json'));print('last',d['meta']['last'],'cube',len(d['cube']))" >> out.txt 2>&1
+          git diff --stat >> out.txt
+          tail -25 out.txt | while IFS= read -r l; do echo "::notice::$l"; done
