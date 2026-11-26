@@ -1,8 +1,9 @@
-var CACHE_NAME = "foton-agenti-v47";
+var CACHE_NAME = "foton-agenti-v48";
 var APP_SHELL = [
   "./",
   "./index.html",
   "./ofertare.html",
+  "./piata.html",
   "./styles.css",
   "./app.js",
   "./config.js",
@@ -58,6 +59,18 @@ self.addEventListener("fetch", function (event) {
           headers: { "Content-Type": "application/json" },
         });
       })
+    );
+    return;
+  }
+
+  // Market data (data/*.json): network-first so a new month shows up right away, cache as offline fallback.
+  if (url.pathname.indexOf("/data/") >= 0) {
+    event.respondWith(
+      fetch(req).then(function (res) {
+        var copy = res.clone();
+        caches.open(CACHE_NAME).then(function (cache) { cache.put(req, copy); });
+        return res;
+      }).catch(function () { return caches.match(req); })
     );
     return;
   }

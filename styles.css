@@ -116,6 +116,7 @@ body.no-tabbar { padding-bottom: 16px; }
 .home-tile--tunland::before { background: #4a8f7c; }
 .home-tile--fise::before { background: #b5891f; }
 .home-tile--ofertare::before { background: #3A4759; }
+.home-tile--piata::before { background: #2a78d6; }
 .home-tile:hover { box-shadow: 0 2px 4px rgba(11,11,11,0.06), 0 10px 22px rgba(11,11,11,0.09); transform: translateY(-1px); }
 .home-tile:active { transform: translateY(0); box-shadow: 0 1px 2px rgba(11,11,11,0.05), inset 0 0 0 1.5px rgba(31,56,100,0.25); }
 
