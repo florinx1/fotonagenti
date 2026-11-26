@@ -35,8 +35,9 @@ def dgpci_list():
     this_year = datetime.date.today().year
     for y in (this_year - 1, this_year):
         r = requests.post(BASE + '/drpciv-api/readNewsMedia', timeout=60,
-                          json={'language': 'RO', 'page': 1, 'maxrows': 60, 'category': 'statistica', 'year': y})
-        r.raise_for_status()
+                          json={'language': 'RO', 'page': 1, 'maxrows': 40, 'category': 'statistica', 'year': y})
+        if r.status_code != 200:
+            raise SystemExit(f'DGPCI lista {y}: HTTP {r.status_code} {r.text[:300]}')
         for d in r.json()['data']['news']:
             ro = next((i for i in d['i18n'] if i['language'] == 'RO'), None)
             if not ro or not ro.get('files'):

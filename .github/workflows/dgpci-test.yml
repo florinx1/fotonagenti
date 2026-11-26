@@ -23,3 +23,4 @@ jobs:
           python -c "import json;d=json.load(open('data/dgpci.json'));print('last',d['meta']['last'],'cube',len(d['cube']))" >> out.txt 2>&1
           git diff --stat >> out.txt
           tail -25 out.txt | while IFS= read -r l; do echo "::notice::$l"; done
+# rulare 2
