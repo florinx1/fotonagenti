@@ -1,0 +1,52 @@
+name: Piața DGPCI – actualizare lunară
+on:
+  schedule:
+    - cron: '17 6 1-10 * *'   # zilnic în zilele 1–10, 08:17 ora României (iarna)
+  workflow_dispatch:
+    inputs:
+      backfill:
+        description: 'Retrimite în Drive/Sheets toate lunile (prima configurare)'
+        type: boolean
+        default: false
+      force:
+        description: 'Reprocesează o lună (ex. 202610), opțional'
+        type: string
+        default: ''
+permissions:
+  contents: write
+concurrency:
+  group: dgpci
+  cancel-in-progress: false
+jobs:
+  actualizare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Instalare
+        run: |
+          pip install -q -r dgpci/requirements.txt
+          cd dgpci/tools && npm i --silent
+      - name: Verificare DGPCI și procesare
+        env:
+          GAS_URL: ${{ secrets.GAS_URL }}
+          GAS_TOKEN: ${{ secrets.GAS_TOKEN }}
+        run: |
+          ARGS=""
+          if [ "${{ inputs.backfill }}" = "true" ]; then ARGS="--backfill"; fi
+          if [ -n "${{ inputs.force }}" ]; then ARGS="$ARGS --force ${{ inputs.force }}"; fi
+          python dgpci/monthly.py $ARGS
+      - name: Publicare în aplicație
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/dgpci.json service-worker.js dgpci/db dgpci/state.json
+          if git diff --cached --quiet; then echo "Nimic nou de publicat."; exit 0; fi
+          git commit -m "Piața DGPCI: date actualizate automat"
+          git push

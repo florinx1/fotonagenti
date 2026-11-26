@@ -70,7 +70,8 @@ Aplicația PWA „Foton by Inter Cargo” (repo `florinx1/fotonagenti`) este fol
 
 ## Piața vehiculelor comerciale (DGPCI)
 - `piata.html`: pagina „Piața Auto România – analiză” (tile pe ecranul principal). Citește `data/dgpci.json` (sau `APP_CONFIG.DGPCI_URL`, dacă e setat).
-- `data/dgpci.json` este generat lunar din arhivele DGPCI de scriptul extern `build_data.py` (pipeline-ul ICG_DGPCI, nu e în repo). Nu edita JSON-ul de mână.
+- `data/dgpci.json` este generat automat de GitHub Actions (`.github/workflows/dgpci-lunar.yml`, zilnic în zilele 1–10) cu scripturile din `dgpci/` (`monthly.py` → `parse.py`, `acea.py`, `build_data.py`, `build_xlsx.py`). Istoricul e în `dgpci/db/rec_YYYYMM.parquet`. Nu edita JSON-ul de mână.
+- Arhivele originale, Excelul complet și baza Google Sheets ajung în Google Drive-ul lui Florin prin Apps Script (secretele GitHub `GAS_URL`, `GAS_TOKEN`). Codul Apps Script nu e în repo (conține parola).
 - Conține vehicule noi plus vehicule înscrise ca uzate, dar cu prima înmatriculare în același an (filtrul „Tip înmatriculare”), din categoriile N1/N2/N3, M2/M3, speciale și remorci. Fără autoturisme M1.
 - **Briefingul comercial FOTON NU apare în aplicație.** Se trimite doar pe e-mail lui Florin și lui Alex.
 - Dimensiuni: segment, categorie comunitară (inclusiv N1G/N2G/N3G), suprastructură DGPCI, finanțare (Leasing = „proprietar, netitular CI”; Achiziție directă = „proprietar și titular CI”), combustibil, județ.
