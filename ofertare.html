@@ -321,6 +321,7 @@ input:focus,select:focus,textarea:focus{border-color:#05C3DE;box-shadow:0 0 0 3p
 <div><label>Loc livrare</label><select id="dLoc"><option>Sediul Inter Cargo Grup, Bragadiru</option><option>La adresa clientului (cost transport separat)</option></select></div>
 <div><label>Valabilitate ofertă (zile)</label><input id="dVal" type="number" value="15" min="1"></div>
 <div><label>Avans la comandă (%)</label><input id="dAv" type="number" value="20" min="0" max="100"></div>
+<div style="grid-column:1/-1"><label class="req">Curs de plată (prețuri în EUR, plata în lei)</label><select id="dCurs"><option value="bnr1">Curs BNR + 1%</option><option value="bnr05">Curs BNR + 0,5%</option><option value="bcr">Curs de vânzare BCR</option></select></div>
 <div><label>Garanție</label><input id="dGar"></div>
 </div>
 </div>
@@ -3299,16 +3300,19 @@ document.querySelectorAll('#ctype button').forEach(b=>b.onclick=()=>{S.ctype=b.d
  const pj=S.ctype==='pj';$('lNume').textContent=pj?'Denumire firmă':'Nume și prenume';$('lCui').textContent=pj?'CUI':'CNP';$('wReg').classList.toggle('hide',!pj);$('anafBtn').classList.toggle('hide',!pj);$('anafMsg').textContent=''});
 
 /* step 4 */
+const CURS={bnr1:'cursul BNR + 1%',bnr05:'cursul BNR + 0,5%',bcr:'cursul de vânzare BCR'};
+function cursTxt(){return CURS[($('dCurs')||{}).value]||CURS.bnr1}
 function condText(){const av=$('dAv').value||'20';return[
 '1. Comanda devine fermă la semnarea ei de către client și la plata avansului de '+av+'% din valoarea totală cu TVA.',
 '2. Diferența de preț se achită integral înainte de predarea vehiculului.',
-'3. Prețurile sunt exprimate în euro. Plata se face în lei, la cursul BNR + 1% din ziua emiterii facturii.',
+'3. Prețurile sunt exprimate în euro. Plata se face în lei, la '+cursTxt()+' din ziua emiterii facturii.',
 '4. Termenul de livrare curge de la data încasării avansului. Accesoriile se montează înainte de predare.',
 '5. Vehiculul se predă după inspecția PDI, pe bază de proces-verbal de predare-primire.',
 '6. Garanția vehiculului se acordă conform certificatului de garanție FOTON.',
 '7. În cazul renunțării la comandă din culpa clientului, avansul nu se restituie.'].join('\n')}
 $('resetCond').onclick=()=>{$('dCond').value=condText()};
 $('dAv').oninput=()=>{if(!S.condEdited)$('dCond').value=condText()};
+$('dCurs').onchange=()=>{const c=$('dCond');if(!S.condEdited)c.value=condText();else c.value=c.value.replace(/cursul (BNR \+ 1%|BNR \+ 0,5%|de vânzare BCR)/g,cursTxt())};
 $('dCond').oninput=()=>{S.condEdited=true};
 $('dTerm').onchange=()=>$('wTermX').classList.toggle('hide',$('dTerm').value!=='x');
 
@@ -3345,7 +3349,7 @@ async function renderOffer(){const M=S.model,t=totals(),img=await snapshot();if(
   if($('pL_s').checked&&P.L)rws.push(['Preț de listă',P.L,'']);if($('pD_s').checked&&P.D)rws.push(['Preț cu discount',P.D,pct(P.D)]);if($('pS_s').checked&&P.S)rws.push(['Preț cu suport importator',P.S,pct(P.S)]);
   return rws.length?'<div class="bk"><div class="ot">Preț vehicul</div><table class="pt"><tr><th>Treaptă de preț</th><th class="r">Fără TVA</th><th class="r">Cu TVA</th></tr>'+rws.map((r,i)=>'<tr'+(i===rws.length-1?' style="font-weight:600"':' class="s"')+'><td>'+r[0]+r[2]+'</td><td class="r">'+eur(r[1])+'</td><td class="r">'+eur(r[1]*(1+VAT))+'</td></tr>').join('')+'</table></div>':''})()+
  '<div class="bk"><div class="ot">Total ofertă</div><table class="pt"><tr><th>Descriere</th><th class="r">Cant.</th><th class="r">Valoare fără TVA</th></tr>'+rows+'</table>'+
- '<div style="font-size:8.8pt;color:#444;margin-top:5px">Prețuri exprimate în EUR; plata se face în lei, la cursul BNR + 1% din ziua emiterii facturii. Avans la comandă: '+esc($('dAv').value||'20')+'% din totalul cu TVA ('+eur(t.gross*num($('dAv').value||20)/100)+').</div></div>'+
+ '<div style="font-size:8.8pt;color:#444;margin-top:5px">Prețuri exprimate în EUR; plata se face în lei, la '+esc(cursTxt())+' din ziua emiterii facturii. Avans la comandă: '+esc($('dAv').value||'20')+'% din totalul cu TVA ('+eur(t.gross*num($('dAv').value||20)/100)+').</div></div>'+
  pfoot(1)+'</div><div class="pg">'+wm+head+
  '<div class="bk"><div class="ot">Date tehnice – '+esc(M.name)+'</div><div class="o2 sp">'+spec+'</div></div>'+
  '<div class="bk"><div class="ot">Dotări de serie</div><ul class="dot">'+M.dot.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div>'+
@@ -3677,7 +3681,7 @@ const pfMoney=(x,P)=>P&&P.moneda==='RON'?money(x,'lei'):eur(+x||0);
 function pfForm(t){const r=DET,last=pfData(pfCur(r));let p={};try{p=JSON.parse(r.payload||'{}')}catch(e){}const f=p.f||{};
  const c=last?last.cump:{nume:f.cNume||r.client,cui:f.cCui||r.cui,rc:f.cReg||'',adr:f.cAdr||'',pers:f.cPers||'',tel:r.telefon||'',mail:r.email||'',pf:p.ctype==='pf'};
  const lz=last&&last.tip==='leasing';const lsel=lz?LEASE.findIndex(x=>x.cui.replace(/\D/g,'')===String(last.fin.cui).replace(/\D/g,'')):-1;
- let tip=last?last.tip:'direct',mon=last&&last.moneda==='RON'&&last.tip!=='rezervare'?'RON':'EUR';const pe=last&&last.plataEur||'';
+ let tip=last?last.tip:'direct',mon=last&&last.moneda==='RON'&&last.tip!=='rezervare'?'RON':'EUR';const pe=last&&last.plataEur||(PF_PE[f.dCurs]?f.dCurs:'');
  const chip=(id,a)=>'<div class="vchips" id="'+id+'" style="margin-bottom:0">'+a.map(([k,b,sp,on])=>'<button type="button" data-t="'+k+'"'+(on?' class="on"':'')+'><b>'+b+'</b><span>'+sp+'</span></button>').join('')+'</div>';
  $('actForm').innerHTML='<div class="aform"><b>'+(t==='pfre'?'Reemite proforma':'Emite factură proformă')+'</b>'+
   '<p class="hint" style="margin:4px 0 0">Proforma se face din oferta '+esc(r.nr)+': vehiculul, opționalele și prețul final de <b>'+eur(+r.pretFinal||0)+'</b> fără TVA. Primește automat număr în seria ICG-PF.'+(t==='pfre'&&r.proformaNr?' Proforma '+esc(r.proformaNr)+' rămâne în arhivă cu starea „Înlocuită”.':'')+'</p>'+
@@ -3854,7 +3858,7 @@ async function show(v){document.querySelectorAll('#nav button').forEach(b=>b.cla
  for(let i=1;i<=5;i++)$('s'+i).classList.toggle('hide',!w||i!==S.step);['mele:m','arch:a','rep:r','sett:s','allocBox:al','detBox:det'].forEach(x=>{const[id,k]=x.split(':');$(id).classList.toggle('hide',v!==k)});
  if(v==='m'){await loadRows();renderMele()}if(v==='a'){await loadRows();renderArch()}if(v==='r'){await loadRows();renderRep()}if(v==='s')renderSett();window.scrollTo(0,0)}
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{if(b.dataset.v==='w'&&S.step===5){if(confirmNew())return}show(b.dataset.v)});
-function confirmNew(){S.model=null;S.color=null;S.acc={};S.opts=[];OFNO='';CUR=null;$('vin').value='';S.condEdited=false;
+function confirmNew(){$('dCurs').value='bnr1';S.model=null;S.color=null;S.acc={};S.opts=[];OFNO='';CUR=null;$('vin').value='';S.condEdited=false;
  document.querySelectorAll('#s1 input,#s3 input,#s4 input').forEach(el=>{if(el.type==='checkbox')el.checked=false;else if(!['dVal','dAv','vNume','vTel','vMail'].includes(el.id))el.value=''});['L','D','S'].forEach(k=>TIER_HAD[k]=false);syncTiers();
  $('dCond').value=condText();$('saveMsg').textContent='';applyProf();renderModels();S.step=1;show('w');return true}
 ['aq','ast','avz','aper'].forEach(id=>$(id).addEventListener(id==='aq'?'input':'change',renderArch));
